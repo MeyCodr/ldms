@@ -1,0 +1,111 @@
+<?php
+session_start();
+include "../../../dbconn.php";
+
+header('Content-Type: application/json; charset=utf-8');
+
+$output = array();
+
+function respondJson($data)
+{
+    if (ob_get_length()) {
+        ob_clean();
+    }
+    echo json_encode($data);
+    exit();
+}
+
+if (
+    !isset($_SESSION['fullname']) ||
+    !isset($_SESSION['role']) ||
+    !isset($_SESSION['usertype']) ||
+    !isset($_SESSION['designation']) ||
+    !isset($_SESSION['hodid']) ||
+    $_SESSION['role'] != 'CLERK' ||
+    $_SESSION['usertype'] != 'MAIN' ||
+    $_SESSION['designation'] != 'MANAGER (AM/HOS & ABOVE)' ||
+    (int) $_SESSION['hodid'] == 0 ||
+    !isset($_POST["action"]) ||
+    $_POST["action"] != "load_non_executive_staff"
+) {
+    respondJson($output);
+}
+
+$department = isset($_SESSION['department']) ? $_SESSION['department'] : '';
+$currentYear = (int) date('Y');
+$currentQuarter = (int) ceil(date('n') / 3);
+
+if ($department == '' && isset($_SESSION['id'])) {
+    $stmtDepartment = $conn->prepare("SELECT department FROM user WHERE id = ?");
+    if ($stmtDepartment) {
+        $stmtDepartment->bind_param("i", $_SESSION['id']);
+        $stmtDepartment->execute();
+        $departmentResult = $stmtDepartment->get_result()->fetch_assoc();
+        if ($departmentResult) {
+            $department = $departmentResult['department'];
+        }
+    }
+}
+
+if ($department == '') {
+    respondJson($output);
+}
+
+$sql = "SELECT
+            u.id,
+            u.staffno,
+            u.staffname,
+            u.grade,
+            u.status,
+            COALESCE(dp.name, u.department) AS department,
+            COALESCE(s.name, u.section) AS section,
+            EXISTS (
+                SELECT 1
+                FROM skill_matrix_evaluations sme
+                WHERE sme.staffid = u.id
+                AND YEAR(sme.evaluation_date) = ?
+                AND QUARTER(sme.evaluation_date) = ?
+            ) AS has_current_quarter_evaluation
+        FROM user u
+        LEFT JOIN departments dp ON u.department_id = dp.id
+        LEFT JOIN sections s ON u.section_id = s.id
+        WHERE u.designation = ?
+        AND u.status != ?
+        AND u.department = ?
+        ORDER BY u.staffname";
+
+$stmt = $conn->prepare($sql);
+if (!$stmt) {
+    respondJson($output);
+}
+
+$designation = "NON EXECUTIVE";
+$inactiveStatus = "RESIGN";
+$stmt->bind_param("iisss", $currentYear, $currentQuarter, $designation, $inactiveStatus, $department);
+$stmt->execute();
+$result = $stmt->get_result();
+
+while ($row = $result->fetch_assoc()) {
+    if ($row['has_current_quarter_evaluation']) {
+        $action = '<div style="display: flex; gap: 6px; justify-content: center; white-space: nowrap;">';
+        $action .= '<a href="evaluation-matrix.php?staffid=' . $row['id'] . '" class="btn btn-default btn-sm"><i class="fa fa-search"></i> VIEW</a>';
+        $action .= '<a href="duplicate-matrix.php?staffid=' . $row['id'] . '" class="btn btn-warning btn-sm"><i class="fa fa-copy"></i> DUPLICATE</a>';
+        $action .= '</div>';
+    } else {
+        $action = '<a href="evaluation-matrix.php?staffid=' . $row['id'] . '" class="btn btn-info btn-sm"><i class="fa fa-edit"></i> FILL SKILL MATRIX</a>';
+    }
+
+    $output[] = array(
+        'id' => $row['id'],
+        'staffno' => $row['staffno'],
+        'staffname' => $row['staffname'],
+        'department' => $row['department'],
+        'section' => $row['section'],
+        'grade' => $row['grade'],
+        'status' => '<span class="label label-pill label-success">ACTIVE</span>',
+        'action' => $action,
+    );
+}
+
+respondJson($output);
+?>
