@@ -168,7 +168,7 @@
                         <div class="panel-body" align="center">
 							<div class="row">
 								<div class="col-md-12">
-									<canvas id="publicojtChart" style="width:100%;max-width:700px"></canvas>
+									<canvas id="publicojtChart" style="width:100%;max-width:700px;height:300px"></canvas>
 								</div>
 							</div>
 						</div>
@@ -207,7 +207,7 @@
                         <div class="panel-body" align="center">
 							<div class="row">
 								<div class="col-md-12">
-									<canvas id="top10Chart" style="width:100%;"></canvas>
+									<canvas id="top10Chart" style="width:100%;height:400px;"></canvas>
 								</div>
 							</div>
 						</div>
@@ -223,7 +223,7 @@
                         <div class="panel-body" align="center">
 							<div class="row">
 								<div class="col-md-12">
-									<canvas id="businessChart" style="width:100%;max-width:700px"></canvas>
+									<canvas id="businessChart" style="width:100%;max-width:700px;height:300px"></canvas>
 								</div>
 							</div>
 						</div>
@@ -237,7 +237,7 @@
                         <div class="panel-body" align="center">
 							<div class="row">
 								<div class="col-md-12">
-									<canvas id="dhmsbChart" style="width:100%;max-width:700px"></canvas>
+									<canvas id="dhmsbChart" style="width:100%;max-width:700px;height:300px"></canvas>
 								</div>
 							</div>
 						</div>
@@ -251,7 +251,7 @@
                         <div class="panel-body" align="center">
 							<div class="row">
 								<div class="col-md-12">
-									<canvas id="qualityChart" style="width:100%;max-width:700px"></canvas>
+									<canvas id="qualityChart" style="width:100%;max-width:700px;height:300px"></canvas>
 								</div>
 							</div>
 						</div>
@@ -259,7 +259,7 @@
 				</div>
 			</div>
 			<div class="row">
-                <div class="col-md-4">
+                <div class="col-md-6">
 					<div class="panel panel-default">
                         <div class="panel-heading">
                             <strong>Finance Division (Total Man Hour Vs Avg Hour)</strong>
@@ -267,13 +267,13 @@
                         <div class="panel-body" align="center">
 							<div class="row">
 								<div class="col-md-12">
-									<canvas id="financeChart" style="width:100%;max-width:700px"></canvas>
+									<canvas id="financeChart" style="width:100%;max-width:700px;height:300px"></canvas>
 								</div>
 							</div>
 						</div>
 					</div>
 				</div>
-				<div class="col-md-4">
+				<div class="col-md-6">
 					<div class="panel panel-default">
                         <div class="panel-heading">
                             <strong>Human Capital (Total Man Hour Vs Avg Hour)</strong>
@@ -281,21 +281,7 @@
                         <div class="panel-body" align="center">
 							<div class="row">
 								<div class="col-md-12">
-									<canvas id="humanChart" style="width:100%;max-width:700px"></canvas>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="col-md-4">
-					<div class="panel panel-default">
-                        <div class="panel-heading">
-                            <strong>Operation Transformation Division (Total Man Hour Vs Avg Hour)</strong>
-                        </div>
-                        <div class="panel-body" align="center">
-							<div class="row">
-								<div class="col-md-12">
-									<canvas id="transformChart" style="width:100%;max-width:700px"></canvas>
+									<canvas id="humanChart" style="width:100%;max-width:700px;height:300px"></canvas>
 								</div>
 							</div>
 						</div>
@@ -310,7 +296,9 @@
                         </div>
                         <div class="panel-body" align="center">
 							<div class="row">
-								<canvas id="operationChart" style="width:100%;max-width:700px"></canvas>
+								<div class="col-md-12">
+									<canvas id="operationChart" style="width:100%;max-width:700px;height:300px"></canvas>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -322,7 +310,9 @@
                         </div>
                         <div class="panel-body" align="center">
 							<div class="row">
-								<canvas id="rndChart" style="width:100%;max-width:700px"></canvas>
+								<div class="col-md-12">
+									<canvas id="rndChart" style="width:100%;max-width:700px;height:300px"></canvas>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -379,11 +369,11 @@
 
 		var clerkid = <?php echo $_SESSION['id']?>;
 
-		var date = new Date(), y = date.getFullYear(), m = date.getMonth();
-		var firstDay = new Date(y, m, 1);
-		var fd = firstDay.getFullYear()  + "-" + (firstDay.getMonth() + 1)+ "-" + '01';
-		var lastDay = new Date(y, m + 1, 0);
-		var ld = lastDay.getFullYear()  + "-" + (lastDay.getMonth() + 1)+ "-" + lastDay.getDate();
+		var date = new Date(), y = date.getFullYear();
+		var fd = y + "-01-01";
+		var mm = String(date.getMonth() + 1).padStart(2, '0');
+		var dd = String(date.getDate()).padStart(2, '0');
+		var ld = y + "-" + mm + "-" + dd;
 
 		$('#datarecord').fadeIn().html('<label>Data summary : '+fd+' - '+ld+'</label');
 
@@ -515,12 +505,16 @@
                     var ctxTop10 = canvasTop10.getContext('2d');
                     var category = [];
 					var totalsend = [];
+					var totalsend1 = [];
 					var colorplant = [];
+					var colorplant1 = [];
 
 					for(var count = 0; count < data.length; count++) {
 						category.push(data[count].category);
 						totalsend.push(data[count].totalsend);
+						totalsend1.push(data[count].totalsend1);
 						colorplant.push(data[count].colorplant);
+						colorplant1.push(data[count].colorplant1);
 					}
 
                     top10Chart = new Chart(ctxTop10, {
@@ -531,7 +525,14 @@
                                 {
                                     label: "Total Hours",
                                     backgroundColor: colorplant,
-                                    data: totalsend
+                                    data: totalsend,
+									stack: 'Stack 0'
+                                },
+								{
+                                    label: "Avg Hours",
+                                    backgroundColor: colorplant1,
+                                    data: totalsend1,
+									stack: 'Stack 1'
                                 }
                             ]
                         },
@@ -539,9 +540,12 @@
                             responsive: true,
                             maintainAspectRatio: false,
                             legend: {
-                                display: false
+                                display: true
                             },
                             scales: {
+								xAxes: [{
+                                    stacked: true,
+                                }],
                                 yAxes:[{
 									min:0,
 									ticks:{
@@ -1003,92 +1007,6 @@
 
 		makeoperationchart(fd,ld);
 
-		var canvasTransform = document.getElementById("transformChart");
-		var transformChart;
-
-		function maketransformchart(startdate,enddate) {
-			$.ajax({
-				url:"fetch_dash.php",
-				method:"POST",
-				data:{action:'fetch_transform',startdate:startdate,enddate:enddate},
-				dataType:"JSON",
-				success:function(data)
-				{
-                    var ctxTransform = canvasTransform.getContext('2d');
-                    var category = [];
-					var totalsend = [];
-					var totalsend1 = [];
-					var colorplant = [];
-					var colorplant1 = [];
-
-					for(var count = 0; count < data.length; count++) {
-						category.push(data[count].category);
-						totalsend.push(data[count].totalsend);
-						totalsend1.push(data[count].totalsend1);
-						colorplant.push(data[count].colorplant);
-						colorplant1.push(data[count].colorplant1);
-					}
-
-                    transformChart = new Chart(ctxTransform, {
-                        type: 'bar',
-                        data: {
-                            labels: category,
-                            datasets: [
-                                {
-                                    label: "Total Hours",
-                                    backgroundColor: colorplant,
-                                    data: totalsend,
-									stack: 'Stack 0'
-                                },
-								{
-                                    label: "Avg Hours",
-                                    backgroundColor: colorplant1,
-                                    data: totalsend1,
-									stack: 'Stack 1'
-                                }
-                            ]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            legend: {
-                                display: true
-                            },
-                            scales: {
-								xAxes: [{
-                                    stacked: true,
-                                }],
-                                yAxes:[{
-									min:0,
-									ticks:{
-										min:0,
-										stepSize: 10
-									}
-								}]
-                            },
-                            plugins: {
-                                labels: {
-                                    render: 'value',
-                                    fontColor: '#000',
-                                }
-                            },
-							layout: {
-								padding: {
-									top: 20
-								}
-							}
-                        }
-                    });
-				}
-			})
-		}
-
-		function destroyCharttransform() {
-            transformChart.destroy();
-        }
-
-		maketransformchart(fd,ld);
-
 		var canvasQuality = document.getElementById("qualityChart");
 		var qualityChart;
 
@@ -1283,8 +1201,6 @@
 			makehumanchart(startdate,enddate);
 			destroyChartoperation();
 			makeoperationchart(startdate,enddate);
-			destroyCharttransform();
-			maketransformchart(startdate,enddate);
 			destroyChartquality();
 			makequalitychart(startdate,enddate);
 			destroyChartrnd();
@@ -1310,8 +1226,6 @@
 			makehumanchart(fd,ld);
 			destroyChartoperation();
 			makeoperationchart(fd,ld);
-			destroyCharttransform();
-			maketransformchart(fd,ld);
 			destroyChartquality();
 			makequalitychart(fd,ld);
 			destroyChartrnd();

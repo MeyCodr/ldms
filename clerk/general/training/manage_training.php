@@ -219,6 +219,56 @@
 
         var userid = <?php echo $_SESSION['id']?>;
 
+        function attachStaffSearch(selectId) {
+            var $select = $('#' + selectId);
+            var name = $select.attr('name');
+            var currentVal = $select.val() || '';
+            var currentText = $select.find('option:selected').text() || '';
+
+            var allOptions = [];
+            $select.find('option').each(function() {
+                if ($(this).val()) allOptions.push({ value: $(this).val(), text: $(this).text() });
+            });
+
+            var $wrapper = $('<div style="position:relative;"></div>');
+            var $input = $('<input type="text" class="form-control" placeholder="Type to search staff..." autocomplete="off">');
+            var $hidden = $('<input type="hidden" name="' + name + '">');
+            var $list = $('<ul style="display:none;position:absolute;z-index:9999;width:100%;max-height:300px;overflow-y:auto;background:#fff;border:1px solid #ccd0d4;border-top:none;list-style:none;padding:0;margin:0;border-radius:0 0 4px 4px;box-shadow:0 4px 6px rgba(0,0,0,.1);"></ul>');
+
+            if (currentVal) {
+                $input.val(currentText);
+                $hidden.val(currentVal);
+            }
+
+            $wrapper.append($input).append($hidden).append($list);
+            $select.replaceWith($wrapper);
+
+            function renderList(q) {
+                $list.empty();
+                var filtered = allOptions.filter(function(o) {
+                    return !q || o.text.toLowerCase().indexOf(q.toLowerCase()) !== -1;
+                });
+                if (!filtered.length) { $list.hide(); return; }
+                filtered.forEach(function(o) {
+                    var $item = $('<li style="padding:6px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;">' + o.text + '</li>');
+                    $item.on('mouseenter', function() { $(this).css('background-color','#e8f4f8'); });
+                    $item.on('mouseleave', function() { $(this).css('background-color',''); });
+                    $item.on('mousedown', function(e) {
+                        e.preventDefault();
+                        $input.val(o.text);
+                        $hidden.val(o.value);
+                        $list.hide();
+                    });
+                    $list.append($item);
+                });
+                $list.show();
+            }
+
+            $input.on('focus', function() { renderList($(this).val()); });
+            $input.on('input', function() { $hidden.val(''); renderList($(this).val()); });
+            $input.on('blur', function() { setTimeout(function() { $list.hide(); }, 200); });
+        }
+
         $('#external').hide();
         $('#internal').hide();
 
@@ -284,6 +334,7 @@
                 $(function(){
                     $.post("fetch_training.php",{action:"load_party"},function(data){
                         $('#participant'+counter).html(data);
+                        attachStaffSearch('participant'+counter);
                     });
                 });
                 return false;
@@ -309,6 +360,7 @@
                 $(function(){
                     $.post("fetch_training.php",{action:"load_contract"},function(data){
                         $('#contractstaff'+counterconc).html(data);
+                        attachStaffSearch('contractstaff'+counterconc);
                     });
                 });
                 return false;
@@ -324,6 +376,7 @@
             $(function(){
                 $.post("fetch_training.php",{action:"load_staff"},function(data){
                     $('#internalname').html(data);
+                    attachStaffSearch('internalname');
                 });
             });
         }else if (action1 == 'edittraining') {
@@ -391,6 +444,7 @@
                                 for (t=0;t<=i;t++) {
                                     $('#participant'+t).html(data);
                                     $('#participant'+t).val(userstaffname[t]);
+                                    attachStaffSearch('participant'+t);
                                 }
                             });
                         });
@@ -426,6 +480,7 @@
                                 for (t=0;t<totalcont;t++) {
                                     $('#contractstaff'+t).html(data);
                                     $('#contractstaff'+t).val(contractstaffname[t]);
+                                    attachStaffSearch('contractstaff'+t);
                                 }
                             });
                         });
@@ -447,6 +502,7 @@
                         $(function(){
                             $.post("fetch_training.php",{action:"load_party"},function(data){
                                 $('#participant'+counter1).html(data);
+                                attachStaffSearch('participant'+counter1);
                             });
                         });
                         
@@ -476,6 +532,7 @@
                         $(function(){
                             $.post("fetch_training.php",{action:"load_contract"},function(data){
                                 $('#contractstaff'+counterconc1).html(data);
+                                attachStaffSearch('contractstaff'+counterconc1);
                             });
                         });
 
@@ -495,6 +552,7 @@
                 $.post("fetch_training.php",{action:"load_staff"},function(data){
                     $('#internalname').html(data);
                     $('#internalname').val(edittrainer);
+                    attachStaffSearch('internalname');
                 });
             });
         }
