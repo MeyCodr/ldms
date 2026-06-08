@@ -113,14 +113,15 @@ if ($_POST["action"] == "load_non_executive_staff") {
             $status = '<span class="label label-pill label-success">ACTIVE</span>';
         }
 
+        $isAdmin = isset($_SESSION['role']) && $_SESSION['role'] == 'ADMIN';
         if ($row['has_current_quarter_evaluation']) {
             $action = '<div style="display: flex; gap: 6px; justify-content: center; white-space: nowrap;">';
             $action .= '<a href="evaluation-matrix.php?staffid=' . $row['id'] . '" class="btn btn-default btn-sm"><i class="fa fa-search"></i> VIEW</a>';
-            if (skillMatrixUserCanUse()) {
+            if ($isAdmin || skillMatrixUserCanUse()) {
                 $action .= '<a href="duplicate-matrix.php?staffid=' . $row['id'] . '" class="btn btn-warning btn-sm"><i class="fa fa-copy"></i> DUPLICATE</a>';
             }
             $action .= '</div>';
-        } else if (skillMatrixUserCanUse()) {
+        } else if ($isAdmin || skillMatrixUserCanUse()) {
             $action = '<a href="evaluation-matrix.php?staffid=' . $row['id'] . '" class="btn btn-info btn-sm"><i class="fa fa-edit"></i> FILL SKILL MATRIX</a>';
         } else {
             $action = '<span class="label label-pill label-warning">PENDING HOS</span>';

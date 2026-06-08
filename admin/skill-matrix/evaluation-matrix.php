@@ -49,7 +49,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || skillMatrix
     $currentYear = (int) date('Y');
     $currentQuarter = (int) ceil(date('n') / 3);
     $hasCurrentQuarterEvaluation = false;
-    $canFillSkillMatrix = skillMatrixUserCanUse();
+    $canFillSkillMatrix = skillMatrixUserCanUse() || $_SESSION['role'] == 'ADMIN';
     $viewEvaluationId = null;
     $viewTopics = array(
         'knowledge' => array(),
