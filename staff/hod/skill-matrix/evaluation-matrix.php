@@ -50,10 +50,15 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
                                            sme.approved_at = NOW()
                                        WHERE sme.id = ?
                                        AND creator.hodid = ?
-                                       AND creator.designation = ?
                                        AND (
-                                           (creator.roletype = '' AND creator.usertype = '')
-                                           OR (creator.roletype = 'CLERK' AND creator.usertype = 'MAIN')
+                                           (
+                                               creator.designation = ?
+                                               AND (
+                                                   (creator.roletype = '' AND creator.usertype = '')
+                                                   OR (creator.roletype = 'CLERK' AND creator.usertype = 'MAIN')
+                                               )
+                                           )
+                                           OR EXISTS (SELECT 1 FROM skill_matrix_whitelist w WHERE w.staffno = creator.staffno COLLATE utf8mb4_0900_ai_ci)
                                        )");
         $creatorDesignation = "MANAGER (AM/HOS & ABOVE)";
         $approveStmt->bind_param("iiis", $hodId, $postEvaluationId, $hodId, $creatorDesignation);
@@ -91,10 +96,15 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
                             LEFT JOIN user approver ON approver.id = sme.approved_by
                             WHERE sme.id = ?
                             AND creator.hodid = ?
-                            AND creator.designation = ?
                             AND (
-                                (creator.roletype = '' AND creator.usertype = '')
-                                OR (creator.roletype = 'CLERK' AND creator.usertype = 'MAIN')
+                                (
+                                    creator.designation = ?
+                                    AND (
+                                        (creator.roletype = '' AND creator.usertype = '')
+                                        OR (creator.roletype = 'CLERK' AND creator.usertype = 'MAIN')
+                                    )
+                                )
+                                OR EXISTS (SELECT 1 FROM skill_matrix_whitelist w WHERE w.staffno = creator.staffno COLLATE utf8mb4_0900_ai_ci)
                             )
                             LIMIT 1");
     $creatorDesignation = "MANAGER (AM/HOS & ABOVE)";

@@ -11,13 +11,17 @@ if (isset($_SESSION['id']) && (!isset($_SESSION['designation']) || !isset($_SESS
     }
 }
 
-$canUseSkillMatrix = isset($_SESSION['fullname'], $_SESSION['role'], $_SESSION['designation'], $_SESSION['usertype'], $_SESSION['hodid'])
+$canUseSkillMatrix = (
+    !empty($_SESSION['is_sm_user']) && isset($_SESSION['fullname'])
+) || (
+    isset($_SESSION['fullname'], $_SESSION['role'], $_SESSION['designation'], $_SESSION['usertype'], $_SESSION['hodid'])
     && $_SESSION['designation'] == 'MANAGER (AM/HOS & ABOVE)'
     && (int) $_SESSION['hodid'] != 0
     && (
         ($_SESSION['role'] == '' && $_SESSION['usertype'] == '') ||
         ($_SESSION['role'] == 'CLERK' && $_SESSION['usertype'] == 'MAIN')
-    );
+    )
+);
 $isClerkMatrixUser = $canUseSkillMatrix && $_SESSION['role'] == 'CLERK';
 
 if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkillMatrix)) {
@@ -93,7 +97,8 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
                             <li><a href="../tni/tni_list.php">TNI LIST</a></li>
                             <li><a href="../tna/tna_summary.php">TNA SUMMARY</a></li>
                             <li class="active"><a href="skill-matrix.php">SKILL MATRIX</a></li>
-                            <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
+                            <li><a href="../organization/org.php">ORGANIZATION</a></li>
+                        <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
                         <?php } ?>
                     </ul>
                     <ul class="nav navbar-nav navbar-right">

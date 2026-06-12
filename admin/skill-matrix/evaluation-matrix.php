@@ -28,13 +28,17 @@ function skillMatrixUserCanUse()
         }
     }
 
-    return isset($_SESSION['fullname'], $_SESSION['role'], $_SESSION['designation'], $_SESSION['usertype'], $_SESSION['hodid'])
+    return (
+        !empty($_SESSION['is_sm_user']) && isset($_SESSION['fullname'])
+    ) || (
+        isset($_SESSION['fullname'], $_SESSION['role'], $_SESSION['designation'], $_SESSION['usertype'], $_SESSION['hodid'])
         && $_SESSION['designation'] == 'MANAGER (AM/HOS & ABOVE)'
         && (int) $_SESSION['hodid'] != 0
         && (
             ($_SESSION['role'] == '' && $_SESSION['usertype'] == '') ||
             ($_SESSION['role'] == 'CLERK' && $_SESSION['usertype'] == 'MAIN')
-        );
+        )
+    );
 }
 
 if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || skillMatrixUserCanUse())) {
@@ -274,7 +278,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || skillMatrix
                 $evaluationDateForDb = date('Y-m-d');
                 $createdBy = isset($_SESSION['id']) ? (int) $_SESSION['id'] : null;
 
-                $evaluationStmt = $conn->prepare("INSERT INTO skill_matrix_evaluations (staffid, evaluation_date, created_by) VALUES (?, ?, ?)");
+                $evaluationStmt = $conn->prepare("INSERT INTO skill_matrix_evaluations (staffid, evaluation_date, created_by, approval_status) VALUES (?, ?, ?, 'PENDING')");
                 $evaluationStmt->bind_param("isi", $staffid, $evaluationDateForDb, $createdBy);
                 $evaluationStmt->execute();
                 $evaluationId = $conn->insert_id;
@@ -418,7 +422,8 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || skillMatrix
                             <li><a href="../tni/tni_list.php">TNI LIST</a></li>
                             <li><a href="../tna/tna_summary.php">TNA SUMMARY</a></li>
                             <li class="active"><a href="skill-matrix.php">SKILL MATRIX</a></li>
-                            <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
+                            <li><a href="../organization/org.php">ORGANIZATION</a></li>
+                        <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
                         <?php } ?>
                     </ul>                    <ul class="nav navbar-nav navbar-right">
                         <li class="dropdown">

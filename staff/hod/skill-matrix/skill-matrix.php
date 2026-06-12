@@ -40,17 +40,22 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
                             FROM skill_matrix_evaluations sme
                             INNER JOIN user target ON target.id = sme.staffid
                             INNER JOIN user creator ON creator.id = sme.created_by
-                            WHERE creator.designation = ?
-                            AND creator.hodid = ?
+                            WHERE creator.hodid = ?
                             AND (
-                                (creator.roletype = '' AND creator.usertype = '')
-                                OR (creator.roletype = 'CLERK' AND creator.usertype = 'MAIN')
+                                (
+                                    creator.designation = ?
+                                    AND (
+                                        (creator.roletype = '' AND creator.usertype = '')
+                                        OR (creator.roletype = 'CLERK' AND creator.usertype = 'MAIN')
+                                    )
+                                )
+                                OR EXISTS (SELECT 1 FROM skill_matrix_whitelist w WHERE w.staffno = creator.staffno COLLATE utf8mb4_0900_ai_ci)
                             )
                             AND YEAR(sme.evaluation_date) = ?
                             AND QUARTER(sme.evaluation_date) = ?
                             ORDER BY FIELD(sme.approval_status, 'PENDING', 'APPROVED'), sme.evaluation_date DESC, target.staffname");
     $creatorDesignation = "MANAGER (AM/HOS & ABOVE)";
-    $stmt->bind_param("siii", $creatorDesignation, $hodId, $currentYear, $currentQuarter);
+    $stmt->bind_param("isii", $hodId, $creatorDesignation, $currentYear, $currentQuarter);
     $stmt->execute();
     $result = $stmt->get_result();
 

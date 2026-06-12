@@ -234,7 +234,7 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                 $evaluationDateForDb = date('Y-m-d');
                 $createdBy = isset($_SESSION['id']) ? (int) $_SESSION['id'] : null;
 
-                $evaluationStmt = $conn->prepare("INSERT INTO skill_matrix_evaluations (staffid, evaluation_date, created_by) VALUES (?, ?, ?)");
+                $evaluationStmt = $conn->prepare("INSERT INTO skill_matrix_evaluations (staffid, evaluation_date, created_by, approval_status) VALUES (?, ?, ?, 'PENDING')");
                 $evaluationStmt->bind_param("isi", $staffid, $evaluationDateForDb, $createdBy);
                 $evaluationStmt->execute();
                 $evaluationId = $conn->insert_id;

@@ -58,17 +58,22 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                             LEFT JOIN user approver ON approver.id = sme.approved_by
                             LEFT JOIN departments dp ON u.department_id = dp.id
                             LEFT JOIN sections s ON u.section_id = s.id
-                            WHERE creator.designation = ?
-                            AND creator.hodid = ?
+                            WHERE creator.hodid = ?
                             AND (
-                                (creator.roletype = '' AND creator.usertype = '')
-                                OR (creator.roletype = 'CLERK' AND creator.usertype = 'MAIN')
+                                (
+                                    creator.designation = ?
+                                    AND (
+                                        (creator.roletype = '' AND creator.usertype = '')
+                                        OR (creator.roletype = 'CLERK' AND creator.usertype = 'MAIN')
+                                    )
+                                )
+                                OR EXISTS (SELECT 1 FROM skill_matrix_whitelist w WHERE w.staffno = creator.staffno COLLATE utf8mb4_0900_ai_ci)
                             )
                             AND YEAR(sme.evaluation_date) = ?
                             AND QUARTER(sme.evaluation_date) = ?
                             ORDER BY u.staffname");
     $creatorDesignation = "MANAGER (AM/HOS & ABOVE)";
-    $stmt->bind_param("siii", $creatorDesignation, $hodId, $currentYear, $currentQuarter);
+    $stmt->bind_param("isii", $hodId, $creatorDesignation, $currentYear, $currentQuarter);
     $stmt->execute();
     $result = $stmt->get_result();
 

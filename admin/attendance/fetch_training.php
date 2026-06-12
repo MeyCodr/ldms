@@ -248,6 +248,16 @@ if (isset($_POST['action'])) {
 			);
 		}
 		echo json_encode($output);
+	} else if ($_POST["action"] == "gettitle") {
+		$ojtid = $_POST["id"];
+		$sql = "select * from ojt where id = '$ojtid';";
+		$query = mysqli_query($conn, $sql);
+		while ($row = mysqli_fetch_assoc($query)) {
+			$output[] = array(
+				'title' => $row['title'],
+			);
+		}
+		echo json_encode($output);
 	}
 }
 

@@ -1,6 +1,16 @@
 <?php
     session_start();
 
+    $canViewSkillMatrix = !empty($_SESSION['is_sm_user']) || (
+        isset($_SESSION['designation'], $_SESSION['hodid'], $_SESSION['role'], $_SESSION['usertype'])
+        && $_SESSION['designation'] == 'MANAGER (AM/HOS & ABOVE)'
+        && (int) $_SESSION['hodid'] != 0
+        && (
+            ($_SESSION['role'] == '' && $_SESSION['usertype'] == '') ||
+            ($_SESSION['role'] == 'CLERK' && $_SESSION['usertype'] == 'MAIN')
+        )
+    );
+
     if (isset($_SESSION['fullname']) && ($_SESSION['role'] == '')) {
 
 ?>
@@ -49,6 +59,7 @@
                         <li><a href="../dashboard.php">HOME</a></li>
 						<li><a href="../attendance/training.php">MY TRAINING</a></li>
                         <li><a href="../tna/tna.php">TNA</a></li>
+                        <?php if ($canViewSkillMatrix) { ?><li><a href="../skill-matrix/skill-matrix.php">SKILL MATRIX</a></li><?php } ?>
 						<li><a href="password.php">CHANGE PASSWORD</a></li>
     				</ul>
     				<ul class="nav navbar-nav navbar-right">

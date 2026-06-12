@@ -2,11 +2,13 @@
 session_start();
 include "../../../dbconn.php";
 
-$canViewSkillMatrix = isset($_SESSION['designation'], $_SESSION['hodid'], $_SESSION['role'], $_SESSION['usertype'])
+$canViewSkillMatrix = !empty($_SESSION['is_sm_user']) || (
+    isset($_SESSION['designation'], $_SESSION['hodid'], $_SESSION['role'], $_SESSION['usertype'])
     && $_SESSION['designation'] == 'MANAGER (AM/HOS & ABOVE)'
     && (int) $_SESSION['hodid'] != 0
     && $_SESSION['role'] == ''
-    && $_SESSION['usertype'] == '';
+    && $_SESSION['usertype'] == ''
+);
 
 if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
     $sourceStaffId = isset($_GET['staffid']) ? (int) $_GET['staffid'] : 0;
@@ -131,7 +133,7 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                 $evaluationDateForDb = date('Y-m-d');
                 $copiedCount = 0;
 
-                $insertEvaluationStmt = $conn->prepare("INSERT INTO skill_matrix_evaluations (staffid, evaluation_date, created_by) VALUES (?, ?, ?)");
+                $insertEvaluationStmt = $conn->prepare("INSERT INTO skill_matrix_evaluations (staffid, evaluation_date, created_by, approval_status) VALUES (?, ?, ?, 'PENDING')");
                 $insertTopicStmt = $conn->prepare("INSERT INTO skill_matrix_topics (evaluation_id, section_type, topic_name, sort_order) VALUES (?, ?, ?, ?)");
                 $insertItemStmt = $conn->prepare("INSERT INTO skill_matrix_items (topic_id, evaluation_text, rating, sort_order) VALUES (?, ?, ?, ?)");
 
@@ -306,7 +308,7 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                                                 </thead>
                                                 <tbody>
                                                     <?php foreach ($eligibleStaff as $staff) { ?>
-                                                        <tr>
+                                                        <tr class="target-staff-row" style="cursor: pointer;">
                                                             <td class="text-center">
                                                                 <input type="checkbox" name="target_staff[]" value="<?php echo $staff['id']; ?>">
                                                             </td>
@@ -356,6 +358,15 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
 
         $('#select_all').change(function () {
             $('input[name="target_staff[]"]').prop('checked', $(this).prop('checked'));
+        });
+
+        $('.target-staff-row').click(function (e) {
+            if ($(e.target).is('input[type="checkbox"]')) {
+                return;
+            }
+
+            var checkbox = $(this).find('input[type="checkbox"]');
+            checkbox.prop('checked', !checkbox.prop('checked'));
         });
 
         setTimeout(function () {

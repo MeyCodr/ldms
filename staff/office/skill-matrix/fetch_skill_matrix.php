@@ -15,16 +15,15 @@ function respondJson($data)
     exit();
 }
 
+$isSmWhitelisted = !empty($_SESSION['is_sm_user']) && isset($_SESSION['fullname']);
+$isRegularManager = isset($_SESSION['fullname'], $_SESSION['role'], $_SESSION['usertype'], $_SESSION['designation'], $_SESSION['hodid'])
+    && $_SESSION['role'] == ''
+    && $_SESSION['usertype'] == ''
+    && $_SESSION['designation'] == 'MANAGER (AM/HOS & ABOVE)'
+    && (int) $_SESSION['hodid'] != 0;
+
 if (
-    !isset($_SESSION['fullname']) ||
-    !isset($_SESSION['role']) ||
-    !isset($_SESSION['usertype']) ||
-    !isset($_SESSION['designation']) ||
-    !isset($_SESSION['hodid']) ||
-    $_SESSION['role'] != '' ||
-    $_SESSION['usertype'] != '' ||
-    $_SESSION['designation'] != 'MANAGER (AM/HOS & ABOVE)' ||
-    (int) $_SESSION['hodid'] == 0 ||
+    (!$isSmWhitelisted && !$isRegularManager) ||
     !isset($_POST["action"]) ||
     $_POST["action"] != "load_non_executive_staff"
 ) {

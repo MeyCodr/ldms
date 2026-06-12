@@ -26,6 +26,8 @@ function skillMatrixUserCanUse()
         }
     }
 
+    if (!empty($_SESSION['is_sm_user']) && isset($_SESSION['fullname'])) return true;
+
     return isset($_SESSION['fullname'], $_SESSION['role'], $_SESSION['designation'], $_SESSION['usertype'], $_SESSION['hodid'])
         && $_SESSION['designation'] == 'MANAGER (AM/HOS & ABOVE)'
         && (int) $_SESSION['hodid'] != 0

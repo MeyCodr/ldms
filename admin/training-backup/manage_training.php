@@ -63,6 +63,7 @@
 						<li><a href="../tna/tna_summary.php">TNA SUMMARY</a></li>
 						<li><a href="../skill-matrix/skill-matrix.php">SKILL MATRIX</a></li>
                         <!-- <li><a href="../report/report.php">SUMMARY REPORT</a></li> -->
+                        <li><a href="../organization/org.php">ORGANIZATION</a></li>
                         <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
     				</ul>
     				<ul class="nav navbar-nav navbar-right">

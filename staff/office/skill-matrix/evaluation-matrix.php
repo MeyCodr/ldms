@@ -15,11 +15,13 @@ function skillMatrixRatingLabel($rating)
     return isset($labels[(int) $rating]) ? $labels[(int) $rating] : $rating;
 }
 
-$canViewSkillMatrix = isset($_SESSION['designation'], $_SESSION['hodid'], $_SESSION['role'], $_SESSION['usertype'])
+$canViewSkillMatrix = !empty($_SESSION['is_sm_user']) || (
+    isset($_SESSION['designation'], $_SESSION['hodid'], $_SESSION['role'], $_SESSION['usertype'])
     && $_SESSION['designation'] == 'MANAGER (AM/HOS & ABOVE)'
     && (int) $_SESSION['hodid'] != 0
     && $_SESSION['role'] == ''
-    && $_SESSION['usertype'] == '';
+    && $_SESSION['usertype'] == ''
+);
 
 if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
     $staffid = isset($_GET['staffid']) ? $_GET['staffid'] : '';
@@ -42,6 +44,11 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
         'evaluated_by' => isset($_SESSION['fullname']) ? $_SESSION['fullname'] : '',
         'verified_by' => '',
         'approved_by' => ''
+    );
+    $repopulateData = array(
+        'knowledge' => array(),
+        'skill' => array(),
+        'ability' => array()
     );
 
     if (isset($_SESSION['hodid']) && (int) $_SESSION['hodid'] > 0) {
@@ -227,6 +234,36 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
             }
         }
 
+        if (count($errors) > 0) {
+            foreach ($sections as $section) {
+                $topics = isset($_POST[$section . '_topic']) ? $_POST[$section . '_topic'] : array();
+                $evaluations = isset($_POST[$section . '_evaluation']) ? $_POST[$section . '_evaluation'] : array();
+                $ratings = isset($_POST[$section . '_rating']) ? $_POST[$section . '_rating'] : array();
+
+                foreach ($topics as $topicIndex => $topicName) {
+                    $topicEvaluations = isset($evaluations[$topicIndex]) ? $evaluations[$topicIndex] : array();
+                    $topicRatings = isset($ratings[$topicIndex]) ? $ratings[$topicIndex] : array();
+                    $items = array();
+
+                    foreach ($topicEvaluations as $rowIndex => $evaluationText) {
+                        $items[] = array(
+                            'evaluation_text' => $evaluationText,
+                            'rating' => isset($topicRatings[$rowIndex]) ? $topicRatings[$rowIndex] : ''
+                        );
+                    }
+
+                    if (count($items) == 0) {
+                        $items[] = array('evaluation_text' => '', 'rating' => '');
+                    }
+
+                    $repopulateData[$section][] = array(
+                        'topic_name' => $topicName,
+                        'items' => $items
+                    );
+                }
+            }
+        }
+
         if (count($errors) == 0) {
             mysqli_begin_transaction($conn);
 
@@ -234,7 +271,7 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                 $evaluationDateForDb = date('Y-m-d');
                 $createdBy = isset($_SESSION['id']) ? (int) $_SESSION['id'] : null;
 
-                $evaluationStmt = $conn->prepare("INSERT INTO skill_matrix_evaluations (staffid, evaluation_date, created_by) VALUES (?, ?, ?)");
+                $evaluationStmt = $conn->prepare("INSERT INTO skill_matrix_evaluations (staffid, evaluation_date, created_by, approval_status) VALUES (?, ?, ?, 'PENDING')");
                 $evaluationStmt->bind_param("isi", $staffid, $evaluationDateForDb, $createdBy);
                 $evaluationStmt->execute();
                 $evaluationId = $conn->insert_id;
@@ -631,16 +668,33 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
             return 'Ability';
         }
 
-        function ratingOptions() {
-            return '<option value="">-- Select Rating --</option>' +
-                '<option value="1">1 - Beginner</option>' +
-                '<option value="2">2 - Basic</option>' +
-                '<option value="3">3 - Competent</option>' +
-                '<option value="4">4 - Advanced</option>' +
-                '<option value="5">5 - Expert</option>';
+        function escapeHtml(value) {
+            return $('<div>').text(value == null ? '' : value).html().replace(/"/g, '&quot;');
         }
 
-        function addEvaluationRow(section, topicIndex) {
+        function ratingOptions(selectedRating) {
+            selectedRating = String(selectedRating == null ? '' : selectedRating);
+            var options = [
+                ['', '-- Select Rating --'],
+                ['1', '1 - Beginner'],
+                ['2', '2 - Basic'],
+                ['3', '3 - Competent'],
+                ['4', '4 - Advanced'],
+                ['5', '5 - Expert']
+            ];
+            var html = '';
+
+            for (var i = 0; i < options.length; i++) {
+                var value = options[i][0];
+                var label = options[i][1];
+                var selected = (value === selectedRating) ? ' selected' : '';
+                html += '<option value="' + value + '"' + selected + '>' + label + '</option>';
+            }
+
+            return html;
+        }
+
+        function addEvaluationRow(section, topicIndex, evaluationText, rating) {
             var tbody = $('#' + section + '_topic_' + topicIndex + ' tbody');
             if (tbody.find('tr').length >= 5) {
                 swal("Maximum reached", "Only 5 evaluations are allowed per topic.", "warning");
@@ -650,8 +704,8 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
             var rowNo = tbody.find('tr').length + 1;
             var row = '<tr>' +
                 '<td class="text-center evaluation-no">' + rowNo + '</td>' +
-                '<td><input type="text" name="' + section + '_evaluation[' + topicIndex + '][]" class="form-control"></td>' +
-                '<td><select name="' + section + '_rating[' + topicIndex + '][]" class="form-control">' + ratingOptions() + '</select></td>' +
+                '<td><input type="text" name="' + section + '_evaluation[' + topicIndex + '][]" class="form-control" value="' + escapeHtml(evaluationText) + '"></td>' +
+                '<td><select name="' + section + '_rating[' + topicIndex + '][]" class="form-control">' + ratingOptions(rating) + '</select></td>' +
                 '<td class="text-center">' +
                 '<button type="button" class="btn btn-danger btn-sm remove-evaluation"><i class="fa fa-trash"></i></button>' +
                 '</td>' +
@@ -666,7 +720,7 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
             });
         }
 
-        function addTopic(section) {
+        function addTopic(section, topicName) {
             topicCounts[section]++;
             var topicIndex = topicCounts[section];
             var label = sectionLabel(section);
@@ -689,7 +743,7 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                 '<div class="panel-body">' +
                 '<div class="form-group">' +
                 '<label>Topic</label>' +
-                '<input type="text" name="' + section + '_topic[' + topicIndex + ']" class="form-control">' +
+                '<input type="text" name="' + section + '_topic[' + topicIndex + ']" class="form-control" value="' + escapeHtml(topicName) + '">' +
                 '</div>' +
                 '<div class="table-responsive">' +
                 '<table class="table table-bordered table-striped">' +
@@ -708,11 +762,14 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                 '</div>';
 
             $('#' + section + '_topics').append(topic);
-            addEvaluationRow(section, topicIndex);
+
+            return topicIndex;
         }
 
         $('.add-topic').click(function () {
-            addTopic($(this).data('section'));
+            var section = $(this).data('section');
+            var topicIndex = addTopic(section);
+            addEvaluationRow(section, topicIndex);
         });
 
         $(document).on('click', '.add-evaluation', function () {
@@ -753,9 +810,24 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
             });
         <?php } ?>
 
-        addTopic('knowledge');
-        addTopic('skill');
-        addTopic('ability');
+        var repopulateData = <?php echo json_encode($repopulateData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+
+        $.each(['knowledge', 'skill', 'ability'], function (i, section) {
+            var topics = repopulateData[section];
+
+            if (topics && topics.length > 0) {
+                $.each(topics, function (j, topic) {
+                    var topicIndex = addTopic(section, topic.topic_name);
+
+                    $.each(topic.items, function (k, item) {
+                        addEvaluationRow(section, topicIndex, item.evaluation_text, item.rating);
+                    });
+                });
+            } else {
+                var topicIndex = addTopic(section);
+                addEvaluationRow(section, topicIndex);
+            }
+        });
     </script>
 
     </html>

@@ -15,6 +15,8 @@ function skillMatrixDuplicateUserCanUse()
         }
     }
 
+    if (!empty($_SESSION['is_sm_user']) && isset($_SESSION['fullname'])) return true;
+
     return isset($_SESSION['fullname'], $_SESSION['role'], $_SESSION['designation'], $_SESSION['usertype'], $_SESSION['hodid'])
         && $_SESSION['designation'] == 'MANAGER (AM/HOS & ABOVE)'
         && (int) $_SESSION['hodid'] != 0
@@ -174,7 +176,7 @@ if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
                 $evaluationDateForDb = date('Y-m-d');
                 $copiedCount = 0;
 
-                $insertEvaluationStmt = $conn->prepare("INSERT INTO skill_matrix_evaluations (staffid, evaluation_date, created_by) VALUES (?, ?, ?)");
+                $insertEvaluationStmt = $conn->prepare("INSERT INTO skill_matrix_evaluations (staffid, evaluation_date, created_by, approval_status) VALUES (?, ?, ?, 'PENDING')");
                 $insertTopicStmt = $conn->prepare("INSERT INTO skill_matrix_topics (evaluation_id, section_type, topic_name, sort_order) VALUES (?, ?, ?, ?)");
                 $insertItemStmt = $conn->prepare("INSERT INTO skill_matrix_items (topic_id, evaluation_text, rating, sort_order) VALUES (?, ?, ?, ?)");
 
@@ -299,7 +301,8 @@ if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
                             <li><a href="../tni/tni_list.php">TNI LIST</a></li>
                             <li><a href="../tna/tna_summary.php">TNA SUMMARY</a></li>
                             <li class="active"><a href="skill-matrix.php">SKILL MATRIX</a></li>
-                            <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
+                            <li><a href="../organization/org.php">ORGANIZATION</a></li>
+                        <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
                         <?php } ?>
                     </ul>                    <ul class="nav navbar-nav navbar-right">
                         <li class="dropdown">

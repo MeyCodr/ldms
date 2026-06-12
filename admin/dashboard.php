@@ -56,6 +56,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                         <li><a href="tni/tni_list.php">TNI</a></li>
 						<li><a href="tna/tna_summary.php">TNA SUMMARY</a></li>
 						<li><a href="skill-matrix/skill-matrix.php">SKILL MATRIX</a></li>
+						<li><a href="organization/org.php">ORGANIZATION</a></li>
                         <li><a href="password/password.php">CHANGE PASSWORD</a></li>
 
                         
