@@ -313,6 +313,30 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || skillMatrix
         $saveMessage = 'Evaluation saved successfully.';
     }
 
+    $prefillData = array('knowledge' => array(), 'skill' => array(), 'ability' => array());
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && $saveError != '') {
+        foreach (array('knowledge', 'skill', 'ability') as $section) {
+            $postTopics = isset($_POST[$section . '_topic']) ? $_POST[$section . '_topic'] : array();
+            $postEvaluations = isset($_POST[$section . '_evaluation']) ? $_POST[$section . '_evaluation'] : array();
+            $postRatings = isset($_POST[$section . '_rating']) ? $_POST[$section . '_rating'] : array();
+            foreach ($postTopics as $topicIndex => $topicName) {
+                $topicEvaluations = isset($postEvaluations[$topicIndex]) ? $postEvaluations[$topicIndex] : array();
+                $topicRatings = isset($postRatings[$topicIndex]) ? $postRatings[$topicIndex] : array();
+                $rows = array();
+                foreach ($topicEvaluations as $rowIndex => $evalText) {
+                    $rows[] = array(
+                        'evaluation_text' => $evalText,
+                        'rating' => isset($topicRatings[$rowIndex]) ? $topicRatings[$rowIndex] : ''
+                    );
+                }
+                $prefillData[$section][] = array(
+                    'topic_name' => $topicName,
+                    'rows' => $rows
+                );
+            }
+        }
+    }
+
     ?>
     <!DOCTYPE html>
     <html lang="en">
@@ -691,6 +715,8 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || skillMatrix
             return i;
         }
 
+        var prefillData = <?php echo json_encode($prefillData); ?>;
+
         var topicCounts = {
             knowledge: 0,
             skill: 0,
@@ -718,7 +744,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || skillMatrix
                 '<option value="5">5 - Expert</option>';
         }
 
-        function addEvaluationRow(section, topicIndex) {
+        function addEvaluationRow(section, topicIndex, evalText, rating) {
             var tbody = $('#' + section + '_topic_' + topicIndex + ' tbody');
             if (tbody.find('tr').length >= 5) {
                 swal("Maximum reached", "Only 5 evaluations are allowed per topic.", "warning");
@@ -736,6 +762,9 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || skillMatrix
                 '</tr>';
 
             tbody.append(row);
+            var lastRow = tbody.find('tr').last();
+            if (evalText !== undefined) lastRow.find('input').val(evalText);
+            if (rating !== undefined) lastRow.find('select').val(rating);
         }
 
         function refreshEvaluationNumbers(tbody) {
@@ -744,7 +773,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || skillMatrix
             });
         }
 
-        function addTopic(section) {
+        function addTopic(section, topicData) {
             topicCounts[section]++;
             var topicIndex = topicCounts[section];
             var label = sectionLabel(section);
@@ -786,7 +815,18 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || skillMatrix
                 '</div>';
 
             $('#' + section + '_topics').append(topic);
-            addEvaluationRow(section, topicIndex);
+            if (topicData) {
+                $('input[name="' + section + '_topic[' + topicIndex + ']"]').val(topicData.topic_name || '');
+                if (topicData.rows && topicData.rows.length > 0) {
+                    topicData.rows.forEach(function(row) {
+                        addEvaluationRow(section, topicIndex, row.evaluation_text, row.rating);
+                    });
+                } else {
+                    addEvaluationRow(section, topicIndex);
+                }
+            } else {
+                addEvaluationRow(section, topicIndex);
+            }
         }
 
         $('.add-topic').click(function () {
@@ -831,9 +871,16 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || skillMatrix
             });
         <?php } ?>
 
-        addTopic('knowledge');
-        addTopic('skill');
-        addTopic('ability');
+        ['knowledge', 'skill', 'ability'].forEach(function(section) {
+            var data = prefillData[section];
+            if (data && data.length > 0) {
+                data.forEach(function(topicData) {
+                    addTopic(section, topicData);
+                });
+            } else {
+                addTopic(section);
+            }
+        });
     </script>
 
     </html>

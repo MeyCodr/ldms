@@ -86,7 +86,7 @@ if ($_POST["action"] == "load_non_executive_staff") {
             FROM user u
             LEFT JOIN departments dp ON u.department_id = dp.id
             LEFT JOIN sections s ON u.section_id = s.id
-            WHERE u.designation = ?
+            WHERE u.designation IN (?, ?)
             AND u.status != ?";
 
     if ($department != "" && $department != "ALL") {
@@ -96,13 +96,14 @@ if ($_POST["action"] == "load_non_executive_staff") {
     $sql .= " ORDER BY department, u.staffname";
 
     $stmt = $conn->prepare($sql);
-    $designation = "NON EXECUTIVE";
+    $designation1 = "NON EXECUTIVE";
+    $designation2 = "CONTRACT";
     $inactiveStatus = "RESIGN";
 
     if ($department != "" && $department != "ALL") {
-        $stmt->bind_param("iissss", $currentYear, $currentQuarter, $designation, $inactiveStatus, $department, $department);
+        $stmt->bind_param("iisssss", $currentYear, $currentQuarter, $designation1, $designation2, $inactiveStatus, $department, $department);
     } else {
-        $stmt->bind_param("iiss", $currentYear, $currentQuarter, $designation, $inactiveStatus);
+        $stmt->bind_param("iisss", $currentYear, $currentQuarter, $designation1, $designation2, $inactiveStatus);
     }
 
     $stmt->execute();

@@ -72,7 +72,7 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                                              FROM user u
                                              WHERE u.id = ?
                                              AND u.department = ?
-                                             AND u.designation = ?
+                                             AND u.designation IN (?, ?)
                                              AND u.status != ?
                                              AND NOT EXISTS (
                                                 SELECT 1
@@ -81,9 +81,10 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                                                 AND YEAR(sme.evaluation_date) = ?
                                                 AND QUARTER(sme.evaluation_date) = ?
                                              )");
-                $designation = "NON EXECUTIVE";
+                $designation1 = "NON EXECUTIVE";
+                $designation2 = "CONTRACT";
                 $inactiveStatus = "RESIGN";
-                $targetStmt->bind_param("isssii", $targetStaffId, $department, $designation, $inactiveStatus, $currentYear, $currentQuarter);
+                $targetStmt->bind_param("issssii", $targetStaffId, $department, $designation1, $designation2, $inactiveStatus, $currentYear, $currentQuarter);
                 $targetStmt->execute();
                 $targetResult = $targetStmt->get_result()->fetch_assoc();
 
@@ -175,7 +176,7 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                                         LEFT JOIN sections s ON u.section_id = s.id
                                         WHERE u.id != ?
                                         AND u.department = ?
-                                        AND u.designation = ?
+                                        AND u.designation IN (?, ?)
                                         AND u.status != ?
                                         AND NOT EXISTS (
                                             SELECT 1
@@ -185,9 +186,10 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                                             AND QUARTER(sme.evaluation_date) = ?
                                         )
                                         ORDER BY u.staffname");
-        $designation = "NON EXECUTIVE";
+        $designation1 = "NON EXECUTIVE";
+        $designation2 = "CONTRACT";
         $inactiveStatus = "RESIGN";
-        $eligibleStmt->bind_param("isssii", $sourceStaffId, $department, $designation, $inactiveStatus, $currentYear, $currentQuarter);
+        $eligibleStmt->bind_param("issssii", $sourceStaffId, $department, $designation1, $designation2, $inactiveStatus, $currentYear, $currentQuarter);
         $eligibleStmt->execute();
         $eligibleResult = $eligibleStmt->get_result();
 

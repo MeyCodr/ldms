@@ -77,7 +77,7 @@ $sql = "SELECT
         FROM user u
         LEFT JOIN departments dp ON u.department_id = dp.id
         LEFT JOIN sections s ON u.section_id = s.id
-        WHERE u.designation = ?
+        WHERE u.designation IN (?, ?)
         AND u.status != ?
         AND u.department = ?
         ORDER BY u.staffname";
@@ -87,9 +87,10 @@ if (!$stmt) {
     respondJson($output);
 }
 
-$designation = "NON EXECUTIVE";
+$designation1 = "NON EXECUTIVE";
+$designation2 = "CONTRACT";
 $inactiveStatus = "RESIGN";
-$stmt->bind_param("iiiisss", $currentYear, $currentQuarter, $currentYear, $currentQuarter, $designation, $inactiveStatus, $department);
+$stmt->bind_param("iiiissss", $currentYear, $currentQuarter, $currentYear, $currentQuarter, $designation1, $designation2, $inactiveStatus, $department);
 $stmt->execute();
 $result = $stmt->get_result();
 

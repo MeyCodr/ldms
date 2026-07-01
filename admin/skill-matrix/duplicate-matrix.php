@@ -117,7 +117,7 @@ if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
                                              LEFT JOIN departments dp ON u.department_id = dp.id
                                              WHERE u.id = ?
                                              AND (dp.name = ? OR u.department = ?)
-                                             AND u.designation = ?
+                                             AND u.designation IN (?, ?)
                                              AND u.status != ?
                                              AND NOT EXISTS (
                                                 SELECT 1
@@ -126,9 +126,10 @@ if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
                                                 AND YEAR(sme.evaluation_date) = ?
                                                 AND QUARTER(sme.evaluation_date) = ?
                                              )");
-                $designation = "NON EXECUTIVE";
+                $designation1 = "NON EXECUTIVE";
+                $designation2 = "CONTRACT";
                 $inactiveStatus = "RESIGN";
-                $targetStmt->bind_param("issssii", $targetStaffId, $department, $department, $designation, $inactiveStatus, $currentYear, $currentQuarter);
+                $targetStmt->bind_param("isssssii", $targetStaffId, $department, $department, $designation1, $designation2, $inactiveStatus, $currentYear, $currentQuarter);
                 $targetStmt->execute();
                 $targetResult = $targetStmt->get_result()->fetch_assoc();
 
@@ -221,7 +222,7 @@ if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
                                         LEFT JOIN sections s ON u.section_id = s.id
                                         WHERE u.id != ?
                                         AND (dp.name = ? OR u.department = ?)
-                                        AND u.designation = ?
+                                        AND u.designation IN (?, ?)
                                         AND u.status != ?
                                         AND NOT EXISTS (
                                             SELECT 1
@@ -231,9 +232,10 @@ if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
                                             AND QUARTER(sme.evaluation_date) = ?
                                         )
                                         ORDER BY u.staffname");
-        $designation = "NON EXECUTIVE";
+        $designation1 = "NON EXECUTIVE";
+        $designation2 = "CONTRACT";
         $inactiveStatus = "RESIGN";
-        $eligibleStmt->bind_param("issssii", $sourceStaffId, $department, $department, $designation, $inactiveStatus, $currentYear, $currentQuarter);
+        $eligibleStmt->bind_param("isssssii", $sourceStaffId, $department, $department, $designation1, $designation2, $inactiveStatus, $currentYear, $currentQuarter);
         $eligibleStmt->execute();
         $eligibleResult = $eligibleStmt->get_result();
 
