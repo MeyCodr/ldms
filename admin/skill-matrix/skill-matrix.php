@@ -173,6 +173,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
                                                 <th>Section</th>
                                                 <th>Grade</th>
                                                 <th>Status</th>
+                                                <th>Approval Status</th>
                                                 <th>Action</th>
                                             </tr>
                                         </thead>
@@ -246,17 +247,20 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
                     "data": "status"
                 },
                 {
+                    "data": "approval_status"
+                },
+                {
                     "data": "action"
                 }
             ],
             "columnDefs": [{
                 className: 'text-center',
-                targets: [0, 1, 5, 6, 7]
+                targets: [0, 1, 5, 6, 7, 8]
             },
             {
                 orderable: false,
                 searchable: false,
-                targets: [0, 7]
+                targets: [0, 8]
             }],
             "drawCallback": function () {
                 var api = this.api();

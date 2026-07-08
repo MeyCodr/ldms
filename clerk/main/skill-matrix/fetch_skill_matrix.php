@@ -65,7 +65,16 @@ $sql = "SELECT
                 WHERE sme.staffid = u.id
                 AND YEAR(sme.evaluation_date) = ?
                 AND QUARTER(sme.evaluation_date) = ?
-            ) AS has_current_quarter_evaluation
+            ) AS has_current_quarter_evaluation,
+            (
+                SELECT sme.approval_status
+                FROM skill_matrix_evaluations sme
+                WHERE sme.staffid = u.id
+                AND YEAR(sme.evaluation_date) = ?
+                AND QUARTER(sme.evaluation_date) = ?
+                ORDER BY sme.evaluation_date DESC, sme.id DESC
+                LIMIT 1
+            ) AS approval_status
         FROM user u
         LEFT JOIN departments dp ON u.department_id = dp.id
         LEFT JOIN sections s ON u.section_id = s.id
@@ -82,14 +91,29 @@ if (!$stmt) {
 $designation1 = "NON EXECUTIVE";
 $designation2 = "CONTRACT";
 $inactiveStatus = "RESIGN";
-$stmt->bind_param("iissss", $currentYear, $currentQuarter, $designation1, $designation2, $inactiveStatus, $department);
+$stmt->bind_param("iiiissss", $currentYear, $currentQuarter, $currentYear, $currentQuarter, $designation1, $designation2, $inactiveStatus, $department);
 $stmt->execute();
 $result = $stmt->get_result();
 
 while ($row = $result->fetch_assoc()) {
+    if ($row['approval_status'] == 'APPROVED') {
+        $approvalStatus = '<span class="label label-pill label-success">APPROVED</span>';
+    } else if ($row['approval_status'] == 'PENDING') {
+        $approvalStatus = '<span class="label label-pill label-warning">WAITING APPROVAL</span>';
+    } else if ($row['has_current_quarter_evaluation']) {
+        $approvalStatus = '<span class="label label-pill label-default">DRAFT</span>';
+    } else {
+        $approvalStatus = '<span class="label label-pill label-default">NOT SUBMITTED</span>';
+    }
+
     if ($row['has_current_quarter_evaluation']) {
+        $isSubmitted = $row['approval_status'] == 'PENDING' || $row['approval_status'] == 'APPROVED';
         $action = '<div style="display: flex; gap: 6px; justify-content: center; white-space: nowrap;">';
-        $action .= '<a href="evaluation-matrix.php?staffid=' . $row['id'] . '" class="btn btn-default btn-sm"><i class="fa fa-search"></i> VIEW</a>';
+        if ($isSubmitted) {
+            $action .= '<a href="evaluation-matrix.php?staffid=' . $row['id'] . '" class="btn btn-default btn-sm"><i class="fa fa-search"></i> VIEW</a>';
+        } else {
+            $action .= '<a href="evaluation-matrix.php?staffid=' . $row['id'] . '&edit=1" class="btn btn-primary btn-sm"><i class="fa fa-edit"></i> EDIT</a>';
+        }
         $action .= '<a href="duplicate-matrix.php?staffid=' . $row['id'] . '" class="btn btn-warning btn-sm"><i class="fa fa-copy"></i> DUPLICATE</a>';
         $action .= '</div>';
     } else {
@@ -104,6 +128,7 @@ while ($row = $result->fetch_assoc()) {
         'section' => $row['section'],
         'grade' => $row['grade'],
         'status' => '<span class="label label-pill label-success">ACTIVE</span>',
+        'approval_status' => $approvalStatus,
         'action' => $action,
     );
 }

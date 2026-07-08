@@ -99,13 +99,20 @@ while ($row = $result->fetch_assoc()) {
         $approvalStatus = '<span class="label label-pill label-success">APPROVED</span>';
     } else if ($row['approval_status'] == 'PENDING') {
         $approvalStatus = '<span class="label label-pill label-warning">WAITING APPROVAL</span>';
+    } else if ($row['has_current_quarter_evaluation']) {
+        $approvalStatus = '<span class="label label-pill label-default">DRAFT</span>';
     } else {
         $approvalStatus = '<span class="label label-pill label-default">NOT SUBMITTED</span>';
     }
 
     if ($row['has_current_quarter_evaluation']) {
+        $isSubmitted = $row['approval_status'] == 'PENDING' || $row['approval_status'] == 'APPROVED';
         $action = '<div style="display: flex; gap: 6px; justify-content: center; white-space: nowrap;">';
-        $action .= '<a href="evaluation-matrix.php?staffid=' . $row['id'] . '" class="btn btn-default btn-sm"><i class="fa fa-search"></i> VIEW</a>';
+        if ($isSubmitted) {
+            $action .= '<a href="evaluation-matrix.php?staffid=' . $row['id'] . '" class="btn btn-default btn-sm"><i class="fa fa-search"></i> VIEW</a>';
+        } else {
+            $action .= '<a href="evaluation-matrix.php?staffid=' . $row['id'] . '&edit=1" class="btn btn-primary btn-sm"><i class="fa fa-edit"></i> EDIT</a>';
+        }
         $action .= '<a href="duplicate-matrix.php?staffid=' . $row['id'] . '" class="btn btn-warning btn-sm"><i class="fa fa-copy"></i> DUPLICATE</a>';
         $action .= '</div>';
     } else {

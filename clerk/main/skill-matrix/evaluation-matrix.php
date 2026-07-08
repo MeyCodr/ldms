@@ -32,6 +32,8 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
     $currentYear = (int) date('Y');
     $currentQuarter = (int) ceil(date('n') / 3);
     $hasCurrentQuarterEvaluation = false;
+    $currentApprovalStatus = null;
+    $editRequested = isset($_GET['edit']) && $_GET['edit'] == '1';
     $viewEvaluationId = null;
     $viewTopics = array(
         'knowledge' => array(),
@@ -42,6 +44,11 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
         'evaluated_by' => isset($_SESSION['fullname']) ? $_SESSION['fullname'] : '',
         'verified_by' => '',
         'approved_by' => ''
+    );
+    $repopulateData = array(
+        'knowledge' => array(),
+        'skill' => array(),
+        'ability' => array()
     );
 
     if (isset($_SESSION['hodid']) && (int) $_SESSION['hodid'] > 0) {
@@ -75,13 +82,14 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
         $staff = $stmt->get_result()->fetch_assoc();
 
         if ($staff) {
-            $quarterStmt = $conn->prepare("SELECT id, evaluation_date, created_by, approved_by FROM skill_matrix_evaluations WHERE staffid = ? AND YEAR(evaluation_date) = ? AND QUARTER(evaluation_date) = ? ORDER BY evaluation_date DESC, id DESC LIMIT 1");
+            $quarterStmt = $conn->prepare("SELECT id, evaluation_date, created_by, approved_by, approval_status FROM skill_matrix_evaluations WHERE staffid = ? AND YEAR(evaluation_date) = ? AND QUARTER(evaluation_date) = ? ORDER BY evaluation_date DESC, id DESC LIMIT 1");
             $quarterStmt->bind_param("iii", $staffid, $currentYear, $currentQuarter);
             $quarterStmt->execute();
             $quarterResult = $quarterStmt->get_result()->fetch_assoc();
             $hasCurrentQuarterEvaluation = $quarterResult ? true : false;
 
             if ($hasCurrentQuarterEvaluation) {
+                $currentApprovalStatus = $quarterResult['approval_status'];
                 $viewEvaluationId = (int) $quarterResult['id'];
                 $displayEvaluationDate = date('d/m/Y', strtotime($quarterResult['evaluation_date']));
                 $signOffStmt = $conn->prepare("SELECT
@@ -138,10 +146,39 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                     }
                 }
             }
+
+            $canEditExisting = $hasCurrentQuarterEvaluation && $editRequested && $currentApprovalStatus === null;
+
+            if ($canEditExisting && $_SERVER['REQUEST_METHOD'] != 'POST') {
+                foreach ($viewTopics as $sectionKey => $sectionTopics) {
+                    foreach ($sectionTopics as $topic) {
+                        $items = array();
+
+                        foreach ($topic['items'] as $topicItem) {
+                            $items[] = array(
+                                'evaluation_text' => $topicItem['evaluation_text'],
+                                'rating' => $topicItem['rating']
+                            );
+                        }
+
+                        if (count($items) == 0) {
+                            $items[] = array('evaluation_text' => '', 'rating' => '');
+                        }
+
+                        $repopulateData[$sectionKey][] = array(
+                            'topic_name' => $topic['topic_name'],
+                            'items' => $items
+                        );
+                    }
+                }
+            }
         }
     }
 
+    $canEditExisting = isset($canEditExisting) ? $canEditExisting : false;
+
     if ($_SERVER['REQUEST_METHOD'] == 'POST' && $staff) {
+        $formAction = isset($_POST['form_action']) && $_POST['form_action'] == 'submit' ? 'submit' : 'save';
         $sections = array('knowledge', 'skill', 'ability');
         $topicsToSave = array();
         $sectionTopicCounts = array(
@@ -151,11 +188,11 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
         );
         $errors = array();
 
-        if ($hasCurrentQuarterEvaluation) {
+        if ($hasCurrentQuarterEvaluation && !$canEditExisting) {
             $errors[] = 'Skill matrix already submitted for this quarter. Please submit again next quarter.';
         }
 
-        if (!$hasCurrentQuarterEvaluation) {
+        if (!$hasCurrentQuarterEvaluation || $canEditExisting) {
             foreach ($sections as $section) {
                 $topics = isset($_POST[$section . '_topic']) ? $_POST[$section . '_topic'] : array();
                 $evaluations = isset($_POST[$section . '_evaluation']) ? $_POST[$section . '_evaluation'] : array();
@@ -227,17 +264,66 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
             }
         }
 
+        if (count($errors) > 0) {
+            foreach ($sections as $section) {
+                $topics = isset($_POST[$section . '_topic']) ? $_POST[$section . '_topic'] : array();
+                $evaluations = isset($_POST[$section . '_evaluation']) ? $_POST[$section . '_evaluation'] : array();
+                $ratings = isset($_POST[$section . '_rating']) ? $_POST[$section . '_rating'] : array();
+
+                foreach ($topics as $topicIndex => $topicName) {
+                    $topicEvaluations = isset($evaluations[$topicIndex]) ? $evaluations[$topicIndex] : array();
+                    $topicRatings = isset($ratings[$topicIndex]) ? $ratings[$topicIndex] : array();
+                    $items = array();
+
+                    foreach ($topicEvaluations as $rowIndex => $evaluationText) {
+                        $items[] = array(
+                            'evaluation_text' => $evaluationText,
+                            'rating' => isset($topicRatings[$rowIndex]) ? $topicRatings[$rowIndex] : ''
+                        );
+                    }
+
+                    if (count($items) == 0) {
+                        $items[] = array('evaluation_text' => '', 'rating' => '');
+                    }
+
+                    $repopulateData[$section][] = array(
+                        'topic_name' => $topicName,
+                        'items' => $items
+                    );
+                }
+            }
+        }
+
         if (count($errors) == 0) {
             mysqli_begin_transaction($conn);
 
             try {
-                $evaluationDateForDb = date('Y-m-d');
-                $createdBy = isset($_SESSION['id']) ? (int) $_SESSION['id'] : null;
+                if ($canEditExisting) {
+                    $evaluationId = $viewEvaluationId;
 
-                $evaluationStmt = $conn->prepare("INSERT INTO skill_matrix_evaluations (staffid, evaluation_date, created_by, approval_status) VALUES (?, ?, ?, 'PENDING')");
-                $evaluationStmt->bind_param("isi", $staffid, $evaluationDateForDb, $createdBy);
-                $evaluationStmt->execute();
-                $evaluationId = $conn->insert_id;
+                    $deleteItemsStmt = $conn->prepare("DELETE i FROM skill_matrix_items i INNER JOIN skill_matrix_topics t ON t.id = i.topic_id WHERE t.evaluation_id = ?");
+                    $deleteItemsStmt->bind_param("i", $evaluationId);
+                    $deleteItemsStmt->execute();
+
+                    $deleteTopicsStmt = $conn->prepare("DELETE FROM skill_matrix_topics WHERE evaluation_id = ?");
+                    $deleteTopicsStmt->bind_param("i", $evaluationId);
+                    $deleteTopicsStmt->execute();
+
+                    if ($formAction == 'submit' && $currentApprovalStatus != 'PENDING') {
+                        $submitStmt = $conn->prepare("UPDATE skill_matrix_evaluations SET approval_status = 'PENDING' WHERE id = ?");
+                        $submitStmt->bind_param("i", $evaluationId);
+                        $submitStmt->execute();
+                    }
+                } else {
+                    $evaluationDateForDb = date('Y-m-d');
+                    $createdBy = isset($_SESSION['id']) ? (int) $_SESSION['id'] : null;
+                    $initialApprovalStatus = $formAction == 'submit' ? 'PENDING' : null;
+
+                    $evaluationStmt = $conn->prepare("INSERT INTO skill_matrix_evaluations (staffid, evaluation_date, created_by, approval_status) VALUES (?, ?, ?, ?)");
+                    $evaluationStmt->bind_param("isis", $staffid, $evaluationDateForDb, $createdBy, $initialApprovalStatus);
+                    $evaluationStmt->execute();
+                    $evaluationId = $conn->insert_id;
+                }
 
                 $topicStmt = $conn->prepare("INSERT INTO skill_matrix_topics (evaluation_id, section_type, topic_name, sort_order) VALUES (?, ?, ?, ?)");
                 $itemStmt = $conn->prepare("INSERT INTO skill_matrix_items (topic_id, evaluation_text, rating, sort_order) VALUES (?, ?, ?, ?)");
@@ -254,7 +340,11 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                 }
 
                 mysqli_commit($conn);
-                header("Location: evaluation-matrix.php?staffid=" . urlencode($staffid) . "&saved=1");
+                $redirectUrl = "evaluation-matrix.php?staffid=" . urlencode($staffid) . "&saved=1&submitted=" . ($formAction == 'submit' ? '1' : '0');
+                if ($formAction == 'save') {
+                    $redirectUrl .= "&edit=1";
+                }
+                header("Location: " . $redirectUrl);
                 exit();
             } catch (Exception $e) {
                 mysqli_rollback($conn);
@@ -266,7 +356,9 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
     }
 
     if (isset($_GET['saved']) && $_GET['saved'] == '1') {
-        $saveMessage = 'Evaluation saved successfully.';
+        $saveMessage = (isset($_GET['submitted']) && $_GET['submitted'] == '1')
+            ? 'Evaluation submitted for approval successfully.'
+            : 'Evaluation saved as draft. It will not be sent for approval until you submit it.';
     }
 
     ?>
@@ -414,7 +506,7 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                                     </tr>
                                 </table>
 
-                                <?php if ($hasCurrentQuarterEvaluation) { ?>
+                                <?php if ($hasCurrentQuarterEvaluation && !$canEditExisting) { ?>
                                     <?php
                                     $sectionTitles = array(
                                         'knowledge' => 'A. Knowledge Section',
@@ -498,6 +590,7 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                                 <form method="post" id="evaluation_form">
                                     <input type="hidden" name="staffid" value="<?php echo $staffid; ?>">
                                     <input type="hidden" name="evaluation_date" value="<?php echo $evaluationDate; ?>">
+                                    <input type="hidden" name="form_action" id="form_action_field" value="save">
 
                                     <div class="panel panel-default evaluation-section">
                                         <div class="panel-heading">
@@ -580,8 +673,11 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                                     </table>
 
                                     <div align="right">
-                                        <button type="submit" class="btn btn-success btn-md">
-                                            SAVE EVALUATION <i class="fa fa-save"></i>
+                                        <button type="submit" class="btn btn-default btn-md">
+                                            SAVE <i class="fa fa-save"></i>
+                                        </button>
+                                        <button type="button" id="submit_for_approval_btn" class="btn btn-success btn-md">
+                                            SUBMIT FOR APPROVAL <i class="fa fa-paper-plane"></i>
                                         </button>
                                     </div>
                                 </form>
@@ -633,16 +729,33 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
             return 'Ability';
         }
 
-        function ratingOptions() {
-            return '<option value="">-- Select Rating --</option>' +
-                '<option value="1">1 - Beginner</option>' +
-                '<option value="2">2 - Basic</option>' +
-                '<option value="3">3 - Competent</option>' +
-                '<option value="4">4 - Advanced</option>' +
-                '<option value="5">5 - Expert</option>';
+        function escapeHtml(value) {
+            return $('<div>').text(value == null ? '' : value).html().replace(/"/g, '&quot;');
         }
 
-        function addEvaluationRow(section, topicIndex) {
+        function ratingOptions(selectedRating) {
+            selectedRating = String(selectedRating == null ? '' : selectedRating);
+            var options = [
+                ['', '-- Select Rating --'],
+                ['1', '1 - Beginner'],
+                ['2', '2 - Basic'],
+                ['3', '3 - Competent'],
+                ['4', '4 - Advanced'],
+                ['5', '5 - Expert']
+            ];
+            var html = '';
+
+            for (var i = 0; i < options.length; i++) {
+                var value = options[i][0];
+                var label = options[i][1];
+                var selected = (value === selectedRating) ? ' selected' : '';
+                html += '<option value="' + value + '"' + selected + '>' + label + '</option>';
+            }
+
+            return html;
+        }
+
+        function addEvaluationRow(section, topicIndex, evaluationText, rating) {
             var tbody = $('#' + section + '_topic_' + topicIndex + ' tbody');
             if (tbody.find('tr').length >= 5) {
                 swal("Maximum reached", "Only 5 evaluations are allowed per topic.", "warning");
@@ -652,8 +765,8 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
             var rowNo = tbody.find('tr').length + 1;
             var row = '<tr>' +
                 '<td class="text-center evaluation-no">' + rowNo + '</td>' +
-                '<td><input type="text" name="' + section + '_evaluation[' + topicIndex + '][]" class="form-control"></td>' +
-                '<td><select name="' + section + '_rating[' + topicIndex + '][]" class="form-control">' + ratingOptions() + '</select></td>' +
+                '<td><input type="text" name="' + section + '_evaluation[' + topicIndex + '][]" class="form-control" value="' + escapeHtml(evaluationText) + '"></td>' +
+                '<td><select name="' + section + '_rating[' + topicIndex + '][]" class="form-control">' + ratingOptions(rating) + '</select></td>' +
                 '<td class="text-center">' +
                 '<button type="button" class="btn btn-danger btn-sm remove-evaluation"><i class="fa fa-trash"></i></button>' +
                 '</td>' +
@@ -668,7 +781,7 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
             });
         }
 
-        function addTopic(section) {
+        function addTopic(section, topicName) {
             topicCounts[section]++;
             var topicIndex = topicCounts[section];
             var label = sectionLabel(section);
@@ -691,7 +804,7 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                 '<div class="panel-body">' +
                 '<div class="form-group">' +
                 '<label>Topic</label>' +
-                '<input type="text" name="' + section + '_topic[' + topicIndex + ']" class="form-control">' +
+                '<input type="text" name="' + section + '_topic[' + topicIndex + ']" class="form-control" value="' + escapeHtml(topicName) + '">' +
                 '</div>' +
                 '<div class="table-responsive">' +
                 '<table class="table table-bordered table-striped">' +
@@ -710,11 +823,14 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                 '</div>';
 
             $('#' + section + '_topics').append(topic);
-            addEvaluationRow(section, topicIndex);
+
+            return topicIndex;
         }
 
         $('.add-topic').click(function () {
-            addTopic($(this).data('section'));
+            var section = $(this).data('section');
+            var topicIndex = addTopic(section);
+            addEvaluationRow(section, topicIndex);
         });
 
         $(document).on('click', '.add-evaluation', function () {
@@ -731,14 +847,31 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
             $(this).closest('.topic-panel').remove();
         });
 
+        $('#submit_for_approval_btn').click(function () {
+            swal({
+                title: "Submit for Approval?",
+                text: "Once submitted, this skill matrix cannot be edited until it has been reviewed. Are you sure you want to submit?",
+                icon: "warning",
+                buttons: true,
+                dangerMode: true,
+                buttons: ["Cancel", "Submit"]
+            })
+            .then((isConfirm) => {
+                if (isConfirm) {
+                    $('#form_action_field').val('submit');
+                    $('#evaluation_form').get(0).submit();
+                }
+            });
+        });
+
         setTimeout(function () {
             $('.alert-success, .alert-danger').fadeOut();
         }, 3000);
 
         <?php if (isset($_GET['saved']) && $_GET['saved'] == '1') { ?>
             swal({
-                title: "Saved",
-                text: "Evaluation saved successfully.",
+                title: "<?php echo (isset($_GET['submitted']) && $_GET['submitted'] == '1') ? 'Submitted' : 'Saved'; ?>",
+                text: "<?php echo addslashes($saveMessage); ?>",
                 icon: "success",
                 timer: 3000,
                 buttons: false
@@ -755,9 +888,24 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
             });
         <?php } ?>
 
-        addTopic('knowledge');
-        addTopic('skill');
-        addTopic('ability');
+        var repopulateData = <?php echo json_encode($repopulateData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+
+        $.each(['knowledge', 'skill', 'ability'], function (i, section) {
+            var topics = repopulateData[section];
+
+            if (topics && topics.length > 0) {
+                $.each(topics, function (j, topic) {
+                    var topicIndex = addTopic(section, topic.topic_name);
+
+                    $.each(topic.items, function (k, item) {
+                        addEvaluationRow(section, topicIndex, item.evaluation_text, item.rating);
+                    });
+                });
+            } else {
+                var topicIndex = addTopic(section);
+                addEvaluationRow(section, topicIndex);
+            }
+        });
     </script>
 
     </html>

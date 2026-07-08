@@ -51,6 +51,7 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
                                 )
                                 OR EXISTS (SELECT 1 FROM skill_matrix_whitelist w WHERE w.staffno = creator.staffno COLLATE utf8mb4_0900_ai_ci)
                             )
+                            AND sme.approval_status IS NOT NULL
                             AND YEAR(sme.evaluation_date) = ?
                             AND QUARTER(sme.evaluation_date) = ?
                             ORDER BY FIELD(sme.approval_status, 'PENDING', 'APPROVED'), sme.evaluation_date DESC, target.staffname");

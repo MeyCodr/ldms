@@ -82,7 +82,16 @@ if ($_POST["action"] == "load_non_executive_staff") {
                     WHERE sme.staffid = u.id
                     AND YEAR(sme.evaluation_date) = ?
                     AND QUARTER(sme.evaluation_date) = ?
-                ) AS has_current_quarter_evaluation
+                ) AS has_current_quarter_evaluation,
+                (
+                    SELECT sme.approval_status
+                    FROM skill_matrix_evaluations sme
+                    WHERE sme.staffid = u.id
+                    AND YEAR(sme.evaluation_date) = ?
+                    AND QUARTER(sme.evaluation_date) = ?
+                    ORDER BY sme.evaluation_date DESC, sme.id DESC
+                    LIMIT 1
+                ) AS approval_status
             FROM user u
             LEFT JOIN departments dp ON u.department_id = dp.id
             LEFT JOIN sections s ON u.section_id = s.id
@@ -101,9 +110,9 @@ if ($_POST["action"] == "load_non_executive_staff") {
     $inactiveStatus = "RESIGN";
 
     if ($department != "" && $department != "ALL") {
-        $stmt->bind_param("iisssss", $currentYear, $currentQuarter, $designation1, $designation2, $inactiveStatus, $department, $department);
+        $stmt->bind_param("iiiisssss", $currentYear, $currentQuarter, $currentYear, $currentQuarter, $designation1, $designation2, $inactiveStatus, $department, $department);
     } else {
-        $stmt->bind_param("iisss", $currentYear, $currentQuarter, $designation1, $designation2, $inactiveStatus);
+        $stmt->bind_param("iiiisss", $currentYear, $currentQuarter, $currentYear, $currentQuarter, $designation1, $designation2, $inactiveStatus);
     }
 
     $stmt->execute();
@@ -116,10 +125,25 @@ if ($_POST["action"] == "load_non_executive_staff") {
             $status = '<span class="label label-pill label-success">ACTIVE</span>';
         }
 
+        if ($row['approval_status'] == 'APPROVED') {
+            $approvalStatus = '<span class="label label-pill label-success">APPROVED</span>';
+        } else if ($row['approval_status'] == 'PENDING') {
+            $approvalStatus = '<span class="label label-pill label-warning">WAITING APPROVAL</span>';
+        } else if ($row['has_current_quarter_evaluation']) {
+            $approvalStatus = '<span class="label label-pill label-default">DRAFT</span>';
+        } else {
+            $approvalStatus = '<span class="label label-pill label-default">NOT SUBMITTED</span>';
+        }
+
         $isAdmin = isset($_SESSION['role']) && $_SESSION['role'] == 'ADMIN';
+        $isSubmitted = $row['approval_status'] == 'PENDING' || $row['approval_status'] == 'APPROVED';
         if ($row['has_current_quarter_evaluation']) {
             $action = '<div style="display: flex; gap: 6px; justify-content: center; white-space: nowrap;">';
-            $action .= '<a href="evaluation-matrix.php?staffid=' . $row['id'] . '" class="btn btn-default btn-sm"><i class="fa fa-search"></i> VIEW</a>';
+            if ($isSubmitted || !($isAdmin || skillMatrixUserCanUse())) {
+                $action .= '<a href="evaluation-matrix.php?staffid=' . $row['id'] . '" class="btn btn-default btn-sm"><i class="fa fa-search"></i> VIEW</a>';
+            } else {
+                $action .= '<a href="evaluation-matrix.php?staffid=' . $row['id'] . '&edit=1" class="btn btn-primary btn-sm"><i class="fa fa-edit"></i> EDIT</a>';
+            }
             if ($isAdmin || skillMatrixUserCanUse()) {
                 $action .= '<a href="duplicate-matrix.php?staffid=' . $row['id'] . '" class="btn btn-warning btn-sm"><i class="fa fa-copy"></i> DUPLICATE</a>';
             }
@@ -138,6 +162,7 @@ if ($_POST["action"] == "load_non_executive_staff") {
             'section' => $row['section'],
             'grade' => $row['grade'],
             'status' => $status,
+            'approval_status' => $approvalStatus,
             'action' => $action,
         );
     }

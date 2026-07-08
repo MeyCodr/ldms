@@ -49,6 +49,7 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
                                            sme.approved_by = ?,
                                            sme.approved_at = NOW()
                                        WHERE sme.id = ?
+                                       AND sme.approval_status = 'PENDING'
                                        AND creator.hodid = ?
                                        AND (
                                            (
@@ -95,6 +96,7 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
                             LEFT JOIN user verifier ON verifier.id = creator.hodid
                             LEFT JOIN user approver ON approver.id = sme.approved_by
                             WHERE sme.id = ?
+                            AND sme.approval_status IS NOT NULL
                             AND creator.hodid = ?
                             AND (
                                 (
