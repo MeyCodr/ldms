@@ -3,6 +3,14 @@ session_start();
 include "../../../dbconn.php";
 include_once __DIR__ . '/../../../division_department_section.php';
 
+$canViewSkillMatrix = !empty($_SESSION['is_sm_user']) || (
+    isset($_SESSION['designation'], $_SESSION['hodid'], $_SESSION['role'], $_SESSION['usertype'])
+    && $_SESSION['designation'] == 'MANAGER (AM/HOS & ABOVE)'
+    && (int) $_SESSION['hodid'] != 0
+    && $_SESSION['role'] == 'CLERK'
+    && $_SESSION['usertype'] == 'MAIN'
+);
+
 if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'CLERK')) {
     $dbOrgStructure = getDbOrgStructure();
     $divisionOptions = array_keys($dbOrgStructure);
@@ -57,6 +65,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'CLERK')) {
                         <li><a href="staff.php">CONTRACT STAFF LIST</a></li>
                         <li><a href="../training/training_ojt.php">ALL TRAINING</a></li>
                         <li><a href="../attendance/training.php">MY TRAINING</a></li>
+                        <?php if ($canViewSkillMatrix) { ?><li><a href="../skill-matrix/skill-matrix.php">SKILL MATRIX</a></li><?php } ?>
                         <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
                     </ul>
                     <ul class="nav navbar-nav navbar-right">

@@ -15,16 +15,17 @@ function respondJson($data)
     exit();
 }
 
+$canViewSkillMatrix = !empty($_SESSION['is_sm_user']) || (
+    isset($_SESSION['role'], $_SESSION['usertype'], $_SESSION['designation'], $_SESSION['hodid'])
+    && $_SESSION['role'] == 'CLERK'
+    && $_SESSION['usertype'] == 'MAIN'
+    && $_SESSION['designation'] == 'MANAGER (AM/HOS & ABOVE)'
+    && (int) $_SESSION['hodid'] != 0
+);
+
 if (
     !isset($_SESSION['fullname']) ||
-    !isset($_SESSION['role']) ||
-    !isset($_SESSION['usertype']) ||
-    !isset($_SESSION['designation']) ||
-    !isset($_SESSION['hodid']) ||
-    $_SESSION['role'] != 'CLERK' ||
-    $_SESSION['usertype'] != 'MAIN' ||
-    $_SESSION['designation'] != 'MANAGER (AM/HOS & ABOVE)' ||
-    (int) $_SESSION['hodid'] == 0 ||
+    !$canViewSkillMatrix ||
     !isset($_POST["action"]) ||
     $_POST["action"] != "load_non_executive_staff"
 ) {

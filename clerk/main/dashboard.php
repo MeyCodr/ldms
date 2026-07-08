@@ -11,13 +11,15 @@
         }
     }
 
-    $canViewSkillMatrix = isset($_SESSION['designation'], $_SESSION['hodid'], $_SESSION['role'], $_SESSION['usertype'])
+    $canViewSkillMatrix = !empty($_SESSION['is_sm_user']) || (
+        isset($_SESSION['designation'], $_SESSION['hodid'], $_SESSION['role'], $_SESSION['usertype'])
         && $_SESSION['designation'] == 'MANAGER (AM/HOS & ABOVE)'
         && (int) $_SESSION['hodid'] != 0
         && (
             ($_SESSION['role'] == '' && $_SESSION['usertype'] == '') ||
             ($_SESSION['role'] == 'CLERK' && $_SESSION['usertype'] == 'MAIN')
-        );
+        )
+    );
 
     if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'CLERK') && ($_SESSION['usertype'] == 'MAIN')) {
 
