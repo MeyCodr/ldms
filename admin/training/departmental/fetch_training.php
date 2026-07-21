@@ -32,53 +32,47 @@
             if ($department != 'ALL') {
 				$sql = "select training.id,user.department,title,startdate,enddate,starttime,endtime,venue,((DATEDIFF(enddate, startdate)) + 1) as totalday,((DATEDIFF(enddate, startdate)) + 1) * ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,'PUBLIC' as trtype from training join participation on training.id = trainingid join user on userid = user.id where department = '$department' group by training.id union select ojt.id,user.department,title,startdate,enddate,starttime,endtime,venue,((DATEDIFF(enddate, startdate)) + 1) as totalday,((DATEDIFF(enddate, startdate)) + 1) * ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,'OJT' as trtype from ojt join participateojt on ojt.id = ojtid join user on userid = user.id where user.department = '$department' group by ojt.id;";
 				$query = mysqli_query($conn,$sql);
+				$rows = [];
+				$publicids = [];
+				$ojtids = [];
 				while ($row = mysqli_fetch_assoc($query))
 				{
-					$trainid = $row['id'];
-
+					$rows[] = $row;
 					if ($row['trtype'] == 'PUBLIC') {
-						$query1 = "select count(*) as totalpeople from participation join user on userid = user.id where trainingid = '$trainid' and department = '$department'";
-						$result1 = mysqli_query($conn, $query1);
-						while($row1 = mysqli_fetch_array($result1)) {
-							if ($row1['totalpeople'] != '') {
-								$totalpeople = $row1['totalpeople'];
-							}else {
-								$totalpeople = 0;
-							}
-						}
-
-						$query2 = "select count(*) as totalpeople from participation join user on userid = user.id where trainingid = '$trainid' and department = '$department' and attendance = 'COMPLETED'";
-						$result2 = mysqli_query($conn, $query2);
-						while($row2 = mysqli_fetch_array($result2)) {
-							if ($row2['totalpeople'] != '') {
-								$totalcomplete = $row2['totalpeople'];
-							}else {
-								$totalcomplete = 0;
-							}
-						}
-					}else if ($row['trtype'] == 'OJT') {
-						$query1 = "select sum(totalman) as totalpeople from participateojt join user on userid = user.id where ojtid = '$trainid' and user.department = '$department'";
-						$result1 = mysqli_query($conn, $query1);
-						while($row1 = mysqli_fetch_array($result1)) {
-							if ($row1['totalpeople'] != '') {
-								$totalpeople = $row1['totalpeople'];
-							}else {
-								$totalpeople = 0;
-							}
-						}
-
-						$query2 = "select sum(totalman) as totalpeople from participateojt join user on userid = user.id where ojtid = '$trainid' and user.department = '$department' and attendance = 'COMPLETEDOJT'";
-						$result2 = mysqli_query($conn, $query2);
-						while($row2 = mysqli_fetch_array($result2)) {
-							if ($row2['totalpeople'] != '') {
-								$totalcomplete = $row2['totalpeople'];
-							}else {
-								$totalcomplete = 0;
-							}
-						}
+						$publicids[] = $row['id'];
+					}else {
+						$ojtids[] = $row['id'];
 					}
+				}
 
-					if ($totalpeople != '0') {
+				$counts = [];
+
+				if (!empty($publicids)) {
+					$idlist = implode(',', array_map('intval', $publicids));
+					$sqlc = "select trainingid, count(*) as totalpeople, sum(attendance = 'COMPLETED') as totalcomplete from participation join user on userid = user.id where department = '$department' and trainingid in ($idlist) group by trainingid";
+					$queryc = mysqli_query($conn, $sqlc);
+					while ($rowc = mysqli_fetch_assoc($queryc)) {
+						$counts['PUBLIC'][$rowc['trainingid']] = $rowc;
+					}
+				}
+
+				if (!empty($ojtids)) {
+					$idlist = implode(',', array_map('intval', $ojtids));
+					$sqlc = "select ojtid, sum(totalman) as totalpeople, sum(case when attendance = 'COMPLETEDOJT' then totalman else 0 end) as totalcomplete from participateojt join user on userid = user.id where user.department = '$department' and ojtid in ($idlist) group by ojtid";
+					$queryc = mysqli_query($conn, $sqlc);
+					while ($rowc = mysqli_fetch_assoc($queryc)) {
+						$counts['OJT'][$rowc['ojtid']] = $rowc;
+					}
+				}
+
+				foreach ($rows as $row)
+				{
+					$trainid = $row['id'];
+					$counted = $counts[$row['trtype']][$trainid] ?? null;
+					$totalpeople = $counted ? (int)$counted['totalpeople'] : 0;
+					$totalcomplete = $counted ? (int)$counted['totalcomplete'] : 0;
+
+					if ($totalpeople != 0) {
 						$percentage = ($totalcomplete/$totalpeople)*100;
 					}else {
 						$percentage = 0;
@@ -101,66 +95,60 @@
 						'totalhour' => $row['totalhour'],
 						'totalman' => $totalcomplete.' / '.$totalpeople.'<br>('.$percentageround.' %)',
 						'totalmanhour' => $row['totalhour'] * $totalcomplete
-					); 
+					);
 				}
 			}
         }else if ($department != '' && $startdate != '') {
             if ($department != 'ALL') {
 				$sql = "select training.id,user.department,title,startdate,enddate,starttime,endtime,venue,((DATEDIFF(enddate, startdate)) + 1) as totalday,((DATEDIFF(enddate, startdate)) + 1) * ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,'PUBLIC' as trtype from training join participation on training.id = trainingid join user on userid = user.id where department = '$department' and startdate between '$startdate' and '$enddate' group by training.id union select ojt.id,user.department,title,startdate,enddate,starttime,endtime,venue,((DATEDIFF(enddate, startdate)) + 1) as totalday,((DATEDIFF(enddate, startdate)) + 1) * ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,'OJT' as trtype from ojt join participateojt on ojt.id = ojtid join user on userid = user.id where user.department = '$department' and startdate between '$startdate' and '$enddate' group by ojt.id;";
 				$query = mysqli_query($conn,$sql);
+				$rows = [];
+				$publicids = [];
+				$ojtids = [];
 				while ($row = mysqli_fetch_assoc($query))
 				{
-					$trainid = $row['id'];
-
+					$rows[] = $row;
 					if ($row['trtype'] == 'PUBLIC') {
-						$query1 = "select count(*) as totalpeople from participation join user on userid = user.id where trainingid = '$trainid' and department = '$department'";
-						$result1 = mysqli_query($conn, $query1);
-						while($row1 = mysqli_fetch_array($result1)) {
-							if ($row1['totalpeople'] != '') {
-								$totalpeople = $row1['totalpeople'];
-							}else {
-								$totalpeople = 0;
-							}
-						}
-
-						$query2 = "select count(*) as totalpeople from participation join user on userid = user.id where trainingid = '$trainid' and department = '$department' and attendance in ('COMPLETED')";
-						$result2 = mysqli_query($conn, $query2);
-						while($row2 = mysqli_fetch_array($result2)) {
-							if ($row2['totalpeople'] != '') {
-								$totalcomplete = $row2['totalpeople'];
-							}else {
-								$totalcomplete = 0;
-							}
-						}
-					}else if ($row['trtype'] == 'OJT') {
-						$query1 = "select sum(totalman) as totalpeople from participateojt join user on userid = user.id where ojtid = '$trainid' and user.department = '$department'";
-						$result1 = mysqli_query($conn, $query1);
-						while($row1 = mysqli_fetch_array($result1)) {
-							if ($row1['totalpeople'] != '') {
-								$totalpeople = $row1['totalpeople'];
-							}else {
-								$totalpeople = 0;
-							}
-						}
-
-						$query2 = "select sum(totalman) as totalpeople from participateojt join user on userid = user.id where ojtid = '$trainid' and user.department = '$department' and attendance in ('COMPLETEDOJT')";
-						$result2 = mysqli_query($conn, $query2);
-						while($row2 = mysqli_fetch_array($result2)) {
-							if ($row2['totalpeople'] != '') {
-								$totalcomplete = $row2['totalpeople'];
-							}else {
-								$totalcomplete = 0;
-							}
-						}
+						$publicids[] = $row['id'];
+					}else {
+						$ojtids[] = $row['id'];
 					}
+				}
 
-					if ($totalpeople != '0') {
+				$counts = [];
+
+				if (!empty($publicids)) {
+					$idlist = implode(',', array_map('intval', $publicids));
+					$sqlc = "select trainingid, count(*) as totalpeople, sum(attendance in ('COMPLETED')) as totalcomplete from participation join user on userid = user.id where department = '$department' and trainingid in ($idlist) group by trainingid";
+					$queryc = mysqli_query($conn, $sqlc);
+					while ($rowc = mysqli_fetch_assoc($queryc)) {
+						$counts['PUBLIC'][$rowc['trainingid']] = $rowc;
+					}
+				}
+
+				if (!empty($ojtids)) {
+					$idlist = implode(',', array_map('intval', $ojtids));
+					$sqlc = "select ojtid, sum(totalman) as totalpeople, sum(case when attendance in ('COMPLETEDOJT') then totalman else 0 end) as totalcomplete from participateojt join user on userid = user.id where user.department = '$department' and ojtid in ($idlist) group by ojtid";
+					$queryc = mysqli_query($conn, $sqlc);
+					while ($rowc = mysqli_fetch_assoc($queryc)) {
+						$counts['OJT'][$rowc['ojtid']] = $rowc;
+					}
+				}
+
+				foreach ($rows as $row)
+				{
+					$trainid = $row['id'];
+					$counted = $counts[$row['trtype']][$trainid] ?? null;
+					$totalpeople = $counted ? (int)$counted['totalpeople'] : 0;
+					$totalcomplete = $counted ? (int)$counted['totalcomplete'] : 0;
+
+					if ($totalpeople != 0) {
 						$percentage = ($totalcomplete/$totalpeople)*100;
 					}else {
 						$percentage = 0;
 					}
 					$percentageround = round($percentage,2);
-					
+
 					$idtitle = $row['id'].'|'.$row['title'];
 
 					$output[]= array(
@@ -177,11 +165,11 @@
 						'totalhour' => $row['totalhour'],
 						'totalman' => $totalcomplete.' / '.$totalpeople.'<br>('.$percentageround.' %)',
 						'totalmanhour' => $row['totalhour'] * $totalcomplete
-					);  
+					);
 				}
 			}
         }
-        
+
         echo json_encode($output);
     }else if($_POST["action"] == "load_deptsummary"){
         if (isset($_POST["department"])) {

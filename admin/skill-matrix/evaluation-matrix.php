@@ -525,6 +525,11 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || skillMatrix
                                     <strong>Evaluation Matrix</strong>
                                 </div>
                                 <div class="col-md-4" align="right">
+                                    <?php if ($hasCurrentQuarterEvaluation && !$canEditExisting) { ?>
+                                        <a href="export_evaluation_matrix.php?staffid=<?php echo urlencode($staffid); ?>" class="btn btn-info btn-md">
+                                            <i class="fa fa-download"></i> DOWNLOAD AS EXCEL
+                                        </a>
+                                    <?php } ?>
                                     <a href="skill-matrix.php" class="btn btn-success btn-md">
                                         <i class="far fa-arrow-alt-circle-left"></i> BACK TO SKILL MATRIX
                                     </a>

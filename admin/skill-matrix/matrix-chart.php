@@ -60,6 +60,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                             LEFT JOIN sections s ON u.section_id = s.id
                             WHERE YEAR(sme.evaluation_date) = ?
                             AND QUARTER(sme.evaluation_date) = ?
+                            AND sme.approval_status = 'PENDING'
                             ";
 
     if ($department != '' && $department != 'ALL') {
@@ -644,41 +645,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                 return;
             }
 
-            var rows = [];
-            $(table).find('tr').each(function () {
-                var row = [];
-                $(this).find('th, td').each(function () {
-                    var colspan = parseInt($(this).attr('colspan') || 1, 10);
-                    var text = $(this).text().replace(/\s+/g, ' ').trim().replace(/"/g, '""');
-                    row.push('"' + text + '"');
-                    for (var i = 1; i < colspan; i++) {
-                        row.push('""');
-                    }
-                });
-                rows.push(row.join(','));
-            });
-
-            var signoffTable = document.getElementById('matrix_signoff_table');
-            if (signoffTable) {
-                rows.push('');
-                $(signoffTable).find('tr').each(function () {
-                    var row = [];
-                    $(this).find('th, td').each(function () {
-                        var text = $(this).text().replace(/\s+/g, ' ').trim().replace(/"/g, '""');
-                        row.push('"' + text + '"');
-                    });
-                    rows.push(row.join(','));
-                });
-            }
-
-            var csv = '\uFEFFSkill Matrix Report - Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?>\r\n' + rows.join('\r\n');
-            var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            var link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'skill_matrix_report_Q<?php echo $currentQuarter; ?>_<?php echo $currentYear; ?>.csv';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            window.location = "export_matrix_report.php?department=" + encodeURIComponent("<?php echo addslashes($department); ?>");
         });
     </script>
 

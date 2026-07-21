@@ -43,32 +43,25 @@ if ($_POST["action"] == "load_trainer") {
             if (!$query) {
                 die("Query failed: " . mysqli_error($conn));
             }
+            $rows = [];
+            $ojtids = [];
+            $nameids = [];
             while ($row = mysqli_fetch_assoc($query)) {
-                $query1 = "select sum(totalman) as totalpeople from participateojt where ojtid = '$trainid'";
-                $result1 = mysqli_query($conn, $query1);
-                if (!$result1) {
-                    die("Query failed: " . mysqli_error($conn));
-                }
-                while ($row1 = mysqli_fetch_array($result1)) {
-                    if ($row1['totalpeople'] != '') {
-                        $totalpeople = $row1['totalpeople'];
-                    } else {
-                        $totalpeople = 0;
-                    }
-                }
+                $rows[] = $row;
+                $ojtids[] = $row['id'];
+                $nameids[] = $row['clerkid'] != 0 ? $row['clerkid'] : $row['userid'];
+            }
 
-                $query2 = "select sum(totalman) as totalpeople from participateojt where ojtid = '$trainid' and attendance in ('COMPLETED','COMPLETEDOJT')";
-                $result2 = mysqli_query($conn, $query2);
-                if (!$result2) {
-                    die("Query failed: " . mysqli_error($conn));
-                }
-                while ($row2 = mysqli_fetch_array($result2)) {
-                    if ($row2['totalpeople'] != '') {
-                        $totalcomplete = $row2['totalpeople'];
-                    } else {
-                        $totalcomplete = 0;
-                    }
-                }
+            $peopleCounts = ojtFetchPeopleCounts($conn, $ojtids);
+            $staffNames = ojtFetchStaffNames($conn, $nameids);
+
+            foreach ($rows as $row) {
+                $trainid = $row['id'];
+                $clerkid = $row['clerkid'];
+                $userid = $row['userid'];
+
+                $totalpeople = isset($peopleCounts[$trainid]) ? $peopleCounts[$trainid]['totalpeople'] : 0;
+                $totalcomplete = isset($peopleCounts[$trainid]) ? $peopleCounts[$trainid]['totalcomplete'] : 0;
 
                 if ($totalpeople != '0') {
                     $percentage = ($totalcomplete / $totalpeople) * 100;
@@ -77,25 +70,8 @@ if ($_POST["action"] == "load_trainer") {
                 }
                 $percentageround = round($percentage, 2);
 
-                if ($clerkid != 0) {
-                    $query4 = "select staffname from user where id = '$clerkid'";
-                    $result4 = mysqli_query($conn, $query4);
-                    if (!$result4) {
-                        die("Query failed: " . mysqli_error($conn));
-                    }
-                    while ($row4 = mysqli_fetch_array($result4)) {
-                        $staffname = $row4['staffname'];
-                    }
-                } else {
-                    $query4 = "select staffname from user where id = '$userid'";
-                    $result4 = mysqli_query($conn, $query4);
-                    if (!$result4) {
-                        die("Query failed: " . mysqli_error($conn));
-                    }
-                    while ($row4 = mysqli_fetch_array($result4)) {
-                        $staffname = $row4['staffname'];
-                    }
-                }
+                $nameid = $clerkid != 0 ? $clerkid : $userid;
+                $staffname = isset($staffNames[$nameid]) ? $staffNames[$nameid] : '';
 
                 $output[] = array(
                     'id' => $row['id'],
@@ -176,30 +152,25 @@ if ($_POST["action"] == "load_trainer") {
 
 
             $query = mysqli_query($conn, $sql);
+            $rows = [];
+            $ojtids = [];
+            $nameids = [];
             while ($row = mysqli_fetch_assoc($query)) {
+                $rows[] = $row;
+                $ojtids[] = $row['id'];
+                $nameids[] = $row['clerkid'] != 0 ? $row['clerkid'] : $row['userid'];
+            }
+
+            $peopleCounts = ojtFetchPeopleCounts($conn, $ojtids);
+            $staffNames = ojtFetchStaffNames($conn, $nameids);
+
+            foreach ($rows as $row) {
                 $trainid = $row['id'];
                 $clerkid = $row['clerkid'];
                 $userid = $row['userid'];
 
-                $query1 = "select sum(totalman) as totalpeople from participateojt where ojtid = '$trainid'";
-                $result1 = mysqli_query($conn, $query1);
-                while ($row1 = mysqli_fetch_array($result1)) {
-                    if ($row1['totalpeople'] != '') {
-                        $totalpeople = $row1['totalpeople'];
-                    } else {
-                        $totalpeople = 0;
-                    }
-                }
-
-                $query2 = "select sum(totalman) as totalpeople from participateojt where ojtid = '$trainid' and attendance in ('COMPLETED','COMPLETEDOJT')";
-                $result2 = mysqli_query($conn, $query2);
-                while ($row2 = mysqli_fetch_array($result2)) {
-                    if ($row2['totalpeople'] != '') {
-                        $totalcomplete = $row2['totalpeople'];
-                    } else {
-                        $totalcomplete = 0;
-                    }
-                }
+                $totalpeople = isset($peopleCounts[$trainid]) ? $peopleCounts[$trainid]['totalpeople'] : 0;
+                $totalcomplete = isset($peopleCounts[$trainid]) ? $peopleCounts[$trainid]['totalcomplete'] : 0;
 
                 if ($totalpeople != '0') {
                     $percentage = ($totalcomplete / $totalpeople) * 100;
@@ -208,19 +179,8 @@ if ($_POST["action"] == "load_trainer") {
                 }
                 $percentageround = round($percentage, 2);
 
-                if ($clerkid != 0) {
-                    $query4 = "select staffname from user where id = '$clerkid'";
-                    $result4 = mysqli_query($conn, $query4);
-                    while ($row4 = mysqli_fetch_array($result4)) {
-                        $staffname = $row4['staffname'];
-                    }
-                } else {
-                    $query4 = "select staffname from user where id = '$userid'";
-                    $result4 = mysqli_query($conn, $query4);
-                    while ($row4 = mysqli_fetch_array($result4)) {
-                        $staffname = $row4['staffname'];
-                    }
-                }
+                $nameid = $clerkid != 0 ? $clerkid : $userid;
+                $staffname = isset($staffNames[$nameid]) ? $staffNames[$nameid] : '';
 
                 $output[] = array(
                     'id' => $row['id'],
@@ -278,30 +238,25 @@ if ($_POST["action"] == "load_trainer") {
                     ";
 
         $query = mysqli_query($conn, $sql);
+        $rows = [];
+        $ojtids = [];
+        $nameids = [];
         while ($row = mysqli_fetch_assoc($query)) {
+            $rows[] = $row;
+            $ojtids[] = $row['id'];
+            $nameids[] = $row['clerkid'] != 0 ? $row['clerkid'] : $row['userid'];
+        }
+
+        $peopleCounts = ojtFetchPeopleCounts($conn, $ojtids);
+        $staffNames = ojtFetchStaffNames($conn, $nameids);
+
+        foreach ($rows as $row) {
             $trainid = $row['id'];
             $clerkid = $row['clerkid'];
             $userid = $row['userid'];
 
-            $query1 = "select sum(totalman) as totalpeople from participateojt where ojtid = '$trainid'";
-            $result1 = mysqli_query($conn, $query1);
-            while ($row1 = mysqli_fetch_array($result1)) {
-                if ($row1['totalpeople'] != '') {
-                    $totalpeople = $row1['totalpeople'];
-                } else {
-                    $totalpeople = 0;
-                }
-            }
-
-            $query2 = "select sum(totalman) as totalpeople from participateojt where ojtid = '$trainid' and attendance in ('COMPLETED','COMPLETEDOJT')";
-            $result2 = mysqli_query($conn, $query2);
-            while ($row2 = mysqli_fetch_array($result2)) {
-                if ($row2['totalpeople'] != '') {
-                    $totalcomplete = $row2['totalpeople'];
-                } else {
-                    $totalcomplete = 0;
-                }
-            }
+            $totalpeople = isset($peopleCounts[$trainid]) ? $peopleCounts[$trainid]['totalpeople'] : 0;
+            $totalcomplete = isset($peopleCounts[$trainid]) ? $peopleCounts[$trainid]['totalcomplete'] : 0;
 
             if ($totalpeople != '0') {
                 $percentage = ($totalcomplete / $totalpeople) * 100;
@@ -310,19 +265,8 @@ if ($_POST["action"] == "load_trainer") {
             }
             $percentageround = round($percentage, 2);
 
-            if ($clerkid != 0) {
-                $query4 = "select staffname from user where id = '$clerkid'";
-                $result4 = mysqli_query($conn, $query4);
-                while ($row4 = mysqli_fetch_array($result4)) {
-                    $staffname = $row4['staffname'];
-                }
-            } else {
-                $query4 = "select staffname from user where id = '$userid'";
-                $result4 = mysqli_query($conn, $query4);
-                while ($row4 = mysqli_fetch_array($result4)) {
-                    $staffname = $row4['staffname'];
-                }
-            }
+            $nameid = $clerkid != 0 ? $clerkid : $userid;
+            $staffname = isset($staffNames[$nameid]) ? $staffNames[$nameid] : '';
 
             $output[] = array(
                 'id' => $row['id'],
@@ -380,30 +324,25 @@ if ($_POST["action"] == "load_trainer") {
                     ) AS tablea;
                     ";
             $query = mysqli_query($conn, $sql);
+            $rows = [];
+            $ojtids = [];
+            $nameids = [];
             while ($row = mysqli_fetch_assoc($query)) {
+                $rows[] = $row;
+                $ojtids[] = $row['id'];
+                $nameids[] = $row['clerkid'] != 0 ? $row['clerkid'] : $row['userid'];
+            }
+
+            $peopleCounts = ojtFetchPeopleCounts($conn, $ojtids);
+            $staffNames = ojtFetchStaffNames($conn, $nameids);
+
+            foreach ($rows as $row) {
                 $trainid = $row['id'];
                 $clerkid = $row['clerkid'];
                 $userid = $row['userid'];
 
-                $query1 = "select sum(totalman) as totalpeople from participateojt where ojtid = '$trainid'";
-                $result1 = mysqli_query($conn, $query1);
-                while ($row1 = mysqli_fetch_array($result1)) {
-                    if ($row1['totalpeople'] != '') {
-                        $totalpeople = $row1['totalpeople'];
-                    } else {
-                        $totalpeople = 0;
-                    }
-                }
-
-                $query2 = "select sum(totalman) as totalpeople from participateojt where ojtid = '$trainid' and attendance in ('COMPLETED','COMPLETEDOJT')";
-                $result2 = mysqli_query($conn, $query2);
-                while ($row2 = mysqli_fetch_array($result2)) {
-                    if ($row2['totalpeople'] != '') {
-                        $totalcomplete = $row2['totalpeople'];
-                    } else {
-                        $totalcomplete = 0;
-                    }
-                }
+                $totalpeople = isset($peopleCounts[$trainid]) ? $peopleCounts[$trainid]['totalpeople'] : 0;
+                $totalcomplete = isset($peopleCounts[$trainid]) ? $peopleCounts[$trainid]['totalcomplete'] : 0;
 
                 if ($totalpeople != '0') {
                     $percentage = ($totalcomplete / $totalpeople) * 100;
@@ -412,19 +351,8 @@ if ($_POST["action"] == "load_trainer") {
                 }
                 $percentageround = round($percentage, 2);
 
-                if ($clerkid != 0) {
-                    $query4 = "select staffname from user where id = '$clerkid'";
-                    $result4 = mysqli_query($conn, $query4);
-                    while ($row4 = mysqli_fetch_array($result4)) {
-                        $staffname = $row4['staffname'];
-                    }
-                } else {
-                    $query4 = "select staffname from user where id = '$userid'";
-                    $result4 = mysqli_query($conn, $query4);
-                    while ($row4 = mysqli_fetch_array($result4)) {
-                        $staffname = $row4['staffname'];
-                    }
-                }
+                $nameid = $clerkid != 0 ? $clerkid : $userid;
+                $staffname = isset($staffNames[$nameid]) ? $staffNames[$nameid] : '';
 
                 $output[] = array(
                     'id' => $row['id'],
@@ -480,30 +408,25 @@ if ($_POST["action"] == "load_trainer") {
                     ) AS tablea;
                     ";
             $query = mysqli_query($conn, $sql);
+            $rows = [];
+            $ojtids = [];
+            $nameids = [];
             while ($row = mysqli_fetch_assoc($query)) {
+                $rows[] = $row;
+                $ojtids[] = $row['id'];
+                $nameids[] = $row['clerkid'] != 0 ? $row['clerkid'] : $row['userid'];
+            }
+
+            $peopleCounts = ojtFetchPeopleCounts($conn, $ojtids);
+            $staffNames = ojtFetchStaffNames($conn, $nameids);
+
+            foreach ($rows as $row) {
                 $trainid = $row['id'];
                 $clerkid = $row['clerkid'];
                 $userid = $row['userid'];
 
-                $query1 = "select sum(totalman) as totalpeople from participateojt where ojtid = '$trainid'";
-                $result1 = mysqli_query($conn, $query1);
-                while ($row1 = mysqli_fetch_array($result1)) {
-                    if ($row1['totalpeople'] != '') {
-                        $totalpeople = $row1['totalpeople'];
-                    } else {
-                        $totalpeople = 0;
-                    }
-                }
-
-                $query2 = "select sum(totalman) as totalpeople from participateojt where ojtid = '$trainid' and attendance in ('COMPLETED','COMPLETEDOJT')";
-                $result2 = mysqli_query($conn, $query2);
-                while ($row2 = mysqli_fetch_array($result2)) {
-                    if ($row2['totalpeople'] != '') {
-                        $totalcomplete = $row2['totalpeople'];
-                    } else {
-                        $totalcomplete = 0;
-                    }
-                }
+                $totalpeople = isset($peopleCounts[$trainid]) ? $peopleCounts[$trainid]['totalpeople'] : 0;
+                $totalcomplete = isset($peopleCounts[$trainid]) ? $peopleCounts[$trainid]['totalcomplete'] : 0;
 
                 if ($totalpeople != '0') {
                     $percentage = ($totalcomplete / $totalpeople) * 100;
@@ -512,19 +435,8 @@ if ($_POST["action"] == "load_trainer") {
                 }
                 $percentageround = round($percentage, 2);
 
-                if ($clerkid != 0) {
-                    $query4 = "select staffname from user where id = '$clerkid'";
-                    $result4 = mysqli_query($conn, $query4);
-                    while ($row4 = mysqli_fetch_array($result4)) {
-                        $staffname = $row4['staffname'];
-                    }
-                } else {
-                    $query4 = "select staffname from user where id = '$userid'";
-                    $result4 = mysqli_query($conn, $query4);
-                    while ($row4 = mysqli_fetch_array($result4)) {
-                        $staffname = $row4['staffname'];
-                    }
-                }
+                $nameid = $clerkid != 0 ? $clerkid : $userid;
+                $staffname = isset($staffNames[$nameid]) ? $staffNames[$nameid] : '';
 
                 $output[] = array(
                     'id' => $row['id'],
@@ -584,31 +496,25 @@ if ($_POST["action"] == "load_trainer") {
                     ";
 
         $query = mysqli_query($conn, $sql);
+        $rows = [];
+        $ojtids = [];
+        $nameids = [];
         while ($row = mysqli_fetch_assoc($query)) {
+            $rows[] = $row;
+            $ojtids[] = $row['id'];
+            $nameids[] = $row['clerkid'] != 0 ? $row['clerkid'] : $row['userid'];
+        }
+
+        $peopleCounts = ojtFetchPeopleCounts($conn, $ojtids);
+        $staffNames = ojtFetchStaffNames($conn, $nameids);
+
+        foreach ($rows as $row) {
             $trainid = $row['id'];
             $clerkid = $row['clerkid'];
             $userid = $row['userid'];
 
-
-            $query1 = "select sum(totalman) as totalpeople from participateojt where ojtid = '$trainid'";
-            $result1 = mysqli_query($conn, $query1);
-            while ($row1 = mysqli_fetch_array($result1)) {
-                if ($row1['totalpeople'] != '') {
-                    $totalpeople = $row1['totalpeople'];
-                } else {
-                    $totalpeople = 0;
-                }
-            }
-
-            $query2 = "select sum(totalman) as totalpeople from participateojt where ojtid = '$trainid' and attendance in ('COMPLETED','COMPLETEDOJT')";
-            $result2 = mysqli_query($conn, $query2);
-            while ($row2 = mysqli_fetch_array($result2)) {
-                if ($row2['totalpeople'] != '') {
-                    $totalcomplete = $row2['totalpeople'];
-                } else {
-                    $totalcomplete = 0;
-                }
-            }
+            $totalpeople = isset($peopleCounts[$trainid]) ? $peopleCounts[$trainid]['totalpeople'] : 0;
+            $totalcomplete = isset($peopleCounts[$trainid]) ? $peopleCounts[$trainid]['totalcomplete'] : 0;
 
             if ($totalpeople != '0') {
                 $percentage = ($totalcomplete / $totalpeople) * 100;
@@ -618,19 +524,8 @@ if ($_POST["action"] == "load_trainer") {
 
             $percentageround = round($percentage, 2);
 
-            if ($clerkid != 0) {
-                $query4 = "select staffname from user where id = '$clerkid'";
-                $result4 = mysqli_query($conn, $query4);
-                while ($row4 = mysqli_fetch_array($result4)) {
-                    $staffname = $row4['staffname'];
-                }
-            } else {
-                $query4 = "select staffname from user where id = '$userid'";
-                $result4 = mysqli_query($conn, $query4);
-                while ($row4 = mysqli_fetch_array($result4)) {
-                    $staffname = $row4['staffname'];
-                }
-            }
+            $nameid = $clerkid != 0 ? $clerkid : $userid;
+            $staffname = isset($staffNames[$nameid]) ? $staffNames[$nameid] : '';
 
             $output[] = array(
                 'id' => $row['id'],
@@ -927,5 +822,58 @@ function loadStaff()
         }
     }
     return $options;
+}
+
+function ojtFetchPeopleCounts($conn, $ojtids)
+{
+    $counts = [];
+    $ojtids = array_unique(array_filter($ojtids, function ($id) {
+        return $id != 0;
+    }));
+
+    if (empty($ojtids)) {
+        return $counts;
+    }
+
+    $idlist = implode(',', array_map('intval', $ojtids));
+
+    $sql = "select ojtid, sum(totalman) as totalpeople from participateojt where ojtid in ($idlist) group by ojtid";
+    $result = mysqli_query($conn, $sql);
+    while ($row = mysqli_fetch_assoc($result)) {
+        $counts[$row['ojtid']]['totalpeople'] = $row['totalpeople'] != '' ? $row['totalpeople'] : 0;
+        $counts[$row['ojtid']]['totalcomplete'] = 0;
+    }
+
+    $sql = "select ojtid, sum(totalman) as totalcomplete from participateojt where ojtid in ($idlist) and attendance in ('COMPLETED','COMPLETEDOJT') group by ojtid";
+    $result = mysqli_query($conn, $sql);
+    while ($row = mysqli_fetch_assoc($result)) {
+        if (!isset($counts[$row['ojtid']])) {
+            $counts[$row['ojtid']]['totalpeople'] = 0;
+        }
+        $counts[$row['ojtid']]['totalcomplete'] = $row['totalcomplete'] != '' ? $row['totalcomplete'] : 0;
+    }
+
+    return $counts;
+}
+
+function ojtFetchStaffNames($conn, $ids)
+{
+    $names = [];
+    $ids = array_unique(array_filter($ids, function ($id) {
+        return $id != 0;
+    }));
+
+    if (empty($ids)) {
+        return $names;
+    }
+
+    $idlist = implode(',', array_map('intval', $ids));
+    $sql = "select id, staffname from user where id in ($idlist)";
+    $result = mysqli_query($conn, $sql);
+    while ($row = mysqli_fetch_assoc($result)) {
+        $names[$row['id']] = $row['staffname'];
+    }
+
+    return $names;
 }
 ?>
