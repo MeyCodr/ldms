@@ -52,16 +52,18 @@
             $id = $_POST['id'];
 			$status = $_POST['status'];
 
+            $hodnew = 0;
             $sql1 = "select id from user where department = '$department' and usertype = 'HOD'";
             $query1 = mysqli_query($conn,$sql1);
             while($row1 = mysqli_fetch_assoc($query1)) {
-                $hodnew = mysqli_real_escape_string($conn, $row1['id']);
+                $hodnew = (int) $row1['id'];
             }
 
+            $hodprev = 0;
             $sql2 = "select hodid from user where id = '$id'";
             $query2 = mysqli_query($conn,$sql2);
             while($row2 = mysqli_fetch_assoc($query2)) {
-                $hodprev = mysqli_real_escape_string($conn, $row2['hodid']);
+                $hodprev = $row2['hodid'] !== null ? (int) $row2['hodid'] : 0;
             }
 
             $division_id = getDivisionIdByName($division);

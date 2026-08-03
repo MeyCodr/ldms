@@ -87,7 +87,30 @@
                             <div class="row">
                                 <div class="col-sm-1"></div>
                                 <div class="col-sm-10 table-responsive">
+                                    <legend>List of Permanent Staff</legend>
                                     <table id="participantlist" class="table table-bordered table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>No.</th>
+                                                <th>Staff Number</th>
+                                                <th>Staff Name</th>
+                                                <th>Department</th>
+                                                <th>Status</th>
+                                                <th width="180px">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="col-sm-1"></div>
+                            </div>
+                            <br>
+                            <div class="row">
+                                <div class="col-sm-1"></div>
+                                <div class="col-sm-10 table-responsive">
+                                    <legend>List of Contract Staff</legend>
+                                    <table id="contractlist" class="table table-bordered table-striped">
                                         <thead>
                                             <tr>
                                                 <th>No.</th>
@@ -200,6 +223,42 @@
             });
         }
 
+        fetch_contract('load_contract', trainingid);
+
+        function fetch_contract(action, trainingid) {
+            var contractdataTable = $('#contractlist').DataTable({
+                "paging": true,
+                "lengthChange": true,
+                "searching": true,
+                "ordering": true,
+                "responsive": true,
+                "pageLength": 10,
+                "info": true,
+                "ajax": {
+                    url: "fetch_participant.php",
+                    type: "POST",
+                    dataSrc: '',
+                    data: { action: action, trainingid: trainingid }
+                },
+                "columns": [
+                    {
+                        "data": "id",
+                        render: function(data, type, row, meta) {
+                            return meta.row + meta.settings._iDisplayStart + 1;
+                        }
+                    },
+                    { "data": "staffno" },
+                    { "data": "staffname" },
+                    { "data": "department" },
+                    { "data": "status" },
+                    { "data": "btnedit" }
+                ],
+                "columnDefs": [
+                    { className: 'text-center', targets: [0, 4, 5] }
+                ]
+            });
+        }
+
         $(document).on('click', '.delete', function() {
             var id = $(this).attr("id");
             swal({
@@ -222,12 +281,16 @@
                                 .then(function() {
                                     $('#participantlist').DataTable().destroy();
                                     fetch_data('load_participant', trainingid);
+                                    $('#contractlist').DataTable().destroy();
+                                    fetch_contract('load_contract', trainingid);
                                 });
                             } else {
                                 swal('Not Deleted!', 'The participant cannot be deleted. Please refer the IT.', 'error')
                                 .then(function() {
                                     $('#participantlist').DataTable().destroy();
                                     fetch_data('load_participant', trainingid);
+                                    $('#contractlist').DataTable().destroy();
+                                    fetch_contract('load_contract', trainingid);
                                 });
                             }
                         }
@@ -260,12 +323,16 @@
                                 .then(function() {
                                     $('#participantlist').DataTable().destroy();
                                     fetch_data('load_participant', trainingid);
+                                    $('#contractlist').DataTable().destroy();
+                                    fetch_contract('load_contract', trainingid);
                                 });
                             } else {
                                 swal('Not Changed!', 'The status cannot be changed. Please refer the IT.', 'error')
                                 .then(function() {
                                     $('#participantlist').DataTable().destroy();
                                     fetch_data('load_participant', trainingid);
+                                    $('#contractlist').DataTable().destroy();
+                                    fetch_contract('load_contract', trainingid);
                                 });
                             }
                         }

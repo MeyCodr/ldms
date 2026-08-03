@@ -70,11 +70,18 @@ if (!empty($_FILES["import_file"]["name"])) {
                 $year = date("dmy");
                 $trid = 'OJ' . $year . $code;
 
+                $userid = null;
+                $department = null;
                 $sql = "select id,department from user where staffno = '$staffno'";
                 $query = mysqli_query($conn, $sql);
                 while ($row = mysqli_fetch_assoc($query)) {
                     $userid = mysqli_real_escape_string($conn, $row['id']);
                     $department = mysqli_real_escape_string($conn, $row['department']);
+                }
+
+                if ($userid === null) {
+                    echo json_encode(['message' => 'error', 'reason' => 'staffno not found', 'staffno' => $staffno]);
+                    continue;
                 }
 
                 $sql = "insert into participateojt (ojtid,userid,totalman,department,clerkid) values ('$ojtid','$userid','1','$department','$clerkid')";
@@ -99,11 +106,18 @@ if (!empty($_FILES["import_file"]["name"])) {
                     $ojtid = mysqli_real_escape_string($conn, $row['id']);
                 }
 
+                $userid = null;
+                $department = null;
                 $sql = "select id,department from user where staffno = '$staffno'";
                 $query = mysqli_query($conn, $sql);
                 while ($row = mysqli_fetch_assoc($query)) {
                     $userid = mysqli_real_escape_string($conn, $row['id']);
                     $department = mysqli_real_escape_string($conn, $row['department']);
+                }
+
+                if ($userid === null) {
+                    echo json_encode(['message' => 'error', 'reason' => 'staffno not found', 'staffno' => $staffno]);
+                    continue;
                 }
 
                 $sql = "insert into participateojt (ojtid,userid,totalman,department,clerkid) values ('$ojtid','$userid','1','$department','$clerkid')";
