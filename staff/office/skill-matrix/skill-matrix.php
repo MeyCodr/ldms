@@ -31,6 +31,11 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
         <script type="text/javascript"
             src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-flash-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js">
             </script>
+        <style>
+            #skillmatrixlist {
+                width: 100% !important;
+            }
+        </style>
     </head>
 
     <body onload="startTime()" style="background-image:url('../../../asset/image/bg-try.png');zoom: 75%;">
@@ -157,6 +162,7 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
             "searching": true,
             "ordering": true,
             "responsive": true,
+            "autoWidth": false,
             "pageLength": 10,
             "info": true,
             "ajax": {

@@ -328,9 +328,9 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
                 });
         }
 
-        function enableMatrixChartButton(department) {
+        function enableMatrixChartButton(department, section) {
             $('#matrix_chart_btn')
-                .attr('href', 'matrix-chart.php?department=' + encodeURIComponent(department))
+                .attr('href', 'matrix-chart.php?department=' + encodeURIComponent(department) + '&section=' + encodeURIComponent(section || 'ALL'))
                 .removeClass('disabled')
                 .css({
                     'pointer-events': 'auto',
@@ -340,6 +340,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
 
         $('#filter_dept').click(function () {
             var department = $('#department').val();
+            var section = $('#section').val();
 
             if (!department || department == 'ALL') {
                 disableMatrixChartButton();
@@ -347,7 +348,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
                 return;
             }
 
-            enableMatrixChartButton(department);
+            enableMatrixChartButton(department, section);
             skillMatrixTable.ajax.reload();
         });
 
