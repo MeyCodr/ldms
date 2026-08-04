@@ -114,6 +114,54 @@ if (isset($_POST['action'])) {
             );
         }
         echo json_encode($output);
+    } else if ($_POST["action"] == "load_pme") {
+        $userid = $_POST['userid'];
+        $startdate = isset($_POST['startdate']) ? $_POST['startdate'] : '';
+        $enddate = isset($_POST['enddate']) ? $_POST['enddate'] : '';
+        $output = array();
+
+        if ($startdate !== '' && $enddate !== '') {
+            $sql = "SELECT participationid AS id, training_title, from_date, to_date, status
+                    FROM pme
+                    WHERE userid = ? AND from_date BETWEEN ? AND ?
+                    ORDER BY from_date DESC";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("iss", $userid, $startdate, $enddate);
+        } else {
+            $sql = "SELECT participationid AS id, training_title, from_date, to_date, status
+                    FROM pme
+                    WHERE userid = ?
+                    ORDER BY from_date DESC";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("i", $userid);
+        }
+        $stmt->execute();
+        $query = $stmt->get_result();
+        while ($row = $query->fetch_assoc()) {
+            if ($row['status'] == 'pending') {
+                $status = '<span class="label label-pill label-warning">PENDING</span><br><small class="text-muted d-block">Waiting for HOD evaluation</small>';
+                $action = '';
+            } else if ($row['status'] == 'approved') {
+                $status = '<span class="label label-pill label-info">APPROVED</span>';
+                $action = '<a href="edit_pme.php?userid=' . $userid . '&participationid=' . $row['id'] . '" class="btn btn-info btn-sm"><i class="fa fa-eye"></i> View PME</a>';
+            } else if ($row['status'] == 'completed' || $row['status'] == 'verified') {
+                $status = '<span class="label label-pill label-success">COMPLETED</span>';
+                $action = '<a href="edit_pme.php?userid=' . $userid . '&participationid=' . $row['id'] . '" class="btn btn-default btn-sm"><i class="fa fa-eye"></i> View PME</a>';
+            } else {
+                $status = '<span class="label label-pill label-default">' . strtoupper($row['status']) . '</span>';
+                $action = '';
+            }
+
+            $output[] = array(
+                'id' => $row['id'],
+                'training_title' => $row['training_title'],
+                'from_date' => $row['from_date'],
+                'to_date' => $row['to_date'],
+                'status' => $status,
+                'action' => $action
+            );
+        }
+        echo json_encode($output);
     } else if ($_POST["action"] == "filter_training") {
         $userid = $_POST['userid'];
         $startdate = $_POST['startdate'];

@@ -18,7 +18,7 @@
 <html lang="en">
     <head>
         <title>Learning and Development Management System</title>
-        
+
         <script src="../../../asset/js/jquery-1.10.2.min.js"></script>
         <link rel="stylesheet" href="../../../asset/css/bootstrap.min.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-timepicker/0.5.2/css/bootstrap-timepicker.css" />
@@ -33,7 +33,7 @@
     </head>
 
     <style>
-        #traininglist {
+        #pmelist {
             width: 100% !important;
         }
         #spinner-div {
@@ -87,14 +87,7 @@
                 <div class="col-md-12">
 					<div class="panel panel-default">
                         <div class="panel-heading">
-                            <div class="row">
-                                <div class="col-md-6" style="margin-top: 10px;">
-                                    <strong id="title">Training Records</strong>
-                                </div>
-                                <div class="col-md-6" align="right">
-                                    <button type="button" name="add_ojt" id="add_ojt" class="btn btn-success btn-md">Add OJT <i class="far fa-arrow-alt-circle-right"></i> </button>
-                                </div>
-                            </div>
+                            <strong id="pmetitle">Performance Monitoring Evaluation</strong>
                         </div>
                         <div class="panel-body" align="center">
                             <div class="row">
@@ -112,26 +105,20 @@
                             <br>
                             <div class="row">
                                 <div class="col-sm-12 table-responsive">
-                                    <table id="traininglist" class="table table-bordered table-striped">
+                                    <table id="pmelist" class="table table-bordered table-striped">
                                         <thead>
                                             <tr>
                                                 <th>No.</th>
-                                                <th>Title</th>
-                                                <th>Type</th>
-                                                <th>Start Date</th>
-                                                <th>Venue</th>
+                                                <th>Training Title</th>
+                                                <th>Evaluation Period Start</th>
+                                                <th>Evaluation Period End</th>
                                                 <th>Status</th>
-                                                <th>Training Hour</th>
                                                 <th width="130px">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
 
                                         </tbody>
-                                        <tfoot>
-                                            <th colspan="7">Total Training Hour</th>
-                                            <th><span id="totalhourall"></span></th>
-                                        </tfoot>
                                     </table>
                                 </div>
                             </div>
@@ -178,11 +165,7 @@
 		    return i;
 		}
 
-        var contracttype = "<?php echo $_SESSION['designation']?>";
-
-        if (contracttype == 'CONTRACT') {
-            $('#add_ojt').hide();
-        }
+        var userid = '<?php echo $_SESSION['id']?>';
 
         $('#startdate').datepicker({
             format: "yyyy-mm-dd",
@@ -194,15 +177,8 @@
             autoclose: true
         });
 
-        var userid = '<?php echo $_SESSION['id']?>';
-
-        $('#add_ojt').click(function(){
-            localStorage.setItem("setaction", 'addojt');
-            window.location = "attendance_ojt.php";
-        });
-
-        function fetch_data(action, userid, startdate, enddate) {
-            var trainingdataTable = $('#traininglist').DataTable({
+        function fetch_pme_data(userid, startdate, enddate) {
+            $('#pmelist').DataTable({
                 "paging": true,
                 "lengthChange": true,
                 "searching": true,
@@ -215,7 +191,7 @@
                     url: "fetch_training.php",
                     type: "POST",
                     dataSrc: '',
-                    data: { action: action, userid: userid, startdate: startdate, enddate: enddate },
+                    data: { action: 'load_pme', userid: userid, startdate: startdate, enddate: enddate },
                 },
                 "columns": [
                     {
@@ -224,134 +200,33 @@
                             return meta.row + meta.settings._iDisplayStart + 1;
                         }
                     },
-                    {
-                        "data": "title"
-                    },
-                    {
-                        "data": "type"
-                    },
-                    {
-                        "data": "startdate"
-                    },
-                    {
-                        "data": "venue"
-                    },
-                    {
-                        "data": "status"
-                    },
-                    {
-                        "data": "totalhour"
-                    },
-                    {
-                        "data": "btnedit"
-                    }
+                    { "data": "training_title" },
+                    { "data": "from_date" },
+                    { "data": "to_date" },
+                    { "data": "status", "orderable": false },
+                    { "data": "action", "orderable": false }
                 ],
                 "columnDefs": [
-                    { className: 'text-center', targets: [0, 3, 5, 6, 7] }
-                ],
-                "order": [[3, 'desc']],
-                fnFooterCallback: function (nRow, aaData, iStart, iEnd, aiDisplay) {
-                    var api = this.api(), data;
-
-                    // converting to integer to find total
-                    var intVal = function (i) {
-                        return typeof i === 'string' ? i.replace(/[\$,]/g, '') * 1 : typeof i === 'number' ? i : 0;
-                    };
-
-                    // computing column Total of the complete result 
-                    var totalhourall = api.column(6).data().reduce(function (a, b) {
-                        return intVal(a) + intVal(b);
-                    }, 0);
-
-                    // Update footer by showing the total with the reference of the column index 
-                    $(api.column(6).footer()).html(totalhourall);
-                }
+                    { className: 'text-center', targets: [0, 2, 3, 4, 5] }
+                ]
             });
         }
-        fetch_data('load_training',userid,'','');
+        fetch_pme_data(userid, '', '');
 
         $('#filter_date').click(function(){
             var startdate = $('#startdate').val();
             var enddate = $('#enddate').val();
 
-            $('#traininglist').DataTable().destroy();
-            fetch_data('filter_training',userid,startdate,enddate);
+            $('#pmelist').DataTable().destroy();
+            fetch_pme_data(userid, startdate, enddate);
         });
 
         $('#clear_filter').click(function(){
-            $('#traininglist').DataTable().destroy();
-            fetch_data('load_training',userid,'','');
+            $('#pmelist').DataTable().destroy();
+            fetch_pme_data(userid, '', '');
             $('#startdate').val('');
             $('#enddate').val('');
         });
-
-        $(document).on('click', '.attendance', function(){
-            var id = $(this).attr("id");
-            localStorage.setItem("setaction", 'editattendance');
-            localStorage.setItem("setid", id);
-            window.location = "attendance.php";
-        });
-
-        $(document).on('click', '.editownojt', function(){
-            var id = $(this).attr("id");
-            localStorage.setItem("setaction", 'viewojtattendance');
-            localStorage.setItem("setid", id);
-            window.location = "attendance_ojt.php";
-        });
-
-        $(document).on('click', '.attendance_ojt', function(){
-            var id = $(this).attr("id");
-            localStorage.setItem("setaction", 'addojtattendance');
-            localStorage.setItem("setid", id);
-            window.location = "attend_ojt.php";
-        });
-
-        $(document).on('click', '.deleteownojt', function(){
-            var id = $(this).attr("id");
-            var btn_action = 'deleteojt';
-            swal({
-                title: "Delete OJT?",
-                text: "Are you sure?",
-                icon: "warning",
-                buttons: true,
-                dangerMode: true,
-                buttons: ["Cancel", "Confirm"]
-            })
-            .then((isConfirm) => {
-                if (isConfirm) {
-                    $.ajax({
-                        url:"attendance_action.php",
-                        method:"POST",
-                        data:{id:id, btn_action:btn_action},
-                        success:function(data)
-                        {
-                            var response = JSON.parse(data)
-                            if((response.message) == 'deleteojt') {
-                                swal(
-                                    'Deleted!',
-                                    'The ojt has been deleted.',
-                                    'success'
-                                )
-                                $('#traininglist').DataTable().destroy();
-                                fetch_data('load_training',userid,'','');
-                            }
-                            else if((response.message) == 'error') {
-                                swal(
-                                    'Not Deleted!',
-                                    'The training cannot be deleted. Please refer the IT.',
-                                    'error'
-                                )
-                                $('#traininglist').DataTable().destroy();
-                                fetch_data('load_training',userid,'','');
-                            }
-                        }
-                    });
-                }else{
-                    swal("Cancelled", "The training has not been deleted", "error");
-                }
-            })
-        });
-
     </script>
 </html>
 <?php

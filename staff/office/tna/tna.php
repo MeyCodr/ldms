@@ -66,6 +66,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == '')) {
                     <ul class="nav navbar-nav">
                         <li><a href="../dashboard.php">HOME</a></li>
                         <li><a href="../attendance/training.php">MY TRAINING</a></li>
+                        <li><a href="../attendance/pme.php">PME</a></li>
                         <li><a href="tna.php">TNA</a></li>
                         <?php if ($canViewSkillMatrix) { ?><li><a href="../skill-matrix/skill-matrix.php">SKILL MATRIX</a></li><?php } ?>
                         <li><a href="../password/password.php">CHANGE PASSWORD</a></li>

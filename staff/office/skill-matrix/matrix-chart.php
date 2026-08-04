@@ -380,6 +380,7 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                     <ul class="nav navbar-nav">
                         <li><a href="../dashboard.php">HOME</a></li>
                         <li><a href="../attendance/training.php">MY TRAINING</a></li>
+                        <li><a href="../attendance/pme.php">PME</a></li>
                         <li><a href="../tna/tna.php">TNA</a></li>
                         <li class="active"><a href="skill-matrix.php">SKILL MATRIX</a></li>
                         <li><a href="../password/password.php">CHANGE PASSWORD</a></li>

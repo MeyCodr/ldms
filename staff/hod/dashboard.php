@@ -229,8 +229,8 @@
 												p.designation = 'Executive' 
 												OR (p.designation = 'MANAGER (AM/HOS & ABOVE)' AND u.usertype != 'HOD')
 											)
-											AND YEAR(p.from_date) = 2025
-											ORDER BY 
+											AND YEAR(p.from_date) = YEAR(CURDATE())
+											ORDER BY
 												CASE 
 													WHEN p.status = 'pending' AND p.to_date < CURDATE() THEN 1
 													WHEN p.status = 'pending' THEN 2
