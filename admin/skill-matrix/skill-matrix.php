@@ -46,6 +46,11 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
         <script type="text/javascript"
             src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-flash-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js">
             </script>
+        <style>
+            #skillmatrixlist {
+                width: 100% !important;
+            }
+        </style>
     </head>
 
     <body onload="startTime()" style="background-image:url('../../asset/image/bg-try.png');zoom: 75%;">
@@ -133,16 +138,19 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
                         </div>
                         <div class="panel-body">
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <select name="department" id="department" class="form-control"></select>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="btn-group">
-                                        <button type="button" name="filter_dept" id="filter_dept"
-                                            class="btn btn-info btn-md">FILTER <i class="fa fa-search"></i></button>
-                                        <button type="button" name="reset_filter" id="reset_filter"
-                                            class="btn btn-default btn-md">RESET</button>
-                                    </div>
+                                <div class="col-md-4">
+                                    <select name="section" id="section" class="form-control" disabled>
+                                        <option value="ALL">-- Select Department First --</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4" style="white-space:nowrap;">
+                                    <button type="button" name="filter_dept" id="filter_dept"
+                                        class="btn btn-info btn-md" style="margin-right:8px;">FILTER <i class="fa fa-search"></i></button>
+                                    <button type="button" name="reset_filter" id="reset_filter"
+                                        class="btn btn-default btn-md">RESET</button>
                                 </div>
                             </div>
                         </div>
@@ -213,6 +221,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
             "searching": true,
             "ordering": true,
             "responsive": true,
+            "autoWidth": false,
             "pageLength": 10,
             "info": true,
             "ajax": {
@@ -222,6 +231,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
                 data: function (data) {
                     data.action = "load_non_executive_staff";
                     data.department = $('#department').val() || "ALL";
+                    data.section = $('#section').val() || "ALL";
                 }
             },
             "columns": [
@@ -284,7 +294,29 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
                 $('#department').html(data);
                 disableMatrixChartButton();
             });
+            resetSectionFilter();
         });
+
+        function resetSectionFilter() {
+            $('#section').html('<option value="ALL">-- Select Department First --</option>').prop('disabled', true);
+        }
+
+        function loadSections(department) {
+            if (!department || department == 'ALL') {
+                resetSectionFilter();
+                return;
+            }
+            $.post("fetch_skill_matrix.php", {
+                action: "load_sections_by_department",
+                department: department
+            }, function (data) {
+                var options = '<option value="ALL">All Sections</option>';
+                $.each(data, function (i, section) {
+                    options += '<option value="' + section + '">' + section + '</option>';
+                });
+                $('#section').html(options).prop('disabled', false);
+            }, 'json');
+        }
 
         function disableMatrixChartButton() {
             $('#matrix_chart_btn')
@@ -321,10 +353,12 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
 
         $('#department').change(function () {
             disableMatrixChartButton();
+            loadSections($(this).val());
         });
 
         $('#reset_filter').click(function () {
             $('#department').val('ALL');
+            resetSectionFilter();
             disableMatrixChartButton();
             skillMatrixTable.ajax.reload();
         });

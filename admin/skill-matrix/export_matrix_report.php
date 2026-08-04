@@ -16,7 +16,17 @@ if (!isset($_SESSION['fullname']) || $_SESSION['role'] != 'ADMIN') {
     exit();
 }
 
+function exportMatrixBindParams($stmt, $types, $params)
+{
+    $refs = [$types];
+    foreach ($params as $key => $value) {
+        $refs[] = &$params[$key];
+    }
+    call_user_func_array([$stmt, 'bind_param'], $refs);
+}
+
 $department = isset($_GET['department']) ? $_GET['department'] : 'ALL';
+$section = isset($_GET['section']) ? $_GET['section'] : 'ALL';
 $currentYear = (int) date('Y');
 $currentQuarter = (int) ceil(date('n') / 3);
 $targetPercentage = 75;
@@ -49,18 +59,26 @@ $staffSql = "SELECT
                 AND sme.approval_status = 'PENDING'
                 ";
 
+$staffTypes = "ii";
+$staffParams = [$currentYear, $currentQuarter];
+
 if ($department != '' && $department != 'ALL') {
     $staffSql .= "AND (dp.name = ? OR u.department = ?) ";
+    $staffTypes .= "ss";
+    $staffParams[] = $department;
+    $staffParams[] = $department;
+}
+
+if ($section != '' && $section != 'ALL') {
+    $staffSql .= "AND (s.name = ? OR u.section = ?) ";
+    $staffTypes .= "ss";
+    $staffParams[] = $section;
+    $staffParams[] = $section;
 }
 
 $staffSql .= "ORDER BY department, u.staffname";
 $stmt = $conn->prepare($staffSql);
-
-if ($department != '' && $department != 'ALL') {
-    $stmt->bind_param("iiss", $currentYear, $currentQuarter, $department, $department);
-} else {
-    $stmt->bind_param("ii", $currentYear, $currentQuarter);
-}
+exportMatrixBindParams($stmt, $staffTypes, $staffParams);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -151,6 +169,9 @@ $sheet->getSheetView()->setZoomScale(100);
 $titleText = 'Skill Matrix Report - Q' . $currentQuarter . ' ' . $currentYear;
 if ($department != '' && $department != 'ALL') {
     $titleText .= ' - ' . $department;
+}
+if ($section != '' && $section != 'ALL') {
+    $titleText .= ' - ' . $section;
 }
 $sheet->mergeCells('A1:' . $lastColumn . '1')->setCellValue('A1', $titleText);
 $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
@@ -305,6 +326,9 @@ $sheet->getStyle('C' . $signOffHeaderRow . ':E' . $signOffValueRow)
 $filenameSuffix = 'Q' . $currentQuarter . '_' . $currentYear;
 if ($department != '' && $department != 'ALL') {
     $filenameSuffix .= '_' . preg_replace('/[^A-Za-z0-9]+/', '_', $department);
+}
+if ($section != '' && $section != 'ALL') {
+    $filenameSuffix .= '_' . preg_replace('/[^A-Za-z0-9]+/', '_', $section);
 }
 
 $writer = new Xlsx($spreadsheet);

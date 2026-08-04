@@ -23,8 +23,18 @@ function matrixPieLevel($score)
     return 0;
 }
 
+function matrixChartBindParams($stmt, $types, $params)
+{
+    $refs = [$types];
+    foreach ($params as $key => $value) {
+        $refs[] = &$params[$key];
+    }
+    call_user_func_array([$stmt, 'bind_param'], $refs);
+}
+
 if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
     $department = isset($_GET['department']) ? $_GET['department'] : 'ALL';
+    $section = isset($_GET['section']) ? $_GET['section'] : 'ALL';
     $currentYear = (int) date('Y');
     $currentQuarter = (int) ceil(date('n') / 3);
     $targetPercentage = 75;
@@ -33,10 +43,34 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
     $topicTotals = array();
     $topicCounts = array();
     $departmentOptions = array();
+    $sectionOptions = array();
 
     $departmentResult = mysqli_query($conn, "SELECT name FROM departments ORDER BY name");
     while ($departmentRow = mysqli_fetch_assoc($departmentResult)) {
         $departmentOptions[] = $departmentRow['name'];
+    }
+
+    if ($department != '' && $department != 'ALL') {
+        $sectionSql = "SELECT DISTINCT COALESCE(s.name COLLATE utf8mb4_general_ci, u.section COLLATE utf8mb4_general_ci) AS section
+                        FROM user u
+                        LEFT JOIN departments dp ON u.department_id = dp.id
+                        LEFT JOIN sections s ON u.section_id = s.id
+                        WHERE COALESCE(s.name COLLATE utf8mb4_general_ci, u.section COLLATE utf8mb4_general_ci) IS NOT NULL
+                        AND COALESCE(s.name COLLATE utf8mb4_general_ci, u.section COLLATE utf8mb4_general_ci) != ''
+                        AND (dp.name = ? OR u.department = ?)
+                        ORDER BY section";
+        $sectionStmt = $conn->prepare($sectionSql);
+        $sectionStmt->bind_param("ss", $department, $department);
+        $sectionStmt->execute();
+        $sectionResult = $sectionStmt->get_result();
+        while ($sectionRow = $sectionResult->fetch_assoc()) {
+            $sectionOptions[] = $sectionRow['section'];
+        }
+        if (!in_array($section, $sectionOptions)) {
+            $section = 'ALL';
+        }
+    } else {
+        $section = 'ALL';
     }
 
     $staffSql = "SELECT
@@ -63,18 +97,26 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                             AND sme.approval_status = 'PENDING'
                             ";
 
+    $staffTypes = "ii";
+    $staffParams = [$currentYear, $currentQuarter];
+
     if ($department != '' && $department != 'ALL') {
         $staffSql .= "AND (dp.name = ? OR u.department = ?) ";
+        $staffTypes .= "ss";
+        $staffParams[] = $department;
+        $staffParams[] = $department;
+    }
+
+    if ($section != '' && $section != 'ALL') {
+        $staffSql .= "AND (s.name = ? OR u.section = ?) ";
+        $staffTypes .= "ss";
+        $staffParams[] = $section;
+        $staffParams[] = $section;
     }
 
     $staffSql .= "ORDER BY department, u.staffname";
     $stmt = $conn->prepare($staffSql);
-
-    if ($department != '' && $department != 'ALL') {
-        $stmt->bind_param("iiss", $currentYear, $currentQuarter, $department, $department);
-    } else {
-        $stmt->bind_param("ii", $currentYear, $currentQuarter);
-    }
+    matrixChartBindParams($stmt, $staffTypes, $staffParams);
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -428,7 +470,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                         <div class="panel-body">
                             <form method="get" class="form-inline">
                                 <div class="form-group">
-                                    <select name="department" class="form-control">
+                                    <select name="department" id="department" class="form-control">
                                         <option value="ALL" <?php echo ($department == 'ALL') ? 'selected' : ''; ?>>ALL</option>
                                         <?php foreach ($departmentOptions as $departmentOption) { ?>
                                             <option value="<?php echo htmlspecialchars($departmentOption); ?>" <?php echo ($department == $departmentOption) ? 'selected' : ''; ?>>
@@ -437,10 +479,24 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                                         <?php } ?>
                                     </select>
                                 </div>
-                                <button type="submit" class="btn btn-info">
+                                <div class="form-group" style="margin-left:8px;">
+                                    <select name="section" id="section" class="form-control" <?php echo ($department == '' || $department == 'ALL') ? 'disabled' : ''; ?>>
+                                        <?php if ($department == '' || $department == 'ALL') { ?>
+                                            <option value="ALL">-- Select Department First --</option>
+                                        <?php } else { ?>
+                                            <option value="ALL">All Sections</option>
+                                            <?php foreach ($sectionOptions as $sectionOption) { ?>
+                                                <option value="<?php echo htmlspecialchars($sectionOption); ?>" <?php echo ($section == $sectionOption) ? 'selected' : ''; ?>>
+                                                    <?php echo htmlspecialchars($sectionOption); ?>
+                                                </option>
+                                            <?php } ?>
+                                        <?php } ?>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-info" style="margin-left:8px;">
                                     FILTER <i class="fa fa-search"></i>
                                 </button>
-                                <a href="matrix-chart.php?department=ALL" class="btn btn-default">RESET</a>
+                                <a href="matrix-chart.php?department=ALL&section=ALL" class="btn btn-default">RESET</a>
                             </form>
                         </div>
                     </div>
@@ -470,6 +526,9 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                                 Current Quarter: Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?>
                                 <?php if ($department != '' && $department != 'ALL') { ?>
                                     | Department: <?php echo htmlspecialchars($department); ?>
+                                <?php } ?>
+                                <?php if ($section != '' && $section != 'ALL') { ?>
+                                    | Section: <?php echo htmlspecialchars($section); ?>
                                 <?php } ?>
                             </div>
 
@@ -638,6 +697,24 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
             return i;
         }
 
+        $('#department').change(function () {
+            var department = $(this).val();
+            if (!department || department == 'ALL') {
+                $('#section').html('<option value="ALL">-- Select Department First --</option>').prop('disabled', true);
+                return;
+            }
+            $.post("fetch_skill_matrix.php", {
+                action: "load_sections_by_department",
+                department: department
+            }, function (data) {
+                var options = '<option value="ALL">All Sections</option>';
+                $.each(data, function (i, section) {
+                    options += '<option value="' + section + '">' + section + '</option>';
+                });
+                $('#section').html(options).prop('disabled', false);
+            }, 'json');
+        });
+
         $('#download_matrix_report').click(function () {
             var table = document.getElementById('matrix_report_table');
             if (!table) {
@@ -645,7 +722,8 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                 return;
             }
 
-            window.location = "export_matrix_report.php?department=" + encodeURIComponent("<?php echo addslashes($department); ?>");
+            window.location = "export_matrix_report.php?department=" + encodeURIComponent("<?php echo addslashes($department); ?>") +
+                "&section=" + encodeURIComponent("<?php echo addslashes($section); ?>");
         });
     </script>
 

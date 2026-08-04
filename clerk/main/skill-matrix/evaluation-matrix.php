@@ -441,6 +441,7 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                         <li><a href="../staff/staff.php">CONTRACT STAFF LIST</a></li>
                         <li><a href="../training/training_ojt.php">ALL TRAINING</a></li>
                         <li><a href="../attendance/training.php">MY TRAINING</a></li>
+                        <li><a href="../attendance/pme.php">PME</a></li>
                         <li><a href="../tna/tna_list.php">TNA LIST</a></li>
                         <li class="active"><a href="skill-matrix.php">SKILL MATRIX</a></li>
                         <li><a href="../password/password.php">CHANGE PASSWORD</a></li>

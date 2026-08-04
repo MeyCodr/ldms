@@ -37,12 +37,65 @@ function skillMatrixUserCanUse()
         );
 }
 
+function skillMatrixBindParams($stmt, $types, $params)
+{
+    $refs = [$types];
+    foreach ($params as $key => $value) {
+        $refs[] = &$params[$key];
+    }
+    call_user_func_array([$stmt, 'bind_param'], $refs);
+}
+
 if (!isset($_SESSION['fullname']) || !isset($_POST["action"]) || ($_SESSION['role'] != 'ADMIN' && !skillMatrixUserCanUse())) {
     skillMatrixRespondJson(array());
 }
 
+if ($_POST["action"] == "load_sections_by_department") {
+    $department = isset($_POST["department"]) ? $_POST["department"] : "ALL";
+
+    if (skillMatrixUserCanUse() && (!isset($_SESSION['department']) || $_SESSION['department'] == '')) {
+        $sessionUserId = isset($_SESSION['id']) ? (int) $_SESSION['id'] : 0;
+        $departmentStmt = $conn->prepare("SELECT department FROM user WHERE id = ?");
+        if ($departmentStmt) {
+            $departmentStmt->bind_param("i", $sessionUserId);
+            $departmentStmt->execute();
+            $departmentRow = $departmentStmt->get_result()->fetch_assoc();
+            if ($departmentRow) {
+                $_SESSION['department'] = $departmentRow['department'];
+            }
+        }
+    }
+    if (skillMatrixUserCanUse()) {
+        $department = isset($_SESSION['department']) ? $_SESSION['department'] : "";
+    }
+
+    $output = array();
+    $sql = "SELECT DISTINCT COALESCE(s.name COLLATE utf8mb4_general_ci, u.section COLLATE utf8mb4_general_ci) AS section
+            FROM user u
+            LEFT JOIN departments dp ON u.department_id = dp.id
+            LEFT JOIN sections s ON u.section_id = s.id
+            WHERE COALESCE(s.name COLLATE utf8mb4_general_ci, u.section COLLATE utf8mb4_general_ci) IS NOT NULL
+            AND COALESCE(s.name COLLATE utf8mb4_general_ci, u.section COLLATE utf8mb4_general_ci) != ''";
+    if ($department != "" && $department != "ALL") {
+        $sql .= " AND (dp.name = ? OR u.department = ?)";
+    }
+    $sql .= " ORDER BY section";
+
+    $stmt = $conn->prepare($sql);
+    if ($department != "" && $department != "ALL") {
+        $stmt->bind_param("ss", $department, $department);
+    }
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($row = $result->fetch_assoc()) {
+        $output[] = $row['section'];
+    }
+    skillMatrixRespondJson($output);
+}
+
 if ($_POST["action"] == "load_non_executive_staff") {
     $department = isset($_POST["department"]) ? $_POST["department"] : "ALL";
+    $section = isset($_POST["section"]) ? $_POST["section"] : "ALL";
     $currentYear = (int) date('Y');
     $currentQuarter = (int) ceil(date('n') / 3);
     $output = array();
@@ -98,22 +151,31 @@ if ($_POST["action"] == "load_non_executive_staff") {
             WHERE u.designation IN (?, ?)
             AND u.status != ?";
 
+    $designation1 = "NON EXECUTIVE";
+    $designation2 = "CONTRACT";
+    $inactiveStatus = "RESIGN";
+
+    $types = "iiiisss";
+    $params = [$currentYear, $currentQuarter, $currentYear, $currentQuarter, $designation1, $designation2, $inactiveStatus];
+
     if ($department != "" && $department != "ALL") {
         $sql .= " AND (dp.name = ? OR u.department = ?)";
+        $types .= "ss";
+        $params[] = $department;
+        $params[] = $department;
+    }
+
+    if ($section != "" && $section != "ALL") {
+        $sql .= " AND (s.name = ? OR u.section = ?)";
+        $types .= "ss";
+        $params[] = $section;
+        $params[] = $section;
     }
 
     $sql .= " ORDER BY department, u.staffname";
 
     $stmt = $conn->prepare($sql);
-    $designation1 = "NON EXECUTIVE";
-    $designation2 = "CONTRACT";
-    $inactiveStatus = "RESIGN";
-
-    if ($department != "" && $department != "ALL") {
-        $stmt->bind_param("iiiisssss", $currentYear, $currentQuarter, $currentYear, $currentQuarter, $designation1, $designation2, $inactiveStatus, $department, $department);
-    } else {
-        $stmt->bind_param("iiiisss", $currentYear, $currentQuarter, $currentYear, $currentQuarter, $designation1, $designation2, $inactiveStatus);
-    }
+    skillMatrixBindParams($stmt, $types, $params);
 
     $stmt->execute();
     $result = $stmt->get_result();

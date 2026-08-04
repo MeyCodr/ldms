@@ -146,7 +146,7 @@ if (isset($_POST['action'])) {
                 $action = '<a href="edit_pme.php?userid=' . $userid . '&participationid=' . $row['id'] . '" class="btn btn-info btn-sm"><i class="fa fa-eye"></i> View PME</a>';
             } else if ($row['status'] == 'completed' || $row['status'] == 'verified') {
                 $status = '<span class="label label-pill label-success">COMPLETED</span>';
-                $action = '<a href="edit_pme.php?userid=' . $userid . '&participationid=' . $row['id'] . '" class="btn btn-default btn-sm"><i class="fa fa-eye"></i> View PME</a>';
+                $action = '<a href="edit_pme.php?userid=' . $userid . '&participationid=' . $row['id'] . '" class="btn btn-info btn-sm"><i class="fa fa-eye"></i> View PME</a>';
             } else {
                 $status = '<span class="label label-pill label-default">' . strtoupper($row['status']) . '</span>';
                 $action = '';

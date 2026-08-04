@@ -169,6 +169,7 @@
     				<ul class="nav navbar-nav">
                         <li><a href="../dashboard.php">HOME</a></li>
                         <li><a href="training.php">MY TRAINING</a></li>
+                        <li><a href="pme.php">PME</a></li>
                         <li><a href="../tna/staff_list.php">TNA</a></li>
 						<li><a href="../tni/tni.php">TNI</a></li>
 						<?php if ($canViewSkillMatrix) { ?><li><a href="../skill-matrix/skill-matrix.php">SKILL MATRIX</a></li><?php } ?>
@@ -195,7 +196,7 @@
 							<div class="row align-items-center">
 								<!-- Left-aligned button -->
 								<div class="col-md-2" align="left">
-									<button type="button" name="back_pme" class="btn btn-success btn-md" onclick="window.location.href='training.php'">
+									<button type="button" name="back_pme" class="btn btn-success btn-md" onclick="window.location.href='pme.php'">
 										<i class="far fa-arrow-alt-circle-left"></i> BACK TO PME LIST
 									</button>
 								</div>

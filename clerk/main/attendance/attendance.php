@@ -60,6 +60,7 @@
                         <li><a href="../staff/staff.php">CONTRACT STAFF LIST</a></li>
 						<li><a href="../training/training_ojt.php">ALL TRAINING</a></li>
                         <li><a href="training.php">MY TRAINING</a></li>
+                        <li><a href="pme.php">PME</a></li>
                         <li><a href="../tna/tna_list.php">TNA LIST</a></li>
                         <?php if ($canViewSkillMatrix) { ?><li><a href="../skill-matrix/skill-matrix.php">SKILL MATRIX</a></li><?php } ?>
 

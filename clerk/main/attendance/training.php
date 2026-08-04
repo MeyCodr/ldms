@@ -62,6 +62,7 @@
                         <li><a href="../staff/staff.php">CONTRACT STAFF LIST</a></li>
 						<li><a href="../training/training_ojt.php">ALL TRAINING</a></li>
                         <li><a href="training.php">MY TRAINING</a></li>
+                        <li><a href="pme.php">PME</a></li>
                         <li><a href="../tna/tna_list.php">TNA LIST</a></li>
                         <?php if ($canViewSkillMatrix) { ?><li><a href="../skill-matrix/skill-matrix.php">SKILL MATRIX</a></li><?php } ?>
 
@@ -124,7 +125,6 @@
                                                 <th>Venue</th>
                                                 <th>Status</th>
                                                 <th>Training Hour</th>
-                                                <th>PME</th>
                                                 <th width="130px">Action</th>
                                             </tr>
                                         </thead>
@@ -132,7 +132,7 @@
 
                                         </tbody>
                                         <tfoot>
-                                            <th colspan="8">Total Training Hour</th>
+                                            <th colspan="7">Total Training Hour</th>
                                             <th><span id="totalhourall"></span></th>
                                             <th></th>
                                         </tfoot>
@@ -240,23 +240,20 @@
                     {
                         "data": "totalhour"
                     },
-                    { 
-                        "data": "pme", "orderable": false 
-                    },
                     {
                         "data": "btnedit"
                     },
                     {
-                        "data": "status_sort", "visible": false 
+                        "data": "status_sort", "visible": false
                     },
                     {
-                        "data": "custom_sort", "visible": false 
+                        "data": "custom_sort", "visible": false
                     }
                 ],
                 "columnDefs": [
-                    { className: 'text-center', targets: [0, 3, 5, 6, 7, 8] }
+                    { className: 'text-center', targets: [0, 3, 5, 6, 7] }
                 ],
-                "order": [[5, 'desc'], [9, 'asc']], // Sort by the status_sort column
+                "order": [[5, 'desc'], [8, 'asc']], // Sort by the status_sort column
                 fnFooterCallback: function (nRow, aaData, iStart, iEnd, aiDisplay) {
                     var api = this.api(), data;
 
@@ -360,11 +357,6 @@
             })
         });
 
-        $(document).on('click', '.view_pme', function() {
-            var id = $(this).data("id");
-             window.location.href = "edit_pme.php?userid=' . $userid . '&participationid=' . $row['id'] . '";
-            /* $pmeButton = '<a href="edit_pme.php?userid='.$userid.'&participationid='.$row['id'].'" class="btn btn-primary btn-sm"><i class="fa fa-eye"></i> View PME</a>';*/
-        });
     </script>
 </html>
 <?php
