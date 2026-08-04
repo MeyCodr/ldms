@@ -50,6 +50,7 @@
     				<ul class="nav navbar-nav">
                         <li><a href="../dashboard.php">HOME</a></li>
                         <li><a href="training.php">MY TRAINING</a></li>
+                        <li><a href="../pme/pme.php">PME</a></li>
                         <li><a href="../tna/staff_list.php">TNA</a></li>
 						<!-- <li><a href="../tni/tni.php">TNI</a></li> -->
 						<li><a href="../password/password.php">CHANGE PASSWORD</a></li>

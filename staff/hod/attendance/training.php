@@ -23,6 +23,9 @@
     </head>
 
     <style>
+        #traininglist {
+            width: 100% !important;
+        }
         #spinner-div {
             position: fixed;
             display: none;
@@ -52,6 +55,7 @@
     				<ul class="nav navbar-nav">
                         <li><a href="../dashboard.php">HOME</a></li>
                         <li><a href="training.php">MY TRAINING</a></li>
+                        <li><a href="../pme/pme.php">PME</a></li>
                         <li><a href="../tna/staff_list.php">TNA</a></li>
 						<!-- <li><a href="../tni/tni.php">TNI</a></li> -->
 						<li><a href="../password/password.php">CHANGE PASSWORD</a></li>
@@ -84,25 +88,20 @@
                         </div>
                         <div class="panel-body" align="center">
                             <div class="row">
-                                <div class="col-sm-2"></div>
-                                <div class="col-sm-8">
-                                    <div class="col-md-5">
-                                        <input type="text" name="startdate" id="startdate" class="form-control" placeholder="Insert Start Date" autocomplete="off" />
-                                    </div>
-                                    <div class="col-md-5">
-                                        <input type="text" name="enddate" id="enddate" class="form-control" placeholder="Insert End Date" autocomplete="off" />
-                                    </div>
-                                    <div class="col-md-2" align="left">
-                                        <button type="button" name="filter_date" id="filter_date" class="btn btn-info btn-md">Filter <i class="fa fa-search"></i> </button>
-                                        <button type="button" name="clear_filter" id="clear_filter" class="btn btn-info btn-md">Clear <i class="fa fa-times"></i> </button>
-                                    </div>
+                                <div class="col-sm-4">
+                                    <input type="text" name="startdate" id="startdate" class="form-control" placeholder="Insert Start Date" autocomplete="off" />
                                 </div>
-                                <div class="col-sm-2"></div>
+                                <div class="col-sm-4">
+                                    <input type="text" name="enddate" id="enddate" class="form-control" placeholder="Insert End Date" autocomplete="off" />
+                                </div>
+                                <div class="col-sm-4" align="left" style="white-space:nowrap;">
+                                    <button type="button" name="filter_date" id="filter_date" class="btn btn-info btn-md">Filter <i class="fa fa-search"></i> </button>
+                                    <button type="button" name="clear_filter" id="clear_filter" class="btn btn-info btn-md">Clear <i class="fa fa-times"></i> </button>
+                                </div>
                             </div>
                             <br>
                             <div class="row">
-                                <div class="col-sm-2"></div>
-                                <div class="col-sm-8 table-responsive">
+                                <div class="col-sm-12 table-responsive">
                                     <table id="traininglist" class="table table-bordered table-striped">
                                     <thead>
                                             <tr>
@@ -126,7 +125,6 @@
                                         </tfoot>
                                     </table>
                                 </div>
-                                <div class="col-sm-2"></div>
                             </div>
                         </div>
 					</div>
@@ -201,6 +199,7 @@
                 "searching": true,
                 "ordering": true,
                 "responsive": true,
+                "autoWidth": false,
                 "pageLength": 10,
                 "info": true,
                 "order": [[ 5, "desc" ]],

@@ -22,6 +22,11 @@ if (isset($_SESSION['fullname']) && ($_SESSION['usertype'] == 'HOD')) {
             href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-flash-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.css" />
         <script type="text/javascript"
             src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-flash-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js"></script>
+        <style>
+            #userlist, #gradelist {
+                width: 100% !important;
+            }
+        </style>
     </head>
 
     <body onload="startTime()" style="background-image:url('../../../asset/image/bg-try.png');zoom: 75%;">
@@ -40,6 +45,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['usertype'] == 'HOD')) {
                     <ul class="nav navbar-nav">
                         <li><a href="../dashboard.php">HOME</a></li>
                         <li><a href="../attendance/training.php">MY TRAINING</a></li>
+                        <li><a href="../pme/pme.php">PME</a></li>
                         <li><a href="../tna/staff_list.php">TNA</a></li>
                         <!-- <li><a href="../tni/tni.php">TNI</a></li> -->
                         <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
@@ -107,8 +113,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['usertype'] == 'HOD')) {
                         </div>
                         <div class="panel-body" align="center">
                             <div class="row">
-                                <div class="col-sm-4"></div>
-                                <div class="col-sm-4 table-responsive">
+                                <div class="col-sm-12 table-responsive">
                                     <table id="gradelist" class="table table-bordered table-striped">
                                         <thead>
                                             <tr>
@@ -124,7 +129,6 @@ if (isset($_SESSION['fullname']) && ($_SESSION['usertype'] == 'HOD')) {
                                         </tbody>
                                     </table>
                                 </div>
-                                <div class="col-sm-4"></div>
                             </div>
                         </div>
                     </div>
@@ -184,6 +188,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['usertype'] == 'HOD')) {
                 "searching": true,
                 "ordering": true,
                 "responsive": true,
+                "autoWidth": false,
                 "pageLength": 10,
                 "info": true,
                 "ajax": {
@@ -230,6 +235,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['usertype'] == 'HOD')) {
                 "searching": true,
                 "ordering": true,
                 "responsive": true,
+                "autoWidth": false,
                 "pageLength": 10,
                 "info": true,
                 "ajax": {

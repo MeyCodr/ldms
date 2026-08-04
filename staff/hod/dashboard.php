@@ -62,6 +62,7 @@
     				<ul class="nav navbar-nav">
 						<li><a href="dashboard.php">HOME</a></li>
 						<li><a href="attendance/training.php">MY TRAINING</a></li>
+						<li><a href="pme/pme.php">PME</a></li>
 						<li><a href="tna/staff_list.php">TNA</a></li>
 						<!-- <li><a href="tni/tni.php">TNI</a></li> -->
                         <?php if ($canApproveSkillMatrix) { ?>
@@ -173,158 +174,6 @@
 				</div>
 			</div>
 				
-			<div class="row" class="panel-body">
-                <div class="col-md-12">
-					<div class="panel panel-default">
-						<div class="panel-heading">
-								<div class="row">
-									<div class="col-md-11" style="margin-top: 10px;">
-										<strong>Performance Monitoring Evaluation List</strong>
-									</div>
-								</div>
-							</div>
-
-							<?php
-								include "../../dbconn.php";
-
-								$hodid = $_SESSION['id'];
-
-								// Get the current page number
-								$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-								$limit = 20; // Number of records per page
-								$offset = ($page - 1) * $limit;
-
-								// Get total records
-								$sql_count = "SELECT COUNT(*) AS total FROM pme WHERE hodid = ? AND (designation = 'Executive' OR designation = 'MANAGER (AM/HOS & ABOVE)')";
-								$stmt_count = $conn->prepare($sql_count);
-								$stmt_count->bind_param("i", $hodid);
-								$stmt_count->execute();
-								$result_count = $stmt_count->get_result();
-								$row_count = $result_count->fetch_assoc();
-								$total_records = $row_count['total'];
-								$total_pages = ceil($total_records / $limit); // Calculate total pages
-
-								// $sql = "SELECT p.*, u.usertype 
-								// 		FROM pme p
-								// 		JOIN user u ON p.userid = u.id
-								// 		WHERE p.hodid = ?
-								// 		AND (
-								// 			p.designation = 'Executive' 
-								// 			OR (p.designation = 'MANAGER (AM/HOS & ABOVE)' AND u.usertype != 'HOD')
-								// 		)
-								// 		AND (YEAR(p.from_date) > 2024 OR (YEAR(p.from_date) = 2024 AND MONTH(p.from_date) >= 11))
-								// 		ORDER BY 
-								// 			CASE 
-								// 				WHEN p.status = 'pending' AND p.to_date < CURDATE() THEN 1
-								// 				WHEN p.status = 'pending' THEN 2
-								// 				ELSE 3
-								// 			END,
-								// 			p.from_date DESC";
-
-								$sql = "SELECT p.*, u.usertype 
-											FROM pme p
-											JOIN user u ON p.userid = u.id
-											WHERE p.hodid = ?
-											AND (
-												p.designation = 'Executive' 
-												OR (p.designation = 'MANAGER (AM/HOS & ABOVE)' AND u.usertype != 'HOD')
-											)
-											AND YEAR(p.from_date) = YEAR(CURDATE())
-											ORDER BY
-												CASE 
-													WHEN p.status = 'pending' AND p.to_date < CURDATE() THEN 1
-													WHEN p.status = 'pending' THEN 2
-													ELSE 3
-												END,
-												p.from_date DESC";
-
-
-								$stmt = $conn->prepare($sql);
-								$stmt->bind_param("i", $hodid);
-								$stmt->execute();
-								$result = $stmt->get_result();
-						?>
-
-								<div class="panel-body" align="center">
-									<div class="row">
-										<div class="col-sm-2"></div>
-										<div class="col-sm-8 table-responsive">
-											<table id="trainerTable" class="table table-bordered table-striped">
-												<thead>
-													<tr>
-														<th>No.</th>
-														<th>Name</th>
-														<th>Staff No</th>
-														<th>Training Title</th>
-														<th>Evaluation Period Start</th>
-														<th>Evaluation Period End</th>
-														<th>Evaluation Status</th>
-														<th width="65px">Action</th>
-													</tr>
-												</thead>
-												<tbody align="center">
-													<?php
-													$count = $offset + 1;
-													while ($row = $result->fetch_assoc()) {
-														// Check the status of the evaluation
-														$status = $row['status']; // Assuming 'status' column exists
-														$label_class = ($status == 'approved') ? 'success' : 'danger';
-														$status_text = ($status == 'approved') ? 'Complete' : 'Not Complete';
-													?>
-														<tr>
-															<td><?= $count ?></td>
-															<td><?= $row['staffname'] ?></td>
-															<td><?= $row['staffno'] ?></td>
-															<td><?= $row['training_title'] ?></td>
-															<td><?= $row['from_date']?></td>
-															<td><?= $row['to_date']?></td>
-															<td>
-																<?php if ($row['status'] == 'approved' || $row['status'] == 'completed' || $row['status'] == 'verified'): ?>
-																	<span class="badge bg-success">Complete</span>
-																<?php else: ?>
-																	<span class="badge bg-warning">Pending</span>
-																<?php endif; ?>
-															</td>
-															<td>
-																<?php
-																	$current_date = date("Y-m-d"); // Get today's date
-																	$to_date = $row['to_date']; // Get evaluation end date
-
-																	if ($current_date > $to_date): // If evaluation period ended, enable button
-																?>
-																	<a href="pme/edit_pme.php?id=<?= $row['id'] ?>" 
-																	class="btn btn-info btn-sm" 
-																	style="border-radius: 5px; padding: 8px 12px; font-weight: 500;"
-																	title="Evaluate Performance">
-																		<i class="fa fa-edit me-2"></i> Evaluate
-																	</a>
-																<?php else: ?>
-																	<button class="btn btn-warning btn-sm" 
-																			style="border-radius: 5px; padding: 8px 12px; font-weight: 500; cursor: not-allowed;"
-																			title="Evaluation period not ended yet" 
-																			data-bs-toggle="tooltip">
-																		<i class="fa fa-lock me-2"></i> Evaluate
-																	</button>
-																<?php endif; ?>
-															</td>
-
-														</tr>
-													<?php
-														$count++;
-														
-													}
-													?>
-												</tbody>
-
-											</table>
-
-										</div>
-									</div>
-								</div>
-                            </div>
-                    </div>
-             </div>
-
 			<div class="row">
                 <div class="col-md-6">
 					<div class="panel panel-default">
@@ -1521,19 +1370,6 @@
             $('#enddate').val('');
         });
 
-		$(document).ready(function () {
-			$('#trainerTable').DataTable({
-				"paging": true,          // Enable pagination
-				"searching": true,       // Enable search box
-				"ordering": true,        // Enable sorting
-				"info": true,            // Show "Showing X to Y of Z entries"
-				"lengthMenu": [10, 25, 50], // Allow changing number of entries shown
-			});
-
-			$(document).ready(function () {
-				$('[data-bs-toggle="tooltip"]').tooltip();
-			});
-});
 </script>
 </html>
 <?php
