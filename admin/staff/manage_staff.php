@@ -107,73 +107,83 @@
                         </div>
                         <div class="panel-body">
                             <div class="row">
-                                <div class="col-md-3">
+                                <div class="col-md-1">
 
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-10">
                                     <form method="post" id="staff_form">
                                         <fieldset style="border-radius:10px;">
                                             <legend id="leg1">Add Staff</legend>
-                                            <div class="form-group">
-                                                <label>Staff Number</label>
-                                                <input type="text" name="staffno" id="staffno" class="form-control" placeholder="Insert Staff Number" autocomplete="off" required>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Full Name</label>
-                                                <input type="text" name="staffname" id="staffname" class="form-control" placeholder="Insert Staff Full Name" autocomplete="off" required>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Email</label>
-                                                <input type="text" name="email" id="email" class="form-control" placeholder="Insert Staff Email" autocomplete="off">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Gender</label>
-                                                <select class="form-control" id="gender" name="gender" required>
-                                                    <option selected disabled="disabled">-- Select Gender --</option>
-                                                    <option value="MALE">MALE</option>
-                                                    <option value="FEMALE">FEMALE</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Designation</label>
-                                                <select class="form-control" id="designation" name="designation" required>
-                                                    <option selected disabled="disabled">-- Select Designation --</option>
-                                                    <option value="CONTRACT">CONTRACT</option>
-                                                    <option value="EXECUTIVE">EXECUTIVE</option>
-                                                    <option value="MANAGER (AM/HOS & ABOVE)">MANAGER (AM/HOS & ABOVE)</option>
-                                                    <option value="NON EXECUTIVE">NON EXECUTIVE</option>
-													<option value="TRAINEE">TRAINEE</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Division</label>
-                                                <select class="form-control" id="division" name="division" required>
-                                                    <option selected disabled="disabled">-- Select Division --</option>
-                                                    <?php foreach ($divisionOptions as $div): ?>
-                                                        <option value="<?= htmlspecialchars($div, ENT_QUOTES) ?>"><?= htmlspecialchars($div) ?></option>
-                                                    <?php endforeach; ?>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Staff Number</label>
+                                                        <input type="text" name="staffno" id="staffno" class="form-control" placeholder="Insert Staff Number" autocomplete="off" required>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Full Name</label>
+                                                        <input type="text" name="staffname" id="staffname" class="form-control" placeholder="Insert Staff Full Name" autocomplete="off" required>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Email</label>
+                                                        <input type="text" name="email" id="email" class="form-control" placeholder="Insert Staff Email" autocomplete="off">
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Date Join</label>
+                                                        <input type="date" name="date_join" id="date_join" class="form-control" autocomplete="off">
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Gender</label>
+                                                        <select class="form-control" id="gender" name="gender" required>
+                                                            <option selected disabled="disabled">-- Select Gender --</option>
+                                                            <option value="MALE">MALE</option>
+                                                            <option value="FEMALE">FEMALE</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Designation</label>
+                                                        <select class="form-control" id="designation" name="designation" required>
+                                                            <option selected disabled="disabled">-- Select Designation --</option>
+                                                            <option value="CONTRACT">CONTRACT</option>
+                                                            <option value="EXECUTIVE">EXECUTIVE</option>
+                                                            <option value="MANAGER (AM/HOS & ABOVE)">MANAGER (AM/HOS & ABOVE)</option>
+                                                            <option value="NON EXECUTIVE">NON EXECUTIVE</option>
+                                                            <option value="TRAINEE">TRAINEE</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Division</label>
+                                                        <select class="form-control" id="division" name="division" required>
+                                                            <option selected disabled="disabled">-- Select Division --</option>
+                                                            <?php foreach ($divisionOptions as $div): ?>
+                                                                <option value="<?= htmlspecialchars($div, ENT_QUOTES) ?>"><?= htmlspecialchars($div) ?></option>
+                                                            <?php endforeach; ?>
 
-                                                </select>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Department</label>
-                                                <select class="form-control" id="department" name="department" required>
-                                                    <option selected disabled="disabled">-- Select Department --</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Section</label>
-                                                <select class="form-control" id="section" name="section" required>
-                                                    <option selected disabled="disabled">-- Select Section --</option>
-                                                </select>
-                                            </div>
-											<div class="form-group">
-                                                <label>Status</label>
-                                                <select class="form-control" id="status" name="status" required>
-                                                    <option selected disabled="disabled">-- Select Status --</option>
-                                                    <option value="ACTIVE">ACTIVE</option>
-                                                    <option value="RESIGN">NOT ACTIVE</option>
-                                                </select>
+                                                        </select>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Department</label>
+                                                        <select class="form-control" id="department" name="department" required>
+                                                            <option selected disabled="disabled">-- Select Department --</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Section</label>
+                                                        <select class="form-control" id="section" name="section" required>
+                                                            <option selected disabled="disabled">-- Select Section --</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Status</label>
+                                                        <select class="form-control" id="status" name="status" required>
+                                                            <option selected disabled="disabled">-- Select Status --</option>
+                                                            <option value="ACTIVE">ACTIVE</option>
+                                                            <option value="RESIGN">NOT ACTIVE</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
                                             </div>
                                             <div class="form-group">
                                                 <input type="hidden" name="id" id="id" />
@@ -183,7 +193,7 @@
                                         </fieldset>
                                     </form>
                                 </div>
-                                <div class="col-md-2">
+                                <div class="col-md-1">
 
                                 </div>
                             </div>
@@ -280,6 +290,7 @@
                         $('#staffno').val(data.staffno);
                         $('#staffname').val(data.staffname);
                         $('#email').val(data.email);
+                        $('#date_join').val(data.date_join);
                         $('#gender').val(data.gender);
                         $('#designation').val(data.designation);
                         $('#division').val(data.division);

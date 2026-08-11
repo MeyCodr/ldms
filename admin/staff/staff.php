@@ -87,6 +87,27 @@
             </div>
             <div class="row">
                 <div class="col-md-12">
+                    <div class="panel panel-default">
+                        <div class="panel-body" style="padding:12px 14px;">
+                            <strong style="margin-right:10px;"><i class="fa fa-file-excel"></i> Bulk Update Date Join via Excel</strong>
+                            <a href="export_datejoin_template.php" class="btn btn-default btn-sm">
+                                <i class="fa fa-download"></i> Download Template
+                            </a>
+                            <span style="margin-left:10px;">
+                                <input type="file" id="datejoin-file-input" accept=".xls,.xlsx" style="display:inline-block;width:auto;">
+                                <button class="btn btn-primary btn-sm" id="btn-upload-datejoin" onclick="uploadDateJoinTemplate()">
+                                    <i class="fa fa-upload"></i> Upload &amp; Update
+                                </button>
+                            </span>
+                            <div class="text-muted" style="font-size:11px;margin-top:6px;">
+                                Download the template first, fill in the "Date Join" column (format YYYY-MM-DD) without changing the Staff No column, then upload it here to bulk-update staff join dates. Blank date cells are left unchanged.
+                            </div>
+                        </div>
+                    </div>
+				</div>
+			</div>
+            <div class="row">
+                <div class="col-md-12">
 					<div class="panel panel-default">
                         <div class="panel-heading">
                             <div class="row">
@@ -101,7 +122,7 @@
                         <div class="panel-body" align="center">
                             <div class="row">
                                 <div class="col-sm-12 table-responsive">
-                                    <table id="userlist" class="table table-bordered table-striped">
+                                    <table id="userlist" class="table table-bordered table-striped" style="width:100%;">
                                         <thead>
                                             <tr>
                                                 <th>No.</th>
@@ -172,6 +193,49 @@
             window.location = "manage_staff.php";
         });
 
+        function uploadDateJoinTemplate() {
+            var fileInput = document.getElementById('datejoin-file-input');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                swal('Error', 'Please choose a file to upload first.', 'error');
+                return;
+            }
+
+            var formData = new FormData();
+            formData.append('import_file', fileInput.files[0]);
+
+            var $btn = $('#btn-upload-datejoin');
+            $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Uploading...');
+
+            $.ajax({
+                url: 'import_datejoin.php',
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                dataType: 'json',
+                success: function (res) {
+                    fileInput.value = '';
+                    if (res.message !== 'done') {
+                        swal('Error', res.detail || 'Import failed.', 'error');
+                        return;
+                    }
+                    var summaryText = res.updated + ' staff record(s) updated, ' + res.skipped + ' row(s) skipped (blank date).';
+                    if (res.errors && res.errors.length > 0) {
+                        summaryText += '\n\n' + res.errors.length + ' issue(s):\n' + res.errors.join('\n');
+                    }
+                    swal('Import Complete', summaryText, (res.errors && res.errors.length > 0) ? 'warning' : 'success');
+                    $('#userlist').DataTable().destroy();
+                    fetch_data('load_staff');
+                },
+                error: function () {
+                    swal('Error', 'Upload failed. Please try again.', 'error');
+                },
+                complete: function () {
+                    $btn.prop('disabled', false).html('<i class="fa fa-upload"></i> Upload &amp; Update');
+                }
+            });
+        }
+
         function fetch_data(action){
             var userdataTable = $('#userlist').DataTable({
                 "paging": true,
@@ -188,12 +252,16 @@
                     dataSrc: '',
                     data : {action:action},
                 },
+                "drawCallback": function (settings) {
+                    var api = this.api();
+                    api.column(0, { page: 'current' }).nodes().each(function (cell, i) {
+                        cell.innerHTML = i + 1 + api.context[0]._iDisplayStart;
+                    });
+                },
                 "columns": [
                     {
                         "data": "id",
-                        render: function (data, type, row, meta) {
-                            return meta.row + meta.settings._iDisplayStart + 1;
-                        }
+                        "orderable": false
                     },
                     {
                         "data": "staffno"

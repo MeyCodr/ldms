@@ -40,6 +40,7 @@ $staffSql = "SELECT
                     u.id AS staff_id,
                     u.staffno,
                     u.staffname,
+                    u.date_join,
                     u.designation,
                     u.grade,
                     creator.staffname AS evaluated_by,
@@ -86,6 +87,7 @@ while ($row = $result->fetch_assoc()) {
     $staffRows[$row['evaluation_id']] = array(
         'staffno' => $row['staffno'],
         'staffname' => $row['staffname'],
+        'date_join' => $row['date_join'],
         'designation_grade' => $row['designation'] . ' / ' . $row['grade'],
         'evaluated_by' => $row['evaluated_by'],
         'verified_by' => $row['verified_by'],
@@ -156,7 +158,7 @@ $reportEvaluatedBy = implode(', ', array_keys($evaluatedByNames));
 $reportVerifiedBy = implode(', ', array_keys($verifiedByNames));
 $reportApprovedBy = implode(', ', array_keys($approvedByNames));
 
-$fixedColumnCount = 4;
+$fixedColumnCount = 5;
 $topicCount = count($topicColumns);
 $lastColumnIndex = $fixedColumnCount + $topicCount + 1;
 $lastColumn = Coordinate::stringFromColumnIndex($lastColumnIndex);
@@ -190,9 +192,9 @@ if ($topicCount > 0) {
 }
 $totalColumn = Coordinate::stringFromColumnIndex($lastColumnIndex);
 $sheet->setCellValue($totalColumn . $headerRow1, 'TOTAL');
-$sheet->mergeCells('A' . $headerRow1 . ':D' . $headerRow1)->setCellValue('A' . $headerRow1, '');
+$sheet->mergeCells('A' . $headerRow1 . ':E' . $headerRow1)->setCellValue('A' . $headerRow1, '');
 
-$sheet->mergeCells('A' . $headerRow2 . ':D' . $headerRow2)->setCellValue('A' . $headerRow2, 'No.');
+$sheet->mergeCells('A' . $headerRow2 . ':E' . $headerRow2)->setCellValue('A' . $headerRow2, 'No.');
 $columnNo = 1;
 foreach ($topicColumns as $topic) {
     $col = Coordinate::stringFromColumnIndex($fixedColumnCount + $columnNo);
@@ -203,7 +205,8 @@ foreach ($topicColumns as $topic) {
 $sheet->setCellValue('A' . $headerRow3, 'NO.');
 $sheet->setCellValue('B' . $headerRow3, 'EMP. NO');
 $sheet->setCellValue('C' . $headerRow3, 'NAME');
-$sheet->setCellValue('D' . $headerRow3, 'DESIGNATION / GRADE');
+$sheet->setCellValue('D' . $headerRow3, 'DATE JOIN');
+$sheet->setCellValue('E' . $headerRow3, 'DESIGNATION / GRADE');
 $columnIndex = $fixedColumnCount + 1;
 foreach ($topicColumns as $topic) {
     $col = Coordinate::stringFromColumnIndex($columnIndex);
@@ -232,7 +235,8 @@ foreach ($staffRows as $staffRow) {
     $sheet->setCellValue('A' . $rowPointer, $rowNo);
     $sheet->setCellValue('B' . $rowPointer, $staffRow['staffno']);
     $sheet->setCellValue('C' . $rowPointer, $staffRow['staffname']);
-    $sheet->setCellValue('D' . $rowPointer, $staffRow['designation_grade']);
+    $sheet->setCellValue('D' . $rowPointer, $staffRow['date_join'] ?: '');
+    $sheet->setCellValue('E' . $rowPointer, $staffRow['designation_grade']);
 
     $columnIndex = $fixedColumnCount + 1;
     foreach ($topicColumns as $topicKey => $topic) {
@@ -252,8 +256,8 @@ foreach ($staffRows as $staffRow) {
 $summaryRow = $rowPointer;
 $targetRow = $summaryRow + 1;
 
-$sheet->mergeCells('A' . $summaryRow . ':D' . $summaryRow)->setCellValue('A' . $summaryRow, 'AVERAGE');
-$sheet->mergeCells('A' . $targetRow . ':D' . $targetRow)->setCellValue('A' . $targetRow, 'TARGET');
+$sheet->mergeCells('A' . $summaryRow . ':E' . $summaryRow)->setCellValue('A' . $summaryRow, 'AVERAGE');
+$sheet->mergeCells('A' . $targetRow . ':E' . $targetRow)->setCellValue('A' . $targetRow, 'TARGET');
 
 $overallTopicAverageTotal = 0;
 $overallTopicAverageCount = 0;
@@ -298,7 +302,8 @@ foreach (range(1, $lastColumnIndex) as $columnIndex) {
     $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($columnIndex))->setAutoSize(true);
 }
 $sheet->getColumnDimension('C')->setWidth(28);
-$sheet->getColumnDimension('D')->setWidth(22);
+$sheet->getColumnDimension('D')->setWidth(14);
+$sheet->getColumnDimension('E')->setWidth(22);
 
 $signOffHeaderRow = $lastDataRow + 3;
 $signOffValueRow = $signOffHeaderRow + 1;
