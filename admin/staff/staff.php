@@ -48,6 +48,7 @@
 						<li><a href="../tna/tna_summary.php">TNA SUMMARY</a></li>
 						<li><a href="../skill-matrix/skill-matrix.php">SKILL MATRIX</a></li>
                         <li><a href="../organization/org.php">ORGANIZATION</a></li>
+                        <li><a href="../archive/archive.php">ARCHIVE</a></li>
                         <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
 					</ul>
 					<ul class="nav navbar-nav navbar-right">
@@ -89,7 +90,7 @@
                 <div class="col-md-12">
                     <div class="panel panel-default">
                         <div class="panel-body" style="padding:12px 14px;">
-                            <strong style="margin-right:10px;"><i class="fa fa-file-excel"></i> Bulk Update Date Join via Excel</strong>
+                            <strong style="margin-right:10px;"><i class="fa fa-file-excel"></i> Bulk Update Date Join &amp; Plant via Excel</strong>
                             <a href="export_datejoin_template.php" class="btn btn-default btn-sm">
                                 <i class="fa fa-download"></i> Download Template
                             </a>
@@ -100,7 +101,7 @@
                                 </button>
                             </span>
                             <div class="text-muted" style="font-size:11px;margin-top:6px;">
-                                Download the template first, fill in the "Date Join" column (format YYYY-MM-DD) without changing the Staff No column, then upload it here to bulk-update staff join dates. Blank date cells are left unchanged.
+                                Download the template first, fill in the "Date Join" (format YYYY-MM-DD) and/or "Plant" (pick from the dropdown provided in the sheet) columns without changing the Staff No column, then upload it here to bulk-update staff. Blank cells are left unchanged.
                             </div>
                         </div>
                     </div>
@@ -219,7 +220,7 @@
                         swal('Error', res.detail || 'Import failed.', 'error');
                         return;
                     }
-                    var summaryText = res.updated + ' staff record(s) updated, ' + res.skipped + ' row(s) skipped (blank date).';
+                    var summaryText = res.updated + ' staff record(s) updated, ' + res.skipped + ' row(s) skipped (blank date & plant).';
                     if (res.errors && res.errors.length > 0) {
                         summaryText += '\n\n' + res.errors.length + ' issue(s):\n' + res.errors.join('\n');
                     }

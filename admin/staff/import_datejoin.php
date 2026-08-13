@@ -34,6 +34,20 @@
         respond(['message' => 'error', 'detail' => 'Could not read the file: ' . $e->getMessage()]);
     }
 
+    $validPlants = [
+        'ALAM IMPIAN PLANT',
+        'ALAM MEGAH PLANT',
+        'BUKIT BERUNTUNG PLANT',
+        'FIF TANJUNG MALIM',
+        'PEGOH PLANT',
+        'PEKAN PLANT',
+        'RASA PLANT',
+        'SHAH ALAM 1 PLANT',
+        'SHAH ALAM 2 PLANT',
+        'TANJUNG MALIM 2',
+        'WAREHOUSE BB',
+    ];
+
     $summary = [
         'updated' => 0,
         'skipped' => 0,
@@ -48,30 +62,42 @@
         if ($staffno === '') continue;
         $staffno = strtoupper($staffno);
 
+        // ===== Parse Date Join (column C) =====
         $dateCell = $sheet->getCell("C{$rowIndex}");
-        $rawValue = $dateCell->getValue();
+        $dateRaw = $dateCell->getValue();
+        $dateJoin = null;
+        if ($dateRaw !== null && trim((string) $dateRaw) !== '') {
+            if (is_numeric($dateRaw) && ExcelDate::isDateTime($dateCell)) {
+                $dateJoin = ExcelDate::excelToDateTimeObject($dateRaw)->format('Y-m-d');
+            } else {
+                $ts = strtotime(trim((string) $dateRaw));
+                if ($ts !== false) {
+                    $dateJoin = date('Y-m-d', $ts);
+                }
+            }
+            if ($dateJoin === null) {
+                $summary['errors'][] = "Staff No {$staffno}: could not parse date '{$dateRaw}', date join left unchanged.";
+            }
+        }
 
-        if ($rawValue === null || trim((string) $rawValue) === '') {
+        // ===== Parse Plant (column D) =====
+        $plantRaw = trim((string) $sheet->getCell("D{$rowIndex}")->getValue());
+        $plant = null;
+        if ($plantRaw !== '') {
+            $plantUpper = strtoupper($plantRaw);
+            if (in_array($plantUpper, $validPlants, true)) {
+                $plant = $plantUpper;
+            } else {
+                $summary['errors'][] = "Staff No {$staffno}: '{$plantRaw}' is not a valid plant, plant left unchanged.";
+            }
+        }
+
+        if ($dateJoin === null && $plant === null) {
             $summary['skipped']++;
             continue;
         }
 
-        $dateJoin = null;
-        if (is_numeric($rawValue) && ExcelDate::isDateTime($dateCell)) {
-            $dateJoin = ExcelDate::excelToDateTimeObject($rawValue)->format('Y-m-d');
-        } else {
-            $ts = strtotime(trim((string) $rawValue));
-            if ($ts !== false) {
-                $dateJoin = date('Y-m-d', $ts);
-            }
-        }
-
-        if ($dateJoin === null) {
-            $summary['errors'][] = "Staff No {$staffno}: could not parse date '{$rawValue}', skipped.";
-            continue;
-        }
-
-        $check = $conn->prepare("SELECT date_join FROM user WHERE staffno = ?");
+        $check = $conn->prepare("SELECT date_join, plant FROM user WHERE staffno = ?");
         $check->bind_param('s', $staffno);
         $check->execute();
         $existing = $check->get_result()->fetch_assoc();
@@ -79,10 +105,33 @@
             $summary['errors'][] = "Staff No {$staffno}: not found, skipped.";
             continue;
         }
-        if ($existing['date_join'] === $dateJoin) continue; // no change
 
-        $stmt = $conn->prepare("UPDATE user SET date_join = ? WHERE staffno = ?");
-        $stmt->bind_param('ss', $dateJoin, $staffno);
+        $setClauses = [];
+        $types = '';
+        $params = [];
+
+        if ($dateJoin !== null && $existing['date_join'] !== $dateJoin) {
+            $setClauses[] = 'date_join = ?';
+            $types .= 's';
+            $params[] = $dateJoin;
+        }
+        if ($plant !== null && $existing['plant'] !== $plant) {
+            $setClauses[] = 'plant = ?';
+            $types .= 's';
+            $params[] = $plant;
+        }
+
+        if (empty($setClauses)) continue; // no change
+
+        $params[] = $staffno;
+        $types .= 's';
+
+        $stmt = $conn->prepare("UPDATE user SET " . implode(', ', $setClauses) . " WHERE staffno = ?");
+        $refs = [$types];
+        foreach ($params as $key => $value) {
+            $refs[] = &$params[$key];
+        }
+        call_user_func_array([$stmt, 'bind_param'], $refs);
         if ($stmt->execute()) {
             $summary['updated']++;
         } else {

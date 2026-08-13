@@ -35,7 +35,7 @@
         <script src="../../asset/js/chartjs-plugin-labels.js"></script>
         <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css">
-		<link rel="stylesheet" href="../asset/css/datepicker.css">
+		<link rel="stylesheet" href="../../asset/css/datepicker.css">
         <script src="../../asset/js/bootstrap-datepicker1.js"></script>
 		<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-flash-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.css"/>
         <script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-flash-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js"></script>
@@ -60,10 +60,11 @@
 						<li><a href="training/training_ojt.php">ALL TRAINING</a></li>
 						<li><a href="attendance/training.php">MY TRAINING</a></li>
 						<li><a href="attendance/pme.php">PME</a></li>
-						<li><a href="tna/tna_list.php">TNA LIST</a></li>
+						<li><a href="tna/tna_list.php">TNA</a></li>
                         <?php if ($canViewSkillMatrix) { ?>
                             <li><a href="skill-matrix/skill-matrix.php">SKILL MATRIX</a></li>
                         <?php } ?>
+                        <li><a href="../../admin/archive/archive.php">ARCHIVE</a></li>
                         <li><a href="password/password.php">CHANGE PASSWORD</a></li>
     				</ul>
     				<ul class="nav navbar-nav navbar-right">
@@ -184,9 +185,9 @@
 					</div>
 				</div>
 			</div>
-			<div class="row">
+			<div class="row" style="display:flex;flex-wrap:wrap;">
                 <div class="col-md-6">
-					<div class="panel panel-default">
+					<div class="panel panel-default" style="height:100%;">
                         <div class="panel-heading">
                             <strong>Public/Inhouse vs OJT Overview (Training Hours)</strong>
                         </div>
@@ -200,14 +201,14 @@
 					</div>
 				</div>
 				<div class="col-md-6">
-					<div class="panel panel-default">
+					<div class="panel panel-default" style="height:100%;">
                         <div class="panel-heading">
                             <strong>Top 5 Inhouse Trainer</strong>
                         </div>
                         <div class="panel-body" align="center">
 							<div class="row">
 								<div class="col-md-12">
-									<table id="trainerdata" class="table table-bordered table-striped">
+									<table id="trainerdata" class="table table-bordered table-striped" style="width:100%;">
 										<thead>
 											<tr>
 												<th>No.</th>
@@ -454,7 +455,10 @@
                             },
                             plugins: {
                                 labels: {
-                                    render: 'value',
+                                    render: function (args) {
+                                        return args.value + ' (' + args.percentage + '%)';
+                                    },
+                                    precision: 1,
                                     fontColor: '#fff',
                                 }
                             }
@@ -1024,92 +1028,6 @@
 
 		makeoperationchart(fd,ld);
 
-		var canvasTransform = document.getElementById("transformChart");
-		var transformChart;
-
-		function maketransformchart(startdate,enddate) {
-			$.ajax({
-				url:"fetch_dash.php",
-				method:"POST",
-				data:{action:'fetch_transform',startdate:startdate,enddate:enddate},
-				dataType:"JSON",
-				success:function(data)
-				{
-                    var ctxTransform = canvasTransform.getContext('2d');
-                    var category = [];
-					var totalsend = [];
-					var totalsend1 = [];
-					var colorplant = [];
-					var colorplant1 = [];
-
-					for(var count = 0; count < data.length; count++) {
-						category.push(data[count].category);
-						totalsend.push(data[count].totalsend);
-						totalsend1.push(data[count].totalsend1);
-						colorplant.push(data[count].colorplant);
-						colorplant1.push(data[count].colorplant1);
-					}
-
-                    transformChart = new Chart(ctxTransform, {
-                        type: 'bar',
-                        data: {
-                            labels: category,
-                            datasets: [
-                                {
-                                    label: "Total Hours",
-                                    backgroundColor: colorplant,
-                                    data: totalsend,
-									stack: 'Stack 0'
-                                },
-								{
-                                    label: "Avg Hours",
-                                    backgroundColor: colorplant1,
-                                    data: totalsend1,
-									stack: 'Stack 1'
-                                }
-                            ]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            legend: {
-                                display: true
-                            },
-                            scales: {
-								xAxes: [{
-                                    stacked: true,
-                                }],
-                                yAxes:[{
-									min:0,
-									ticks:{
-										min:0,
-										stepSize: 10
-									}
-								}]
-                            },
-                            plugins: {
-                                labels: {
-                                    render: 'value',
-                                    fontColor: '#000',
-                                }
-                            },
-							layout: {
-								padding: {
-									top: 20
-								}
-							}
-                        }
-                    });
-				}
-			})
-		}
-
-		function destroyCharttransform() {
-            destroyChartInstance(transformChart);
-        }
-
-		maketransformchart(fd,ld);
-
 		var canvasQuality = document.getElementById("qualityChart");
 		var qualityChart;
 
@@ -1304,8 +1222,6 @@
 			makehumanchart(startdate,enddate);
 			destroyChartoperation();
 			makeoperationchart(startdate,enddate);
-			destroyCharttransform();
-			maketransformchart(startdate,enddate);
 			destroyChartquality();
 			makequalitychart(startdate,enddate);
 			destroyChartrnd();
@@ -1331,8 +1247,6 @@
 			makehumanchart(fd,ld);
 			destroyChartoperation();
 			makeoperationchart(fd,ld);
-			destroyCharttransform();
-			maketransformchart(fd,ld);
 			destroyChartquality();
 			makequalitychart(fd,ld);
 			destroyChartrnd();

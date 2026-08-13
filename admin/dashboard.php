@@ -57,6 +57,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
 						<li><a href="tna/tna_summary.php">TNA SUMMARY</a></li>
 						<li><a href="skill-matrix/skill-matrix.php">SKILL MATRIX</a></li>
 						<li><a href="organization/org.php">ORGANIZATION</a></li>
+						<li><a href="archive/archive.php">ARCHIVE</a></li>
                         <li><a href="password/password.php">CHANGE PASSWORD</a></li>
 
                         
@@ -227,7 +228,16 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                 <div class="col-md-6">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>Monthly Total Cost (RM)</strong>
+                            <div class="row">
+                                <div class="col-xs-6" style="margin-top:5px;">
+                                    <strong>Monthly Total Cost (RM)</strong>
+                                </div>
+                                <div class="col-xs-6" align="right">
+                                    <select id="costYear" class="form-control" style="display:inline-block;width:auto;">
+                                        <option value="">-- Use Date Filter --</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                         <div class="panel-body" align="center">
                             <div class="row">
@@ -243,7 +253,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                 <div class="col-md-12">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>All Department List (Total Man Hour)</strong>
+                            <strong>All Department List (<span id="modeLabelTop10">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
                             <div class="row">
@@ -259,7 +269,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                 <div class="col-md-4">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>Business Development & Strategy Division (Total Man Hour)</strong>
+                            <strong>Business Development & Strategy Division (<span id="modeLabelBusiness">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
                             <div class="row">
@@ -273,7 +283,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                 <div class="col-md-4">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>DHMSB Operations Division (Total Man Hour)</strong>
+                            <strong>DHMSB Operations Division (<span id="modeLabelDhmsb">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
                             <div class="row">
@@ -287,7 +297,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                 <div class="col-md-4">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>Quality Management Division (Total Man Hour)</strong>
+                            <strong>Quality Management Division (<span id="modeLabelQuality">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
                             <div class="row">
@@ -317,7 +327,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                 <div class="col-md-4">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>Finance Division (Total Man Hour)</strong>
+                            <strong>Finance Division (<span id="modeLabelFinance">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
                             <div class="row">
@@ -331,7 +341,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                 <div class="col-md-4">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>Human Capital & ESG (Total Man Hour)</strong>
+                            <strong>Human Capital & ESG (<span id="modeLabelHuman">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
                             <div class="row">
@@ -347,7 +357,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                 <div class="col-md-6">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>Operation Management Division (Total Man Hour)</strong>
+                            <strong>Operation Management Division (<span id="modeLabelOperation">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
                             <div class="row">
@@ -359,7 +369,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                 <div class="col-md-6">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>Engineering and R&D Division (Total Man Hour)</strong>
+                            <strong>Engineering and R&D Division (<span id="modeLabelRnd">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
                             <div class="row">
@@ -379,7 +389,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                         <div class="panel-body" align="center">
                             <div class="row">
                                 <div class="col-md-12">
-                                    <table id="trainerdata" class="table table-bordered table-striped">
+                                    <table id="trainerdata" class="table table-bordered table-striped" style="width:100%;">
                                         <thead>
                                             <tr>
                                                 <th>No.</th>
@@ -517,7 +527,10 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                             },
                             plugins: {
                                 labels: {
-                                    render: 'value',
+                                    render: function (args) {
+                                        return args.value + ' (' + args.percentage + '%)';
+                                    },
+                                    precision: 1,
                                     fontColor: '#fff',
                                 }
                             }
@@ -536,14 +549,15 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
         var canvasCost = document.getElementById("costChart");
         var costChart;
 
-        function makecostchart(startdate, enddate) {
+        function makecostchart(startdate, enddate, year) {
             $.ajax({
                 url: "fetch_dash.php",
                 method: "POST",
                 data: {
                     action: 'fetch_cost',
                     startdate: startdate,
-                    enddate: enddate
+                    enddate: enddate,
+                    year: year || ''
                 },
                 dataType: "JSON",
                 success: function (data) {
@@ -617,6 +631,30 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
         }
 
         makecostchart(fd, ld);
+
+        function destroyChartcost() {
+            if (costChart && typeof costChart.destroy === 'function') {
+                costChart.destroy();
+            }
+        }
+
+        $.post("fetch_dash.php", { action: 'fetch_cost_years' }, function (years) {
+            var options = '<option value="">-- Use Date Filter --</option>';
+            $.each(years, function (i, yr) {
+                options += '<option value="' + yr + '">' + yr + '</option>';
+            });
+            $('#costYear').html(options);
+        }, 'json');
+
+        $('#costYear').change(function () {
+            var year = $(this).val();
+            destroyChartcost();
+            if (year) {
+                makecostchart('', '', year);
+            } else {
+                makecostchart($('#startdate').val() || fd, $('#enddate').val() || ld);
+            }
+        });
 
         function fetch_data(action, startdate, enddate) {
             var userdataTable = $('#trainerdata').DataTable({
@@ -1493,6 +1531,11 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
             window.location = "dash_sum/rnd_sum.php";
         }
 
+        function updateModeLabels(mode) {
+            var label = mode === 'totalhour' ? 'Average Total Hour' : 'Total Man Hour';
+            $('#modeLabelTop10, #modeLabelBusiness, #modeLabelDhmsb, #modeLabelQuality, #modeLabelFinance, #modeLabelHuman, #modeLabelOperation, #modeLabelRnd').text(label);
+        }
+
         $('#filter_date').click(function () {
             var startdate = $('#startdate').val();
             var enddate = $('#enddate').val();
@@ -1503,6 +1546,8 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                 return;
             }
 
+            updateModeLabels(mode);
+
             console.log("start date: ", startdate);
             console.log("end date: ", enddate);
             console.log("mode: ", mode);
@@ -1511,6 +1556,8 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
             getOverview(startdate, enddate);
             destroyChartpublicojt();
             makechartpublicojt(startdate, enddate);
+            $('#costYear').val('');
+            destroyChartcost();
             makecostchart(startdate, enddate);
             $('#trainerdata').DataTable().destroy();
             fetch_data('load_top5', startdate, enddate);
@@ -1592,11 +1639,88 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
             }
         });
 
+        $('#mode').change(function () {
+            var startdate = $('#startdate').val() || fd;
+            var enddate = $('#enddate').val() || ld;
+            var mode = $('#mode').val();
+
+            updateModeLabels(mode);
+
+            destroyChartTop10();
+            maketop10chart(mode, startdate, enddate);
+            destroyChartbusiness();
+            makebusinesschart(mode, startdate, enddate);
+            destroyChartdhmsb();
+            makedhmsbchart(mode, startdate, enddate);
+            destroyChartfinance();
+            makefinancechart(mode, startdate, enddate);
+            destroyCharthuman();
+            makehumanchart(mode, startdate, enddate);
+            destroyChartoperation();
+            makeoperationchart(mode, startdate, enddate);
+            destroyChartquality();
+            makequalitychart(mode, startdate, enddate);
+            destroyChartrnd();
+            makerndchart(mode, startdate, enddate);
+
+            canvasBusiness.onclick = function (e) {
+                localStorage.setItem("setstart", startdate);
+                localStorage.setItem("setend", enddate);
+                localStorage.setItem("setmode", mode);
+                window.location = "dash_sum/business_sum.php";
+            }
+
+            canvasDhmsb.onclick = function (e) {
+                localStorage.setItem("setstart", startdate);
+                localStorage.setItem("setend", enddate);
+                localStorage.setItem("setmode", mode);
+                window.location = "dash_sum/dhmsb_sum.php";
+            }
+
+            canvasQuality.onclick = function (e) {
+                localStorage.setItem("setstart", startdate);
+                localStorage.setItem("setend", enddate);
+                localStorage.setItem("setmode", mode);
+                window.location = "dash_sum/quality_sum.php";
+            }
+
+            canvasFinance.onclick = function (e) {
+                localStorage.setItem("setstart", startdate);
+                localStorage.setItem("setend", enddate);
+                localStorage.setItem("setmode", mode);
+                window.location = "dash_sum/finance_sum.php";
+            }
+
+            canvasHuman.onclick = function (e) {
+                localStorage.setItem("setstart", startdate);
+                localStorage.setItem("setend", enddate);
+                localStorage.setItem("setmode", mode);
+                window.location = "dash_sum/human_sum.php";
+            }
+
+            canvasOperation.onclick = function (e) {
+                localStorage.setItem("setstart", startdate);
+                localStorage.setItem("setend", enddate);
+                localStorage.setItem("setmode", mode);
+                window.location = "dash_sum/operation_sum.php";
+            }
+
+            canvasRnd.onclick = function (e) {
+                localStorage.setItem("setstart", startdate);
+                localStorage.setItem("setend", enddate);
+                localStorage.setItem("setmode", mode);
+                window.location = "dash_sum/rnd_sum.php";
+            }
+        });
+
         $('#clear_filter').click(function () {
+            updateModeLabels('manhour');
             $('#datarecord').fadeIn().html('<label>Data summary : ' + fd + ' - ' + ld + '</label');
             getOverview(fd, ld);
             destroyChartpublicojt();
             makechartpublicojt(fd, ld);
+            $('#costYear').val('');
+            destroyChartcost();
             makecostchart(fd, ld);
             $('#trainerdata').DataTable().destroy();
             fetch_data('load_top5', fd, ld);

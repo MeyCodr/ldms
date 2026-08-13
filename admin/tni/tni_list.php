@@ -51,6 +51,7 @@
 						<li><a href="../tna/tna_summary.php">TNA SUMMARY</a></li>
 						<li><a href="../skill-matrix/skill-matrix.php">SKILL MATRIX</a></li>
                         <li><a href="../organization/org.php">ORGANIZATION</a></li>
+                        <li><a href="../archive/archive.php">ARCHIVE</a></li>
                         <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
 					</ul>
 					<ul class="nav navbar-nav navbar-right">
@@ -75,9 +76,8 @@
                         </div>
                         <div class="panel-body" align="center">
                             <div class="row">
-                                <div class="col-sm-2"></div>
-                                <div class="col-sm-8 table-responsive">
-                                    <table id="tnilist" class="table table-bordered table-striped">
+                                <div class="col-sm-12 table-responsive">
+                                    <table id="tnilist" class="table table-bordered table-striped" style="width:100%;">
                                         <thead>
                                             <tr>
                                                 <th>No.</th>
@@ -91,7 +91,6 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                <div class="col-sm-2"></div>
                             </div>
                         </div>
 					</div>

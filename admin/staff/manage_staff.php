@@ -66,6 +66,7 @@
 						<li><a href="../tna/tna_summary.php">TNA SUMMARY</a></li>
 						<li><a href="../skill-matrix/skill-matrix.php">SKILL MATRIX</a></li>
                         <li><a href="../organization/org.php">ORGANIZATION</a></li>
+                        <li><a href="../archive/archive.php">ARCHIVE</a></li>
                         <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
 					</ul>
 					<ul class="nav navbar-nav navbar-right">
@@ -131,6 +132,23 @@
                                                     <div class="form-group">
                                                         <label>Date Join</label>
                                                         <input type="date" name="date_join" id="date_join" class="form-control" autocomplete="off">
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Plant</label>
+                                                        <select class="form-control" id="plant" name="plant">
+                                                            <option value="" selected>-- Select Plant --</option>
+                                                            <option value="ALAM IMPIAN PLANT">ALAM IMPIAN PLANT</option>
+                                                            <option value="ALAM MEGAH PLANT">ALAM MEGAH PLANT</option>
+                                                            <option value="BUKIT BERUNTUNG PLANT">BUKIT BERUNTUNG PLANT</option>
+                                                            <option value="FIF TANJUNG MALIM">FIF TANJUNG MALIM</option>
+                                                            <option value="PEGOH PLANT">PEGOH PLANT</option>
+                                                            <option value="PEKAN PLANT">PEKAN PLANT</option>
+                                                            <option value="RASA PLANT">RASA PLANT</option>
+                                                            <option value="SHAH ALAM 1 PLANT">SHAH ALAM 1 PLANT</option>
+                                                            <option value="SHAH ALAM 2 PLANT">SHAH ALAM 2 PLANT</option>
+                                                            <option value="TANJUNG MALIM 2">TANJUNG MALIM 2</option>
+                                                            <option value="WAREHOUSE BB">WAREHOUSE BB</option>
+                                                        </select>
                                                     </div>
                                                     <div class="form-group">
                                                         <label>Gender</label>
@@ -291,6 +309,7 @@
                         $('#staffname').val(data.staffname);
                         $('#email').val(data.email);
                         $('#date_join').val(data.date_join);
+                        $('#plant').val(data.plant);
                         $('#gender').val(data.gender);
                         $('#designation').val(data.designation);
                         $('#division').val(data.division);

@@ -52,6 +52,7 @@
 						<li><a href="../../tna/tna_summary.php">TNA SUMMARY</a></li>
 						<li><a href="../../skill-matrix/skill-matrix.php">SKILL MATRIX</a></li>
                         <li><a href="../../organization/org.php">ORGANIZATION</a></li>
+                        <li><a href="../../archive/archive.php">ARCHIVE</a></li>
                         <li><a href="../../password/password.php">CHANGE PASSWORD</a></li>
     				</ul>
     				<ul class="nav navbar-nav navbar-right">
@@ -77,7 +78,7 @@
                         <div class="panel-body" align="center">
                             <div class="row">
                                 <div class="col-md-12">
-                                    <table class="table table-bordered table-striped">
+                                    <table class="table table-bordered table-striped" style="width:100%;">
                                         <th>
                                             <div class="col-md-1"></div>
                                             <div class="col-md-10">
@@ -108,7 +109,7 @@
                             <br>
                             <div class="row">
                                 <div class="col-sm-12 table-responsive">
-                                    <table id="traininglist" class="table table-bordered table-striped">
+                                    <table id="traininglist" class="table table-bordered table-striped" style="width:100%;">
                                         <thead>
                                             <!-- <tr id="reportheader"><th colspan="11">gg</th></tr> -->
                                             <tr>

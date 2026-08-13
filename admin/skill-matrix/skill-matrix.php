@@ -50,6 +50,51 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
             #skillmatrixlist {
                 width: 100% !important;
             }
+
+            :root {
+                --status-good: #0ca30c;
+                --status-warning: #fab219;
+                --status-serious: #ec835a;
+                --status-critical: #d03b3b;
+            }
+
+            .dash-tile {
+                background: #fcfcfb;
+                border: 1px solid #e1e0d9;
+                border-left: 4px solid #c3c2b7;
+                border-radius: 4px;
+                padding: 12px 10px;
+                text-align: center;
+                margin-bottom: 15px;
+            }
+
+            .dash-tile-value {
+                font-size: 26px;
+                font-weight: bold;
+                color: #0b0b0b;
+                line-height: 1.2;
+            }
+
+            .dash-tile-label {
+                font-size: 11px;
+                font-weight: bold;
+                color: #52514e;
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+                margin-top: 4px;
+            }
+
+            .dash-chart-scroll {
+                max-height: 320px;
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+
+            .dash-chart-scroll-sm {
+                max-height: 260px;
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
         </style>
     </head>
 
@@ -73,7 +118,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
                                 <li><a href="../../clerk/main/staff/staff.php">CONTRACT STAFF LIST</a></li>
                                 <li><a href="../../clerk/main/training/training_ojt.php">ALL TRAINING</a></li>
                                 <li><a href="../../clerk/main/attendance/training.php">MY TRAINING</a></li>
-                                <li><a href="../../clerk/main/tna/tna_list.php">TNA LIST</a></li>
+                                <li><a href="../../clerk/main/tna/tna_list.php">TNA</a></li>
                             <?php } else { ?>
                                 <li><a href="../../staff/office/dashboard.php">HOME</a></li>
                                 <li><a href="../../staff/office/attendance/training.php">MY TRAINING</a></li>
@@ -98,11 +143,12 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
                                 </ul>
                             </li>
                             <li><a href="../attendance/training.php">MY TRAINING</a></li>
-                            <li><a href="../tna/tna_list.php">TNA LIST</a></li>
-                            <li><a href="../tni/tni_list.php">TNI LIST</a></li>
+                            <li><a href="../tna/tna_list.php">TNA</a></li>
+                            <li><a href="../tni/tni_list.php">TNI</a></li>
                             <li><a href="../tna/tna_summary.php">TNA SUMMARY</a></li>
                             <li class="active"><a href="skill-matrix.php">SKILL MATRIX</a></li>
                             <li><a href="../organization/org.php">ORGANIZATION</a></li>
+                            <li><a href="../archive/archive.php">ARCHIVE</a></li>
                         <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
                         <?php } ?>
                     </ul>
@@ -138,15 +184,31 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
                         </div>
                         <div class="panel-body">
                             <div class="row">
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <select name="department" id="department" class="form-control"></select>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <select name="section" id="section" class="form-control" disabled>
                                         <option value="ALL">-- Select Department First --</option>
                                     </select>
                                 </div>
-                                <div class="col-md-4" style="white-space:nowrap;">
+                                <div class="col-md-3">
+                                    <select name="plant" id="plant" class="form-control">
+                                        <option value="ALL">All Plants</option>
+                                        <option value="ALAM IMPIAN PLANT">ALAM IMPIAN PLANT</option>
+                                        <option value="ALAM MEGAH PLANT">ALAM MEGAH PLANT</option>
+                                        <option value="BUKIT BERUNTUNG PLANT">BUKIT BERUNTUNG PLANT</option>
+                                        <option value="FIF TANJUNG MALIM">FIF TANJUNG MALIM</option>
+                                        <option value="PEGOH PLANT">PEGOH PLANT</option>
+                                        <option value="PEKAN PLANT">PEKAN PLANT</option>
+                                        <option value="RASA PLANT">RASA PLANT</option>
+                                        <option value="SHAH ALAM 1 PLANT">SHAH ALAM 1 PLANT</option>
+                                        <option value="SHAH ALAM 2 PLANT">SHAH ALAM 2 PLANT</option>
+                                        <option value="TANJUNG MALIM 2">TANJUNG MALIM 2</option>
+                                        <option value="WAREHOUSE BB">WAREHOUSE BB</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3" style="white-space:nowrap;">
                                     <button type="button" name="filter_dept" id="filter_dept"
                                         class="btn btn-info btn-md" style="margin-right:8px;">FILTER <i class="fa fa-search"></i></button>
                                     <button type="button" name="reset_filter" id="reset_filter"
@@ -193,6 +255,109 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
                     </div>
                 </div>
             </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <strong>Skill Matrix Overview</strong>
+                        </div>
+                        <div class="panel-body">
+                            <div class="row">
+                                <div class="col-md-2 col-sm-4 col-xs-6">
+                                    <div class="dash-tile">
+                                        <div class="dash-tile-value" id="kpi-total">0</div>
+                                        <div class="dash-tile-label">Total Staff</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 col-sm-4 col-xs-6">
+                                    <div class="dash-tile" style="border-left-color: var(--status-good);">
+                                        <div class="dash-tile-value" id="kpi-completion">0%</div>
+                                        <div class="dash-tile-label">Completion Rate</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 col-sm-4 col-xs-6">
+                                    <div class="dash-tile" style="border-left-color: var(--status-good);">
+                                        <div class="dash-tile-value" id="kpi-approved">0</div>
+                                        <div class="dash-tile-label">Approved</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 col-sm-4 col-xs-6">
+                                    <div class="dash-tile" style="border-left-color: var(--status-warning);">
+                                        <div class="dash-tile-value" id="kpi-waiting">0</div>
+                                        <div class="dash-tile-label">Waiting Approval</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 col-sm-4 col-xs-6">
+                                    <div class="dash-tile" style="border-left-color: var(--status-serious);">
+                                        <div class="dash-tile-value" id="kpi-draft">0</div>
+                                        <div class="dash-tile-label">Draft</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 col-sm-4 col-xs-6">
+                                    <div class="dash-tile" style="border-left-color: var(--status-critical);">
+                                        <div class="dash-tile-value" id="kpi-notsubmitted">0</div>
+                                        <div class="dash-tile-label">Not Submitted</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <strong id="dashboard-chart-title">Status by Department</strong>
+                        </div>
+                        <div class="panel-body" align="center">
+                            <div class="dash-chart-scroll">
+                                <canvas id="dashboard-status-chart"></canvas>
+                            </div>
+                            <div class="text-muted" id="dashboard-empty-state" style="display:none;text-align:center;padding:30px 0;">
+                                No staff records match the current filter.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <strong>Status by Section</strong>
+                        </div>
+                        <div class="panel-body" align="center">
+                            <div class="text-muted" style="font-size:11px;margin-bottom:8px;">Approval status breakdown across all sections.</div>
+                            <div class="dash-chart-scroll-sm">
+                                <canvas id="dashboard-section-chart"></canvas>
+                            </div>
+                            <div class="text-muted" id="dashboard-section-empty" style="display:none;text-align:center;padding:30px 0;">
+                                No staff records match the current filter.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <strong>Status by Plant</strong>
+                        </div>
+                        <div class="panel-body" align="center">
+                            <div class="text-muted" style="font-size:11px;margin-bottom:8px;">Approval status breakdown across all plants.</div>
+                            <div class="dash-chart-scroll-sm">
+                                <canvas id="dashboard-plant-chart"></canvas>
+                            </div>
+                            <div class="text-muted" id="dashboard-plant-empty" style="display:none;text-align:center;padding:30px 0;">
+                                No staff records match the current filter.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </body>
 
@@ -232,6 +397,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
                     data.action = "load_non_executive_staff";
                     data.department = $('#department').val() || "ALL";
                     data.section = $('#section').val() || "ALL";
+                    data.plant = $('#plant').val() || "ALL";
                 }
             },
             "columns": [
@@ -287,6 +453,150 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
             }
         });
 
+        var STATUS_ORDER = ['NOT SUBMITTED', 'DRAFT', 'WAITING APPROVAL', 'APPROVED'];
+        var STATUS_COLORS = {
+            'NOT SUBMITTED': '#d03b3b',
+            'DRAFT': '#ec835a',
+            'WAITING APPROVAL': '#fab219',
+            'APPROVED': '#0ca30c'
+        };
+        var charts = { status: null, section: null, plant: null };
+
+        function emptyStatusCounts() {
+            return { 'NOT SUBMITTED': 0, 'DRAFT': 0, 'WAITING APPROVAL': 0, 'APPROVED': 0, total: 0 };
+        }
+
+        function buildGroups(rows, keyFn) {
+            var groups = {};
+            rows.forEach(function (r) {
+                var key = (keyFn(r) || '').toString().trim() || '(Unspecified)';
+                if (!groups[key]) {
+                    groups[key] = emptyStatusCounts();
+                }
+                if (groups[key].hasOwnProperty(r.approval_status_raw)) {
+                    groups[key][r.approval_status_raw]++;
+                    groups[key].total++;
+                }
+            });
+            return groups;
+        }
+
+        function sortedGroupNames(groups) {
+            return Object.keys(groups).sort(function (a, b) {
+                return groups[b].total - groups[a].total;
+            });
+        }
+
+        function updateStackedBarChart(chartKey, canvas, emptyEl, groupNames, groups, fixedHeight) {
+            if (groupNames.length === 0) {
+                $(emptyEl).show();
+                $(canvas).hide();
+                if (charts[chartKey]) {
+                    charts[chartKey].destroy();
+                    charts[chartKey] = null;
+                }
+                return;
+            }
+            $(emptyEl).hide();
+            $(canvas).show();
+            canvas.parentElement.style.height = (fixedHeight || Math.max(140, groupNames.length * 26 + 40)) + 'px';
+
+            var datasets = STATUS_ORDER.map(function (status) {
+                return {
+                    label: status,
+                    backgroundColor: STATUS_COLORS[status],
+                    data: groupNames.map(function (name) { return groups[name][status]; })
+                };
+            });
+
+            var chartData = { labels: groupNames, datasets: datasets };
+            var chartOptions = {
+                maintainAspectRatio: false,
+                legend: { position: 'top', labels: { boxWidth: 14 } },
+                tooltips: {
+                    mode: 'index',
+                    callbacks: {
+                        label: function (tooltipItem, data) {
+                            var dataset = data.datasets[tooltipItem.datasetIndex];
+                            return dataset.label + ': ' + dataset.data[tooltipItem.index];
+                        }
+                    }
+                },
+                scales: {
+                    xAxes: [{ stacked: true, ticks: { beginAtZero: true, precision: 0 } }],
+                    yAxes: [{ stacked: true }]
+                }
+            };
+
+            if (charts[chartKey]) {
+                charts[chartKey].data = chartData;
+                charts[chartKey].options = chartOptions;
+                charts[chartKey].update();
+            } else {
+                charts[chartKey] = new Chart(canvas.getContext('2d'), {
+                    type: 'horizontalBar',
+                    data: chartData,
+                    options: chartOptions
+                });
+            }
+        }
+
+        function renderDashboard(rows) {
+            rows = rows || [];
+            var total = rows.length;
+            var counts = emptyStatusCounts();
+            rows.forEach(function (r) {
+                if (counts.hasOwnProperty(r.approval_status_raw)) {
+                    counts[r.approval_status_raw]++;
+                }
+            });
+
+            $('#kpi-total').text(total);
+            $('#kpi-completion').text(total > 0 ? Math.round((counts['APPROVED'] / total) * 100) + '%' : '0%');
+            $('#kpi-approved').text(counts['APPROVED']);
+            $('#kpi-waiting').text(counts['WAITING APPROVAL']);
+            $('#kpi-draft').text(counts['DRAFT']);
+            $('#kpi-notsubmitted').text(counts['NOT SUBMITTED']);
+
+            var deptGroups = buildGroups(rows, function (r) { return r.department; });
+            var sectionGroups = buildGroups(rows, function (r) { return r.section; });
+            var plantGroups = buildGroups(rows, function (r) { return r.plant; });
+
+            // ===== Main chart: Status by Department, or by Section once a department is picked =====
+            var departmentFilterActive = $('#department').val() && $('#department').val() != 'ALL';
+            var mainGroups = departmentFilterActive ? sectionGroups : deptGroups;
+            $('#dashboard-chart-title').text(departmentFilterActive ? 'Status by Section' : 'Status by Department');
+            updateStackedBarChart(
+                'status',
+                document.getElementById('dashboard-status-chart'),
+                '#dashboard-empty-state',
+                sortedGroupNames(mainGroups),
+                mainGroups
+            );
+
+            // ===== Status by Section =====
+            updateStackedBarChart(
+                'section',
+                document.getElementById('dashboard-section-chart'),
+                '#dashboard-section-empty',
+                sortedGroupNames(sectionGroups),
+                sectionGroups
+            );
+
+            // ===== Status by Plant =====
+            updateStackedBarChart(
+                'plant',
+                document.getElementById('dashboard-plant-chart'),
+                '#dashboard-plant-empty',
+                sortedGroupNames(plantGroups),
+                plantGroups
+            );
+        }
+
+        skillMatrixTable.on('xhr', function (e, settings, json) {
+            renderDashboard(json);
+        });
+
         $(function () {
             $.post("../tna/fetch_tna.php", {
                 action: "load_department"
@@ -328,9 +638,11 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
                 });
         }
 
-        function enableMatrixChartButton(department, section) {
+        function enableMatrixChartButton(department, section, plant) {
             $('#matrix_chart_btn')
-                .attr('href', 'matrix-chart.php?department=' + encodeURIComponent(department) + '&section=' + encodeURIComponent(section || 'ALL'))
+                .attr('href', 'matrix-chart.php?department=' + encodeURIComponent(department || 'ALL') +
+                    '&section=' + encodeURIComponent(section || 'ALL') +
+                    '&plant=' + encodeURIComponent(plant || 'ALL'))
                 .removeClass('disabled')
                 .css({
                     'pointer-events': 'auto',
@@ -341,14 +653,17 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
         $('#filter_dept').click(function () {
             var department = $('#department').val();
             var section = $('#section').val();
+            var plant = $('#plant').val();
 
-            if (!department || department == 'ALL') {
+            var hasDepartment = department && department != 'ALL';
+            var hasPlant = plant && plant != 'ALL';
+
+            if (!hasDepartment && !hasPlant) {
                 disableMatrixChartButton();
-                swal("Department required", "Please select and filter a department first.", "warning");
-                return;
+            } else {
+                enableMatrixChartButton(department, section, plant);
             }
 
-            enableMatrixChartButton(department, section);
             skillMatrixTable.ajax.reload();
         });
 
@@ -359,6 +674,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
 
         $('#reset_filter').click(function () {
             $('#department').val('ALL');
+            $('#plant').val('ALL');
             resetSectionFilter();
             disableMatrixChartButton();
             skillMatrixTable.ajax.reload();

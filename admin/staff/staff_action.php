@@ -18,6 +18,7 @@
 
             $status = $_POST['status'];
             $date_join = !empty($_POST['date_join']) ? $_POST['date_join'] : null;
+            $plant = !empty($_POST['plant']) ? $_POST['plant'] : null;
 
             // HOD users should not have section_id and section should be blank
             if ($designation === 'HOD' || (isset($_POST['usertype']) && $_POST['usertype'] === 'HOD')) {
@@ -36,7 +37,8 @@
             $password = md5('P@ss1234');
             $sectionIdValue = is_null($section_id) ? 'NULL' : "'$section_id'";
             $dateJoinValue = is_null($date_join) ? 'NULL' : "'" . mysqli_real_escape_string($conn, $date_join) . "'";
-            $sql = "INSERT INTO `user` (`staffno`,`password`,`staffname`,`email`,`gender`,`designation`,`department`,`division`,`section`,`division_id`,`department_id`,`section_id`,`status`,`hodid`,`date_join`) values ('$staffno','$password', '$staffname','$email', '$gender', '$designation', '$department', '$division', '$section', '$division_id', '$department_id', $sectionIdValue, '$status', '$hodid', $dateJoinValue)";
+            $plantValue = is_null($plant) ? 'NULL' : "'" . mysqli_real_escape_string($conn, $plant) . "'";
+            $sql = "INSERT INTO `user` (`staffno`,`password`,`staffname`,`email`,`gender`,`designation`,`department`,`division`,`section`,`division_id`,`department_id`,`section_id`,`status`,`hodid`,`date_join`,`plant`) values ('$staffno','$password', '$staffname','$email', '$gender', '$designation', '$department', '$division', '$section', '$division_id', '$department_id', $sectionIdValue, '$status', '$hodid', $dateJoinValue, $plantValue)";
             if(mysqli_query($conn, $sql)){
                 echo json_encode(['message' => 'insert']);
             }else {
@@ -54,6 +56,7 @@
             $id = $_POST['id'];
 			$status = $_POST['status'];
             $date_join = !empty($_POST['date_join']) ? $_POST['date_join'] : null;
+            $plant = !empty($_POST['plant']) ? $_POST['plant'] : null;
 
             $hodnew = 0;
             $sql1 = "select id from user where department = '$department' and usertype = 'HOD'";
@@ -80,16 +83,17 @@
             }
             $sectionIdValue = is_null($section_id) ? 'NULL' : "'$section_id'";
             $dateJoinValue = is_null($date_join) ? 'NULL' : "'" . mysqli_real_escape_string($conn, $date_join) . "'";
+            $plantValue = is_null($plant) ? 'NULL' : "'" . mysqli_real_escape_string($conn, $plant) . "'";
 
             if ($hodprev != 0) {
-                $sql = "UPDATE `user` SET `staffno` = '$staffno', `staffname` = '$staffname', `email` = '$email', `gender` = '$gender', `designation` = '$designation', `department` = '$department', `division` = '$division', `section` = '$section', `division_id` = '$division_id', `department_id` = '$department_id', `section_id` = $sectionIdValue, `status` = '$status', `hodid` = '$hodnew', `date_join` = $dateJoinValue WHERE `id` = '$id'";
+                $sql = "UPDATE `user` SET `staffno` = '$staffno', `staffname` = '$staffname', `email` = '$email', `gender` = '$gender', `designation` = '$designation', `department` = '$department', `division` = '$division', `section` = '$section', `division_id` = '$division_id', `department_id` = '$department_id', `section_id` = $sectionIdValue, `status` = '$status', `hodid` = '$hodnew', `date_join` = $dateJoinValue, `plant` = $plantValue WHERE `id` = '$id'";
                 if(mysqli_query($conn, $sql)){
                     echo json_encode(['message' => 'update']);
                 }else {
                     echo json_encode(['message' => 'error']);
                 }
             }else {
-                $sql = "UPDATE `user` SET `staffno` = '$staffno', `staffname` = '$staffname', `email` = '$email', `gender` = '$gender', `designation` = '$designation', `department` = '$department', `division` = '$division', `section` = '$section', `division_id` = '$division_id', `department_id` = '$department_id', `section_id` = $sectionIdValue, `status` = '$status', `date_join` = $dateJoinValue WHERE `id` = '$id'";
+                $sql = "UPDATE `user` SET `staffno` = '$staffno', `staffname` = '$staffname', `email` = '$email', `gender` = '$gender', `designation` = '$designation', `department` = '$department', `division` = '$division', `section` = '$section', `division_id` = '$division_id', `department_id` = '$department_id', `section_id` = $sectionIdValue, `status` = '$status', `date_join` = $dateJoinValue, `plant` = $plantValue WHERE `id` = '$id'";
                 if(mysqli_query($conn, $sql)){
                     echo json_encode(['message' => 'update']);
                 }else {

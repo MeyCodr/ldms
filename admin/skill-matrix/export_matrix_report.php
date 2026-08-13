@@ -27,6 +27,7 @@ function exportMatrixBindParams($stmt, $types, $params)
 
 $department = isset($_GET['department']) ? $_GET['department'] : 'ALL';
 $section = isset($_GET['section']) ? $_GET['section'] : 'ALL';
+$plant = isset($_GET['plant']) ? $_GET['plant'] : 'ALL';
 $currentYear = (int) date('Y');
 $currentQuarter = (int) ceil(date('n') / 3);
 $targetPercentage = 75;
@@ -75,6 +76,12 @@ if ($section != '' && $section != 'ALL') {
     $staffTypes .= "ss";
     $staffParams[] = $section;
     $staffParams[] = $section;
+}
+
+if ($plant != '' && $plant != 'ALL') {
+    $staffSql .= "AND u.plant = ? ";
+    $staffTypes .= "s";
+    $staffParams[] = $plant;
 }
 
 $staffSql .= "ORDER BY department, u.staffname";
@@ -169,15 +176,16 @@ $sheet->setTitle('Skill Matrix Report');
 $sheet->getSheetView()->setZoomScale(100);
 
 $titleText = 'Skill Matrix Report - Q' . $currentQuarter . ' ' . $currentYear;
-if ($department != '' && $department != 'ALL') {
-    $titleText .= ' - ' . $department;
-}
-if ($section != '' && $section != 'ALL') {
-    $titleText .= ' - ' . $section;
-}
 $sheet->mergeCells('A1:' . $lastColumn . '1')->setCellValue('A1', $titleText);
 $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
 $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+
+$filterText = 'Department: ' . ($department != '' && $department != 'ALL' ? $department : 'ALL')
+    . '   |   Section: ' . ($section != '' && $section != 'ALL' ? $section : 'ALL')
+    . '   |   Plant: ' . ($plant != '' && $plant != 'ALL' ? $plant : 'ALL');
+$sheet->mergeCells('A2:' . $lastColumn . '2')->setCellValue('A2', $filterText);
+$sheet->getStyle('A2')->getFont()->setBold(true)->setItalic(true)->setSize(11);
+$sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
 $headerRow1 = 3;
 $headerRow2 = 4;
@@ -334,6 +342,9 @@ if ($department != '' && $department != 'ALL') {
 }
 if ($section != '' && $section != 'ALL') {
     $filenameSuffix .= '_' . preg_replace('/[^A-Za-z0-9]+/', '_', $section);
+}
+if ($plant != '' && $plant != 'ALL') {
+    $filenameSuffix .= '_' . preg_replace('/[^A-Za-z0-9]+/', '_', $plant);
 }
 
 $writer = new Xlsx($spreadsheet);

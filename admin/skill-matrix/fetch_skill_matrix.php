@@ -96,6 +96,7 @@ if ($_POST["action"] == "load_sections_by_department") {
 if ($_POST["action"] == "load_non_executive_staff") {
     $department = isset($_POST["department"]) ? $_POST["department"] : "ALL";
     $section = isset($_POST["section"]) ? $_POST["section"] : "ALL";
+    $plant = isset($_POST["plant"]) ? $_POST["plant"] : "ALL";
     $currentYear = (int) date('Y');
     $currentQuarter = (int) ceil(date('n') / 3);
     $output = array();
@@ -127,6 +128,7 @@ if ($_POST["action"] == "load_non_executive_staff") {
                 u.designation,
                 u.grade,
                 u.status,
+                u.plant,
                 COALESCE(dp.name, u.department) AS department,
                 COALESCE(s.name, u.section) AS section,
                 EXISTS (
@@ -172,6 +174,12 @@ if ($_POST["action"] == "load_non_executive_staff") {
         $params[] = $section;
     }
 
+    if ($plant != "" && $plant != "ALL") {
+        $sql .= " AND u.plant = ?";
+        $types .= "s";
+        $params[] = $plant;
+    }
+
     $sql .= " ORDER BY department, u.staffname";
 
     $stmt = $conn->prepare($sql);
@@ -188,12 +196,16 @@ if ($_POST["action"] == "load_non_executive_staff") {
         }
 
         if ($row['approval_status'] == 'APPROVED') {
+            $approvalStatusRaw = 'APPROVED';
             $approvalStatus = '<span class="label label-pill label-success">APPROVED</span>';
         } else if ($row['approval_status'] == 'PENDING') {
+            $approvalStatusRaw = 'WAITING APPROVAL';
             $approvalStatus = '<span class="label label-pill label-warning">WAITING APPROVAL</span>';
         } else if ($row['has_current_quarter_evaluation']) {
+            $approvalStatusRaw = 'DRAFT';
             $approvalStatus = '<span class="label label-pill label-default">DRAFT</span>';
         } else {
+            $approvalStatusRaw = 'NOT SUBMITTED';
             $approvalStatus = '<span class="label label-pill label-default">NOT SUBMITTED</span>';
         }
 
@@ -222,9 +234,11 @@ if ($_POST["action"] == "load_non_executive_staff") {
             'staffname' => $row['staffname'],
             'department' => $row['department'],
             'section' => $row['section'],
+            'plant' => $row['plant'],
             'grade' => $row['grade'],
             'status' => $status,
             'approval_status' => $approvalStatus,
+            'approval_status_raw' => $approvalStatusRaw,
             'action' => $action,
         );
     }

@@ -59,6 +59,7 @@
 						<li><a href="../../tna/tna_summary.php">TNA SUMMARY</a></li>
 						<li><a href="../../skill-matrix/skill-matrix.php">SKILL MATRIX</a></li>
 						<li><a href="../../organization/org.php">ORGANIZATION</a></li>
+						<li><a href="../../archive/archive.php">ARCHIVE</a></li>
                         <li class="dropdown">
     						<a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="label label-pill label-danger count"></span>REPORT</a>
     						<ul class="dropdown-menu">

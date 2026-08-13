@@ -50,6 +50,7 @@
 						<li><a href="staff.php">CONTRACT STAFF LIST</a></li>
 						<li><a href="../training/training_ojt.php">ALL TRAINING</a></li>
 						<li><a href="../attendance/training.php">MY TRAINING</a></li>
+                        <li><a href="../../../../admin/archive/archive.php">ARCHIVE</a></li>
                         <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
     				</ul>
     				<ul class="nav navbar-nav navbar-right">

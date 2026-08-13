@@ -1042,95 +1042,6 @@
 
 		makeoperationchart(fd,ld);
 
-		var canvasTransform = document.getElementById("transformChart");
-		var transformChart;
-
-		function maketransformchart(startdate,enddate) {
-			$.ajax({
-				url:"fetch_dash.php",
-				method:"POST",
-				data:{action:'fetch_transform',startdate:startdate,enddate:enddate},
-				dataType:"JSON",
-				success:function(data)
-				{
-                    var ctxTransform = getCanvasContext(canvasTransform);
-                    if (!ctxTransform) {
-                        return;
-                    }
-                    var category = [];
-					var totalsend = [];
-					var totalsend1 = [];
-					var colorplant = [];
-					var colorplant1 = [];
-
-					for(var count = 0; count < data.length; count++) {
-						category.push(data[count].category);
-						totalsend.push(data[count].totalsend);
-						totalsend1.push(data[count].totalsend1);
-						colorplant.push(data[count].colorplant);
-						colorplant1.push(data[count].colorplant1);
-					}
-
-                    transformChart = new Chart(ctxTransform, {
-                        type: 'bar',
-                        data: {
-                            labels: category,
-                            datasets: [
-                                {
-                                    label: "Total Hours",
-                                    backgroundColor: colorplant,
-                                    data: totalsend,
-									stack: 'Stack 0'
-                                },
-								{
-                                    label: "Avg Hours",
-                                    backgroundColor: colorplant1,
-                                    data: totalsend1,
-									stack: 'Stack 1'
-                                }
-                            ]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            legend: {
-                                display: true
-                            },
-                            scales: {
-								xAxes: [{
-                                    stacked: true,
-                                }],
-                                yAxes:[{
-									min:0,
-									ticks:{
-										min:0,
-										stepSize: 10
-									}
-								}]
-                            },
-                            plugins: {
-                                labels: {
-                                    render: 'value',
-                                    fontColor: '#000',
-                                }
-                            },
-							layout: {
-								padding: {
-									top: 20
-								}
-							}
-                        }
-                    });
-				}
-			})
-		}
-
-		function destroyCharttransform() {
-            destroyChartInstance(transformChart);
-        }
-
-		maketransformchart(fd,ld);
-
 		var canvasQuality = document.getElementById("qualityChart");
 		var qualityChart;
 
@@ -1333,8 +1244,6 @@
 			makehumanchart(startdate,enddate);
 			destroyChartoperation();
 			makeoperationchart(startdate,enddate);
-			destroyCharttransform();
-			maketransformchart(startdate,enddate);
 			destroyChartquality();
 			makequalitychart(startdate,enddate);
 			destroyChartrnd();
@@ -1360,8 +1269,6 @@
 			makehumanchart(fd,ld);
 			destroyChartoperation();
 			makeoperationchart(fd,ld);
-			destroyCharttransform();
-			maketransformchart(fd,ld);
 			destroyChartquality();
 			makequalitychart(fd,ld);
 			destroyChartrnd();

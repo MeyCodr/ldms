@@ -60,10 +60,11 @@
 						</li>
 						<li><a href="training.php">MY TRAINING</a></li>
 						<li><a href="../tna/tna_list.php">TNA</a></li>
-						<li><a href="../tni/tni_list.php">TNI</a></li>
+						<li><a href="../tni/tni_list.php">TNI</a></li>
 						<li><a href="../tna/tna_summary.php">TNA SUMMARY</a></li>
 						<li><a href="../skill-matrix/skill-matrix.php">SKILL MATRIX</a></li>
 						<li><a href="../organization/org.php">ORGANIZATION</a></li>
+						<li><a href="../archive/archive.php">ARCHIVE</a></li>
                         <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
 					</ul>
 					<ul class="nav navbar-nav navbar-right">

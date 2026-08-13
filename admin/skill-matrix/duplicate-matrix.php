@@ -274,7 +274,7 @@ if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
                                 <li><a href="../../clerk/main/staff/staff.php">CONTRACT STAFF LIST</a></li>
                                 <li><a href="../../clerk/main/training/training_ojt.php">ALL TRAINING</a></li>
                                 <li><a href="../../clerk/main/attendance/training.php">MY TRAINING</a></li>
-                                <li><a href="../../clerk/main/tna/tna_list.php">TNA LIST</a></li>
+                                <li><a href="../../clerk/main/tna/tna_list.php">TNA</a></li>
                             <?php } else { ?>
                                 <li><a href="../../staff/office/dashboard.php">HOME</a></li>
                                 <li><a href="../../staff/office/attendance/training.php">MY TRAINING</a></li>
@@ -299,11 +299,12 @@ if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
                                 </ul>
                             </li>
                             <li><a href="../attendance/training.php">MY TRAINING</a></li>
-                            <li><a href="../tna/tna_list.php">TNA LIST</a></li>
-                            <li><a href="../tni/tni_list.php">TNI LIST</a></li>
+                            <li><a href="../tna/tna_list.php">TNA</a></li>
+                            <li><a href="../tni/tni_list.php">TNI</a></li>
                             <li><a href="../tna/tna_summary.php">TNA SUMMARY</a></li>
                             <li class="active"><a href="skill-matrix.php">SKILL MATRIX</a></li>
                             <li><a href="../organization/org.php">ORGANIZATION</a></li>
+                            <li><a href="../archive/archive.php">ARCHIVE</a></li>
                         <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
                         <?php } ?>
                     </ul>                    <ul class="nav navbar-nav navbar-right">

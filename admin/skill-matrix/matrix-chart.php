@@ -35,6 +35,20 @@ function matrixChartBindParams($stmt, $types, $params)
 if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
     $department = isset($_GET['department']) ? $_GET['department'] : 'ALL';
     $section = isset($_GET['section']) ? $_GET['section'] : 'ALL';
+    $plant = isset($_GET['plant']) ? $_GET['plant'] : 'ALL';
+    $plantOptions = [
+        'ALAM IMPIAN PLANT',
+        'ALAM MEGAH PLANT',
+        'BUKIT BERUNTUNG PLANT',
+        'FIF TANJUNG MALIM',
+        'PEGOH PLANT',
+        'PEKAN PLANT',
+        'RASA PLANT',
+        'SHAH ALAM 1 PLANT',
+        'SHAH ALAM 2 PLANT',
+        'TANJUNG MALIM 2',
+        'WAREHOUSE BB',
+    ];
     $currentYear = (int) date('Y');
     $currentQuarter = (int) ceil(date('n') / 3);
     $targetPercentage = 75;
@@ -112,6 +126,12 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
         $staffTypes .= "ss";
         $staffParams[] = $section;
         $staffParams[] = $section;
+    }
+
+    if ($plant != '' && $plant != 'ALL') {
+        $staffSql .= "AND u.plant = ? ";
+        $staffTypes .= "s";
+        $staffParams[] = $plant;
     }
 
     $staffSql .= "ORDER BY department, u.staffname";
@@ -442,11 +462,12 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                             </ul>
                         </li>
                         <li><a href="../attendance/training.php">MY TRAINING</a></li>
-                        <li><a href="../tna/tna_list.php">TNA LIST</a></li>
-                        <li><a href="../tni/tni_list.php">TNI LIST</a></li>
+                        <li><a href="../tna/tna_list.php">TNA</a></li>
+                        <li><a href="../tni/tni_list.php">TNI</a></li>
                         <li><a href="../tna/tna_summary.php">TNA SUMMARY</a></li>
                         <li class="active"><a href="skill-matrix.php">SKILL MATRIX</a></li>
                         <li><a href="../organization/org.php">ORGANIZATION</a></li>
+                        <li><a href="../archive/archive.php">ARCHIVE</a></li>
                         <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
                     </ul>                    <ul class="nav navbar-nav navbar-right">
                         <li class="dropdown">
@@ -493,10 +514,20 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                                         <?php } ?>
                                     </select>
                                 </div>
+                                <div class="form-group" style="margin-left:8px;">
+                                    <select name="plant" id="plant" class="form-control">
+                                        <option value="ALL" <?php echo ($plant == 'ALL') ? 'selected' : ''; ?>>All Plants</option>
+                                        <?php foreach ($plantOptions as $plantOption) { ?>
+                                            <option value="<?php echo htmlspecialchars($plantOption); ?>" <?php echo ($plant == $plantOption) ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($plantOption); ?>
+                                            </option>
+                                        <?php } ?>
+                                    </select>
+                                </div>
                                 <button type="submit" class="btn btn-info" style="margin-left:8px;">
                                     FILTER <i class="fa fa-search"></i>
                                 </button>
-                                <a href="matrix-chart.php?department=ALL&section=ALL" class="btn btn-default">RESET</a>
+                                <a href="matrix-chart.php?department=ALL&section=ALL&plant=ALL" class="btn btn-default">RESET</a>
                             </form>
                         </div>
                     </div>
@@ -529,6 +560,9 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                                 <?php } ?>
                                 <?php if ($section != '' && $section != 'ALL') { ?>
                                     | Section: <?php echo htmlspecialchars($section); ?>
+                                <?php } ?>
+                                <?php if ($plant != '' && $plant != 'ALL') { ?>
+                                    | Plant: <?php echo htmlspecialchars($plant); ?>
                                 <?php } ?>
                             </div>
 
@@ -723,7 +757,8 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
             }
 
             window.location = "export_matrix_report.php?department=" + encodeURIComponent("<?php echo addslashes($department); ?>") +
-                "&section=" + encodeURIComponent("<?php echo addslashes($section); ?>");
+                "&section=" + encodeURIComponent("<?php echo addslashes($section); ?>") +
+                "&plant=" + encodeURIComponent("<?php echo addslashes($plant); ?>");
         });
     </script>
 

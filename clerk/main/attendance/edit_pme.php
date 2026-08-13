@@ -168,11 +168,13 @@
                 <div class="container-fluid ">
     				<ul class="nav navbar-nav">
                         <li><a href="../dashboard.php">HOME</a></li>
+                        <li><a href="../staff/staff.php">CONTRACT STAFF LIST</a></li>
+                        <li><a href="../training/training_ojt.php">ALL TRAINING</a></li>
                         <li><a href="training.php">MY TRAINING</a></li>
                         <li><a href="pme.php">PME</a></li>
-                        <li><a href="../tna/staff_list.php">TNA</a></li>
-						<li><a href="../tni/tni.php">TNI</a></li>
+                        <li><a href="../tna/tna_list.php">TNA</a></li>
 						<?php if ($canViewSkillMatrix) { ?><li><a href="../skill-matrix/skill-matrix.php">SKILL MATRIX</a></li><?php } ?>
+						<li><a href="../../../admin/archive/archive.php">ARCHIVE</a></li>
 						<li><a href="../password/password.php">CHANGE PASSWORD</a></li>
     				</ul>
     				<ul class="nav navbar-nav navbar-right">
