@@ -33,6 +33,15 @@ $ARCHIVE_ENTITIES = [
         'date_column' => 'upload_date',
         'label' => 'Certificate',
     ],
+    // Not a single archive table - a join across training_archive/participation_archive
+    // and ojt_archive/participateojt_archive keyed by userid. Handled specially in
+    // fetch_archive.php / export_archive.php (see 'participant_history' branch); the
+    // 'type' key below is how those files recognise it and skip the generic
+    // single-table SHOW COLUMNS path.
+    'participant' => [
+        'type' => 'participant_history',
+        'label' => 'Participant Training History',
+    ],
 ];
 
 // Who can view/filter/download archive data: ADMIN, or any Clerk-Main user

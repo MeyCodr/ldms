@@ -8,6 +8,80 @@ if (!archiveUserCanAccess()) {
     exit();
 }
 
+function exportParticipantHistory($conn)
+{
+    // Table names are literal strings here, never derived from request input.
+    $trainingReady = mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'training_archive'")) > 0
+        && mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'participation_archive'")) > 0;
+    $ojtReady = mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'ojt_archive'")) > 0
+        && mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'participateojt_archive'")) > 0;
+
+    $userid = isset($_GET['participant_id']) ? (int) $_GET['participant_id'] : 0;
+    if ($userid <= 0 || (!$trainingReady && !$ojtReady)) {
+        header('Content-Type: text/plain');
+        die('No participant selected or no archived data found for this participant yet.');
+    }
+
+    $dateFrom = isset($_GET['date_from']) ? trim($_GET['date_from']) : '';
+    $dateTo = isset($_GET['date_to']) ? trim($_GET['date_to']) : '';
+    if (!preg_match('/^\d{4}(-\d{2}-\d{2})?$/', $dateFrom)) {
+        $dateFrom = '';
+    }
+    if (!preg_match('/^\d{4}(-\d{2}-\d{2})?$/', $dateTo)) {
+        $dateTo = '';
+    }
+
+    $parts = [];
+    if ($trainingReady) {
+        $sql = "SELECT 'Training' AS type, t.trainingcode AS trainingcode, t.title AS title,
+                    t.startdate AS startdate, t.enddate AS enddate, t.venue AS venue, p.attendance AS attendance
+                FROM participation_archive p JOIN training_archive t ON p.trainingid = t.id
+                WHERE p.userid = " . $userid;
+        if ($dateFrom !== '') {
+            $sql .= " AND t.startdate >= '" . mysqli_real_escape_string($conn, $dateFrom) . "'";
+        }
+        if ($dateTo !== '') {
+            $sql .= " AND t.startdate <= '" . mysqli_real_escape_string($conn, $dateTo) . "'";
+        }
+        $parts[] = $sql;
+    }
+    if ($ojtReady) {
+        $sql = "SELECT 'OJT' AS type, o.trainingcode AS trainingcode, o.title AS title,
+                    o.startdate AS startdate, o.enddate AS enddate, o.venue AS venue, po.attendance AS attendance
+                FROM participateojt_archive po JOIN ojt_archive o ON po.ojtid = o.id
+                WHERE po.userid = " . $userid;
+        if ($dateFrom !== '') {
+            $sql .= " AND o.startdate >= '" . mysqli_real_escape_string($conn, $dateFrom) . "'";
+        }
+        if ($dateTo !== '') {
+            $sql .= " AND o.startdate <= '" . mysqli_real_escape_string($conn, $dateTo) . "'";
+        }
+        $parts[] = $sql;
+    }
+
+    $sql = implode(' UNION ALL ', $parts) . ' ORDER BY startdate DESC';
+    $columns = ['type', 'trainingcode', 'title', 'startdate', 'enddate', 'venue', 'attendance'];
+
+    $filename = 'participant_' . $userid . '_training_history_' . date('Ymd_His') . '.csv';
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Cache-Control: max-age=0');
+    header('Pragma: public');
+
+    $out = fopen('php://output', 'w');
+    fputcsv($out, $columns);
+
+    $result = mysqli_query($conn, $sql, MYSQLI_USE_RESULT);
+    if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+            fputcsv($out, $row);
+        }
+        mysqli_free_result($result);
+    }
+    fclose($out);
+    exit();
+}
+
 $entityKey = isset($_GET['entity']) ? $_GET['entity'] : '';
 if (!isset($ARCHIVE_ENTITIES[$entityKey])) {
     header('Content-Type: text/plain');
@@ -15,6 +89,11 @@ if (!isset($ARCHIVE_ENTITIES[$entityKey])) {
 }
 
 $entity = $ARCHIVE_ENTITIES[$entityKey];
+
+if (($entity['type'] ?? 'table') === 'participant_history') {
+    exportParticipantHistory($conn);
+}
+
 $table = $entity['table'];       // trusted - comes from whitelist, never from request
 $dateColumn = $entity['date_column'];
 

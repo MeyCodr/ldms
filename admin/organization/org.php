@@ -76,6 +76,7 @@ if (!isset($_SESSION['fullname']) || $_SESSION['role'] != 'ADMIN') {
                 <li><a href="../tna/tna_summary.php">TNA SUMMARY</a></li>
                 <li><a href="../skill-matrix/skill-matrix.php">SKILL MATRIX</a></li>
                 <li class="active"><a href="org.php">ORGANIZATION</a></li>
+                <li><a href="../archive/archive.php">ARCHIVE</a></li>
                 <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
@@ -93,6 +94,35 @@ if (!isset($_SESSION['fullname']) || $_SESSION['role'] != 'ADMIN') {
 
     <div id="spinner-div">
         <img src="../../asset/image/loading.gif" title="working..." style="margin-top:350px;" />
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-body" style="padding:12px 14px;">
+                    <strong style="margin-right:10px;"><i class="fa fa-file-excel"></i> Bulk Rename via Excel</strong>
+                    <a href="export_org_template.php" class="btn btn-default btn-sm">
+                        <i class="fa fa-download"></i> Download Template
+                    </a>
+                    <span style="margin-left:10px;">
+                        <input type="file" id="import-file-input" accept=".xls,.xlsx" style="display:inline-block;width:auto;">
+                        <button class="btn btn-primary btn-sm" onclick="uploadOrgTemplate()">
+                            <i class="fa fa-upload"></i> Upload &amp; Update
+                        </button>
+                    </span>
+                    <div style="margin-top:8px;">
+                        <label style="font-weight:normal;font-size:12px;color:#a94442;">
+                            <input type="checkbox" id="delete-missing-chk">
+                            Also delete rows removed from the sheet
+                            <span class="text-muted">(only if no staff are assigned to them)</span>
+                        </label>
+                    </div>
+                    <div class="text-muted" style="font-size:11px;margin-top:6px;">
+                        Download the template first, edit the Name / Short Name columns only (do not change the ID columns), then upload it here to bulk-update division, department, and section names.
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="row">
@@ -904,6 +934,75 @@ if (!isset($_SESSION['fullname']) || $_SESSION['role'] != 'ADMIN') {
                     alertError(res.detail || 'Transfer failed.');
                 }
             }, 'json');
+        });
+    }
+
+    // ===== BULK RENAME VIA EXCEL =====
+
+    function uploadOrgTemplate() {
+        var fileInput = document.getElementById('import-file-input');
+        if (!fileInput.files || fileInput.files.length === 0) {
+            alertError('Please choose a file to upload first.');
+            return;
+        }
+        var deleteMissing = $('#delete-missing-chk').is(':checked');
+
+        if (deleteMissing) {
+            swal({
+                title: 'Delete removed rows?',
+                text: 'Any division, department, or section that is missing from the uploaded sheet will be permanently deleted (skipped automatically if staff are still assigned to it). This cannot be undone. Continue?',
+                icon: 'warning',
+                buttons: ['Cancel', 'Delete'],
+                dangerMode: true
+            }).then(function (confirmed) {
+                if (confirmed) doUploadOrgTemplate(fileInput, true);
+            });
+        } else {
+            doUploadOrgTemplate(fileInput, false);
+        }
+    }
+
+    function doUploadOrgTemplate(fileInput, deleteMissing) {
+        var formData = new FormData();
+        formData.append('import_file', fileInput.files[0]);
+        formData.append('delete_missing', deleteMissing ? '1' : '0');
+
+        showSpinner();
+        $.ajax({
+            url: 'org_import.php',
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            dataType: 'json',
+            success: function (res) {
+                hideSpinner();
+                fileInput.value = '';
+                $('#delete-missing-chk').prop('checked', false);
+                if (res.message !== 'done') {
+                    alertError(res.detail || 'Import failed.');
+                    return;
+                }
+                var summaryText = res.divisions_updated + ' division(s), ' +
+                    res.departments_updated + ' department(s), ' +
+                    res.sections_updated + ' section(s) updated.';
+                if (deleteMissing) {
+                    summaryText += '\n' + res.divisions_deleted + ' division(s), ' +
+                        res.departments_deleted + ' department(s), ' +
+                        res.sections_deleted + ' section(s) deleted.';
+                }
+                if (res.errors && res.errors.length > 0) {
+                    summaryText += '\n\n' + res.errors.length + ' issue(s):\n' + res.errors.join('\n');
+                }
+                swal('Import Complete', summaryText, (res.errors && res.errors.length > 0) ? 'warning' : 'success');
+                loadDivisions();
+                if (selectedDivisionId) loadDepartments();
+                if (selectedDepartmentId) loadSections();
+            },
+            error: function () {
+                hideSpinner();
+                alertError('Upload failed. Please try again.');
+            }
         });
     }
 

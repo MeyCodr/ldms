@@ -23,6 +23,14 @@ function matrixPieLevel($score)
     return 0;
 }
 
+$matrixFixedLevels = array(
+    100 => array('label' => 'Highly Skilled', 'sub' => 'Able to Supervise others'),
+    75 => array('label' => 'Competent', 'sub' => ''),
+    50 => array('label' => 'Medium Competency', 'sub' => ''),
+    25 => array('label' => 'Novice', 'sub' => 'Basic Knowledge'),
+    0 => array('label' => 'Minimal Competency', 'sub' => '')
+);
+
 $canViewSkillMatrix = isset($_SESSION['designation'], $_SESSION['hodid'], $_SESSION['role'], $_SESSION['usertype'])
     && $_SESSION['designation'] == 'MANAGER (AM/HOS & ABOVE)'
     && (int) $_SESSION['hodid'] != 0
@@ -33,11 +41,8 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
     $hodId = (int) $_SESSION['id'];
     $currentYear = (int) date('Y');
     $currentQuarter = (int) ceil(date('n') / 3);
-    $targetPercentage = 75;
     $staffRows = array();
     $topicColumns = array();
-    $topicTotals = array();
-    $topicCounts = array();
 
     $stmt = $conn->prepare("SELECT
                                 sme.id AS evaluation_id,
@@ -71,6 +76,7 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                             )
                             AND YEAR(sme.evaluation_date) = ?
                             AND QUARTER(sme.evaluation_date) = ?
+                            AND sme.approval_status = 'APPROVED'
                             ORDER BY u.staffname");
     $creatorDesignation = "MANAGER (AM/HOS & ABOVE)";
     $stmt->bind_param("isii", $hodId, $creatorDesignation, $currentYear, $currentQuarter);
@@ -121,15 +127,11 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                     'section_type' => $topicRow['section_type'],
                     'topic_name' => $topicRow['topic_name']
                 );
-                $topicTotals[$topicKey] = 0;
-                $topicCounts[$topicKey] = 0;
             }
 
             $staffRows[$topicRow['evaluation_id']]['scores'][$topicKey] = $percentage;
             $staffRows[$topicRow['evaluation_id']]['overall_total'] += $percentage;
             $staffRows[$topicRow['evaluation_id']]['overall_count']++;
-            $topicTotals[$topicKey] += $percentage;
-            $topicCounts[$topicKey]++;
         }
     }
 
@@ -199,18 +201,34 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
             white-space: normal;
         }
 
-        .matrix-table .summary-row th,
-        .matrix-table .summary-row td {
-            background-color: #d9edf7;
-            color: #31708f;
-            font-weight: bold;
+        .matrix-table .matrix-ability-cell {
+            vertical-align: top !important;
         }
 
-        .matrix-table .target-row th,
-        .matrix-table .target-row td {
-            background-color: #fcf8e3;
-            color: #8a6d3b;
+        .matrix-cell-topics {
+            border-collapse: collapse;
+            color: #31708f;
+            font-size: 10px;
             font-weight: bold;
+            margin: 4px 0 0 0;
+            width: 100%;
+        }
+
+        .matrix-cell-topics td {
+            border: none !important;
+            padding: 1px 0;
+            vertical-align: top !important;
+            white-space: normal;
+        }
+
+        .matrix-cell-topic-name {
+            text-align: left !important;
+        }
+
+        .matrix-cell-topic-score {
+            padding-left: 4px !important;
+            text-align: right !important;
+            white-space: nowrap;
         }
 
         .matrix-score {
@@ -222,13 +240,32 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
         }
 
         .matrix-pie {
-            background: conic-gradient(#337ab7 0 var(--score), #ffffff var(--score) 100%);
             border: 1px solid #555555;
             border-radius: 50%;
             display: inline-block;
             height: 34px;
             position: relative;
             width: 34px;
+        }
+
+        .matrix-pie.level-100 {
+            background-color: #337ab7;
+        }
+
+        .matrix-pie.level-75 {
+            background: conic-gradient(#337ab7 0 75%, #ffffff 75% 100%);
+        }
+
+        .matrix-pie.level-50 {
+            background: conic-gradient(#337ab7 0 50%, #ffffff 50% 100%);
+        }
+
+        .matrix-pie.level-25 {
+            background: conic-gradient(#337ab7 0 25%, #ffffff 25% 100%);
+        }
+
+        .matrix-pie.level-0 {
+            background-color: #ffffff;
         }
 
         .matrix-pie:before,
@@ -438,13 +475,13 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                                         <thead>
                                             <tr>
                                                 <th colspan="4"></th>
-                                                <th colspan="<?php echo count($topicColumns); ?>">ABILITY DESCRIPTION</th>
+                                                <th colspan="<?php echo count($matrixFixedLevels); ?>">ABILITY DESCRIPTION</th>
                                                 <th>TOTAL</th>
                                             </tr>
                                             <tr>
                                                 <th colspan="4">No.</th>
                                                 <?php $columnNo = 1; ?>
-                                                <?php foreach ($topicColumns as $topic) { ?>
+                                                <?php foreach ($matrixFixedLevels as $level) { ?>
                                                     <th><?php echo $columnNo; ?></th>
                                                     <?php $columnNo++; ?>
                                                 <?php } ?>
@@ -455,9 +492,13 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                                                 <th width="80">EMP. NO</th>
                                                 <th class="staff-name">NAME</th>
                                                 <th width="140">DESIGNATION / GRADE</th>
-                                                <?php foreach ($topicColumns as $topic) { ?>
+                                                <?php foreach ($matrixFixedLevels as $levelValue => $level) { ?>
                                                     <th class="topic-header">
-                                                        <?php echo htmlspecialchars($topic['topic_name']); ?>
+                                                        <?php echo htmlspecialchars($level['label']); ?>
+                                                        <?php if ($level['sub'] != '') { ?>
+                                                            <div class="matrix-remarks-sub"><?php echo htmlspecialchars($level['sub']); ?></div>
+                                                        <?php } ?>
+                                                        (<?php echo $levelValue; ?>%)
                                                     </th>
                                                 <?php } ?>
                                                 <th width="95">AVERAGE</th>
@@ -468,49 +509,38 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                                             <?php foreach ($staffRows as $staffRow) { ?>
                                                 <?php
                                                 $overallAverage = $staffRow['overall_count'] > 0 ? $staffRow['overall_total'] / $staffRow['overall_count'] : 0;
+                                                $levelTopics = array(100 => array(), 75 => array(), 50 => array(), 25 => array(), 0 => array());
+                                                foreach ($staffRow['scores'] as $topicKey => $score) {
+                                                    $levelTopics[matrixPieLevel($score)][] = array(
+                                                        'name' => $topicColumns[$topicKey]['topic_name'],
+                                                        'score' => $score
+                                                    );
+                                                }
                                                 ?>
                                                 <tr>
                                                     <td><?php echo $rowNo; ?>.</td>
                                                     <td><?php echo htmlspecialchars($staffRow['staffno']); ?></td>
                                                     <td class="staff-name"><?php echo htmlspecialchars($staffRow['staffname']); ?></td>
                                                     <td><?php echo htmlspecialchars($staffRow['designation_grade']); ?></td>
-                                                    <?php foreach ($topicColumns as $topicKey => $topic) { ?>
-                                                        <?php $score = isset($staffRow['scores'][$topicKey]) ? $staffRow['scores'][$topicKey] : 0; ?>
-                                                        <?php $pieLevel = matrixPieLevel($score); ?>
-                                                        <td>
-                                                            <div class="matrix-score">
-                                                                <span class="matrix-pie" style="--score: <?php echo $pieLevel; ?>%;"></span>
-                                                                <strong><?php echo number_format($score, 0); ?>%</strong>
-                                                            </div>
+                                                    <?php foreach ($matrixFixedLevels as $levelValue => $level) { ?>
+                                                        <td class="matrix-ability-cell">
+                                                            <span class="matrix-pie level-<?php echo $levelValue; ?>"></span>
+                                                            <?php if (!empty($levelTopics[$levelValue])) { ?>
+                                                                <table class="matrix-cell-topics">
+                                                                    <?php foreach ($levelTopics[$levelValue] as $index => $topicInfo) { ?>
+                                                                        <tr>
+                                                                            <td class="matrix-cell-topic-name"><?php echo ($index + 1); ?>. <?php echo htmlspecialchars($topicInfo['name']); ?></td>
+                                                                            <td class="matrix-cell-topic-score"><?php echo number_format($topicInfo['score'], 0); ?>%</td>
+                                                                        </tr>
+                                                                    <?php } ?>
+                                                                </table>
+                                                            <?php } ?>
                                                         </td>
                                                     <?php } ?>
                                                     <td><strong><?php echo number_format($overallAverage, 2); ?>%</strong></td>
                                                 </tr>
                                                 <?php $rowNo++; ?>
                                             <?php } ?>
-                                            <tr class="summary-row">
-                                                <th colspan="4">AVERAGE</th>
-                                                <?php
-                                                $overallTopicAverageTotal = 0;
-                                                $overallTopicAverageCount = 0;
-                                                ?>
-                                                <?php foreach ($topicColumns as $topicKey => $topic) { ?>
-                                                    <?php
-                                                    $topicAverage = $topicCounts[$topicKey] > 0 ? $topicTotals[$topicKey] / $topicCounts[$topicKey] : 0;
-                                                    $overallTopicAverageTotal += $topicAverage;
-                                                    $overallTopicAverageCount++;
-                                                    ?>
-                                                    <td><?php echo number_format($topicAverage, 0); ?>%</td>
-                                                <?php } ?>
-                                                <td><?php echo $overallTopicAverageCount > 0 ? number_format($overallTopicAverageTotal / $overallTopicAverageCount, 2) : '0.00'; ?>%</td>
-                                            </tr>
-                                            <tr class="target-row">
-                                                <th colspan="4">TARGET</th>
-                                                <?php foreach ($topicColumns as $topic) { ?>
-                                                    <td><?php echo $targetPercentage; ?>%</td>
-                                                <?php } ?>
-                                                <td><?php echo $targetPercentage; ?>%</td>
-                                            </tr>
                                         </tbody>
                                     </table>
                                 </div>

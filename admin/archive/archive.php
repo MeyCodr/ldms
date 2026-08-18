@@ -119,9 +119,15 @@ if (archiveUserCanAccess()) {
                                     <label>Date To</label>
                                     <input type="text" id="date_to" class="form-control" placeholder="YYYY-MM-DD" autocomplete="off" />
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-3" id="keyword_field">
                                     <label>Keyword</label>
                                     <input type="text" id="keyword" class="form-control" placeholder="Search name, title, etc." />
+                                </div>
+                                <div class="col-md-3" id="participant_field" style="display:none;position:relative;">
+                                    <label>Participant</label>
+                                    <input type="text" id="participant_search" class="form-control" placeholder="Search staff no or name" autocomplete="off" />
+                                    <input type="hidden" id="participant_id" value="" />
+                                    <div id="participant_results" class="list-group" style="display:none;position:absolute;z-index:1000;width:100%;max-height:220px;overflow-y:auto;"></div>
                                 </div>
                                 <div class="col-md-2" style="margin-top:24px;white-space:nowrap;">
                                     <button type="button" id="filter_archive" class="btn btn-info btn-md" style="margin-right:8px;">FILTER <i class="fa fa-search"></i></button>
@@ -195,7 +201,8 @@ if (archiveUserCanAccess()) {
                 entity: $('#entity').val(),
                 date_from: $('#date_from').val(),
                 date_to: $('#date_to').val(),
-                keyword: $('#keyword').val()
+                keyword: $('#keyword').val(),
+                participant_id: $('#participant_id').val()
             };
         }
 
@@ -204,7 +211,8 @@ if (archiveUserCanAccess()) {
             return 'export_archive.php?entity=' + encodeURIComponent(f.entity) +
                 '&date_from=' + encodeURIComponent(f.date_from) +
                 '&date_to=' + encodeURIComponent(f.date_to) +
-                '&keyword=' + encodeURIComponent(f.keyword);
+                '&keyword=' + encodeURIComponent(f.keyword) +
+                '&participant_id=' + encodeURIComponent(f.participant_id);
         }
 
         function updateDownloadLink() {
@@ -253,6 +261,7 @@ if (archiveUserCanAccess()) {
                             data.date_from = f.date_from;
                             data.date_to = f.date_to;
                             data.keyword = f.keyword;
+                            data.participant_id = f.participant_id;
                         }
                     },
                     "columns": dtColumns,
@@ -264,8 +273,65 @@ if (archiveUserCanAccess()) {
         }
 
         $('#entity').change(function () {
-            loadTableForEntity($(this).val());
+            var val = $(this).val();
+            if (val === 'participant') {
+                $('#keyword_field').hide();
+                $('#participant_field').show();
+            } else {
+                $('#keyword_field').show();
+                $('#participant_field').hide();
+                $('#participant_search').val('');
+                $('#participant_id').val('');
+                $('#participant_results').hide().empty();
+            }
+            loadTableForEntity(val);
             updateDownloadLink();
+        });
+
+        var participantSearchTimer = null;
+
+        $('#participant_search').on('input', function () {
+            var q = $(this).val();
+            $('#participant_id').val('');
+            clearTimeout(participantSearchTimer);
+            if (q.length < 2) {
+                $('#participant_results').hide().empty();
+                return;
+            }
+            participantSearchTimer = setTimeout(function () {
+                $.post('fetch_archive.php', { action: 'search_participants', entity: 'participant', q: q }, function (resp) {
+                    var items = resp.results || [];
+                    if (items.length === 0) {
+                        $('#participant_results').html('<div class="list-group-item text-muted">No match</div>').show();
+                        return;
+                    }
+                    var $list = $('<div></div>');
+                    $.each(items, function (i, u) {
+                        $('<a href="#" class="list-group-item participant-option"></a>')
+                            .attr('data-id', u.id)
+                            .text(u.staffno + ' - ' + u.staffname)
+                            .appendTo($list);
+                    });
+                    $('#participant_results').html($list.html()).show();
+                }, 'json');
+            }, 250);
+        });
+
+        $(document).on('click', '.participant-option', function (e) {
+            e.preventDefault();
+            $('#participant_id').val($(this).data('id'));
+            $('#participant_search').val($(this).text());
+            $('#participant_results').hide().empty();
+            if (archiveTable) {
+                archiveTable.ajax.reload();
+            }
+            updateDownloadLink();
+        });
+
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('#participant_field').length) {
+                $('#participant_results').hide();
+            }
         });
 
         $('#filter_archive').click(function () {
@@ -279,6 +345,9 @@ if (archiveUserCanAccess()) {
             $('#date_from').val('');
             $('#date_to').val('');
             $('#keyword').val('');
+            $('#participant_search').val('');
+            $('#participant_id').val('');
+            $('#participant_results').hide().empty();
             if (archiveTable) {
                 archiveTable.ajax.reload();
             }

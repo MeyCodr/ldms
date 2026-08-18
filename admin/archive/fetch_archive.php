@@ -23,6 +23,165 @@ function archiveBindParams($stmt, $types, $params)
     call_user_func_array([$stmt, 'bind_param'], $refs);
 }
 
+// Builds the training+OJT UNION ALL for one participant. $dateFrom/$dateTo are
+// applied to both halves when non-empty; pass '' for both to get an unfiltered
+// (participant-only) count. Returns [sql, types, params] or null if neither
+// underlying table pair exists yet.
+function buildParticipantHistorySql($userid, $dateFrom, $dateTo, $trainingReady, $ojtReady)
+{
+    $parts = [];
+    $types = '';
+    $params = [];
+
+    if ($trainingReady) {
+        $sql = "SELECT 'Training' AS type, t.trainingcode AS trainingcode, t.title AS title,
+                    t.startdate AS startdate, t.enddate AS enddate, t.venue AS venue, p.attendance AS attendance
+                FROM participation_archive p JOIN training_archive t ON p.trainingid = t.id
+                WHERE p.userid = ?";
+        $types .= 'i';
+        $params[] = $userid;
+        if ($dateFrom !== '') {
+            $sql .= " AND t.startdate >= ?";
+            $types .= 's';
+            $params[] = $dateFrom;
+        }
+        if ($dateTo !== '') {
+            $sql .= " AND t.startdate <= ?";
+            $types .= 's';
+            $params[] = $dateTo;
+        }
+        $parts[] = $sql;
+    }
+
+    if ($ojtReady) {
+        $sql = "SELECT 'OJT' AS type, o.trainingcode AS trainingcode, o.title AS title,
+                    o.startdate AS startdate, o.enddate AS enddate, o.venue AS venue, po.attendance AS attendance
+                FROM participateojt_archive po JOIN ojt_archive o ON po.ojtid = o.id
+                WHERE po.userid = ?";
+        $types .= 'i';
+        $params[] = $userid;
+        if ($dateFrom !== '') {
+            $sql .= " AND o.startdate >= ?";
+            $types .= 's';
+            $params[] = $dateFrom;
+        }
+        if ($dateTo !== '') {
+            $sql .= " AND o.startdate <= ?";
+            $types .= 's';
+            $params[] = $dateTo;
+        }
+        $parts[] = $sql;
+    }
+
+    if (count($parts) === 0) {
+        return null;
+    }
+
+    return [implode(' UNION ALL ', $parts), $types, $params];
+}
+
+function handleParticipantHistory($conn, $action)
+{
+    $columns = ['type', 'trainingcode', 'title', 'startdate', 'enddate', 'venue', 'attendance'];
+
+    // Table names are literal strings here, never derived from request input.
+    $trainingReady = mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'training_archive'")) > 0
+        && mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'participation_archive'")) > 0;
+    $ojtReady = mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'ojt_archive'")) > 0
+        && mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'participateojt_archive'")) > 0;
+    $exists = $trainingReady || $ojtReady;
+
+    if ($action === 'search_participants') {
+        $q = isset($_POST['q']) ? trim($_POST['q']) : '';
+        if ($q === '') {
+            archiveRespond(['results' => []]);
+        }
+        $like = '%' . $q . '%';
+        $stmt = $conn->prepare("SELECT id, staffno, staffname FROM user WHERE staffno LIKE ? OR staffname LIKE ? ORDER BY staffname LIMIT 20");
+        archiveBindParams($stmt, 'ss', [$like, $like]);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $results = [];
+        while ($row = $res->fetch_assoc()) {
+            $results[] = $row;
+        }
+        archiveRespond(['results' => $results]);
+    }
+
+    if ($action === 'get_columns') {
+        archiveRespond(['exists' => $exists, 'columns' => $columns, 'date_column' => 'startdate']);
+    }
+
+    if ($action === 'list') {
+        $draw = isset($_POST['draw']) ? (int) $_POST['draw'] : 0;
+        $userid = isset($_POST['participant_id']) ? (int) $_POST['participant_id'] : 0;
+
+        if ($userid <= 0 || !$exists) {
+            archiveRespond([
+                'draw' => $draw,
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'columns' => $columns,
+                'data' => [],
+                'exists' => $exists,
+            ]);
+        }
+
+        $start = isset($_POST['start']) ? (int) $_POST['start'] : 0;
+        $length = isset($_POST['length']) ? (int) $_POST['length'] : 25;
+        if ($length <= 0 || $length > 500) {
+            $length = 25;
+        }
+        $dateFrom = isset($_POST['date_from']) ? trim($_POST['date_from']) : '';
+        $dateTo = isset($_POST['date_to']) ? trim($_POST['date_to']) : '';
+        if (!preg_match('/^\d{4}(-\d{2}-\d{2})?$/', $dateFrom)) {
+            $dateFrom = '';
+        }
+        if (!preg_match('/^\d{4}(-\d{2}-\d{2})?$/', $dateTo)) {
+            $dateTo = '';
+        }
+
+        [$totalSql, $totalTypes, $totalParams] = buildParticipantHistorySql($userid, '', '', $trainingReady, $ojtReady);
+        $totalStmt = $conn->prepare("SELECT COUNT(*) AS c FROM ($totalSql) u");
+        archiveBindParams($totalStmt, $totalTypes, $totalParams);
+        $totalStmt->execute();
+        $recordsTotal = (int) $totalStmt->get_result()->fetch_assoc()['c'];
+
+        [$filteredSql, $filteredTypes, $filteredParams] = buildParticipantHistorySql($userid, $dateFrom, $dateTo, $trainingReady, $ojtReady);
+        $countStmt = $conn->prepare("SELECT COUNT(*) AS c FROM ($filteredSql) u");
+        archiveBindParams($countStmt, $filteredTypes, $filteredParams);
+        $countStmt->execute();
+        $recordsFiltered = (int) $countStmt->get_result()->fetch_assoc()['c'];
+
+        $dataSql = "SELECT * FROM ($filteredSql) u ORDER BY startdate DESC LIMIT ?, ?";
+        $dataTypes = $filteredTypes . 'ii';
+        $dataParams = $filteredParams;
+        $dataParams[] = $start;
+        $dataParams[] = $length;
+
+        $dataStmt = $conn->prepare($dataSql);
+        archiveBindParams($dataStmt, $dataTypes, $dataParams);
+        $dataStmt->execute();
+        $dataResult = $dataStmt->get_result();
+
+        $rows = [];
+        while ($row = $dataResult->fetch_assoc()) {
+            $rows[] = $row;
+        }
+
+        archiveRespond([
+            'draw' => $draw,
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'columns' => $columns,
+            'data' => $rows,
+            'exists' => $exists,
+        ]);
+    }
+
+    archiveRespond(['error' => 'invalid_action']);
+}
+
 if (!archiveUserCanAccess()) {
     archiveRespond(['error' => 'unauthorized']);
 }
@@ -35,6 +194,11 @@ if (!isset($ARCHIVE_ENTITIES[$entityKey])) {
 }
 
 $entity = $ARCHIVE_ENTITIES[$entityKey];
+
+if (($entity['type'] ?? 'table') === 'participant_history') {
+    handleParticipantHistory($conn, $action);
+}
+
 $table = $entity['table'];       // trusted - comes from whitelist, never from request
 $dateColumn = $entity['date_column'];
 
