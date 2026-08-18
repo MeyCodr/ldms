@@ -1,8 +1,8 @@
 <?php
     session_start();
-    require '../../asset/vendor/autoload.php';
-    include "../../dbconn.php";
-    include_once __DIR__ . '/../../division_department_section.php';
+    require '../../../asset/vendor/autoload.php';
+    include "../../../dbconn.php";
+    include_once __DIR__ . '/../../../division_department_section.php';
 
     use PhpOffice\PhpSpreadsheet\Spreadsheet;
     use PhpOffice\PhpSpreadsheet\Style\Fill;
@@ -13,26 +13,12 @@
     use PhpOffice\PhpSpreadsheet\NamedRange;
     use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-    if (!isset($_SESSION['fullname']) || $_SESSION['role'] != 'ADMIN') {
-        header("Location: ../../login.php");
+    if (!isset($_SESSION['fullname']) || $_SESSION['role'] != 'CLERK') {
+        header("Location: ../../../login.php");
         exit();
     }
 
-    $plantOptions = [
-        'ALAM IMPIAN PLANT',
-        'ALAM MEGAH PLANT',
-        'BUKIT BERUNTUNG PLANT',
-        'FIF TANJUNG MALIM',
-        'PEGOH PLANT',
-        'PEKAN PLANT',
-        'RASA PLANT',
-        'SHAH ALAM 1 PLANT',
-        'SHAH ALAM 2 PLANT',
-        'TANJUNG MALIM 2',
-        'WAREHOUSE BB',
-    ];
     $genderOptions = ['MALE', 'FEMALE'];
-    $designationOptions = ['CONTRACT', 'EXECUTIVE', 'MANAGER (AM/HOS & ABOVE)', 'NON EXECUTIVE', 'TRAINEE'];
     $statusOptions = ['ACTIVE', 'RESIGN'];
     $orgStructure = getDbOrgStructure();
     $divisionOptions = array_keys($orgStructure);
@@ -40,15 +26,11 @@
     $columns = [
         'A' => 'Staff No',
         'B' => 'Staff Name',
-        'C' => 'Email',
-        'D' => 'Gender',
-        'E' => 'Designation',
-        'F' => 'Division',
-        'G' => 'Department',
-        'H' => 'Section',
-        'I' => 'Status (ACTIVE / RESIGN)',
-        'J' => 'Date Join (YYYY-MM-DD)',
-        'K' => 'Plant',
+        'C' => 'Gender',
+        'D' => 'Division',
+        'E' => 'Department',
+        'F' => 'Section',
+        'G' => 'Status (ACTIVE / RESIGN)',
     ];
 
     $spreadsheet = new Spreadsheet();
@@ -57,19 +39,15 @@
     $sheet->fromArray(array_values($columns), null, 'A1');
 
     $row = 2;
-    $res = $conn->query("SELECT staffno, staffname, email, gender, designation, division, department, section, status, date_join, plant FROM user WHERE staffno IS NOT NULL AND staffno <> '' ORDER BY staffno");
+    $res = $conn->query("SELECT staffno, staffname, gender, division, department, section, status FROM user WHERE designation = 'CONTRACT' AND staffno IS NOT NULL AND staffno <> '' ORDER BY staffno");
     while ($r = $res->fetch_assoc()) {
         $sheet->setCellValueExplicit("A{$row}", $r['staffno'], DataType::TYPE_STRING);
         $sheet->setCellValue("B{$row}", $r['staffname']);
-        $sheet->setCellValue("C{$row}", $r['email']);
-        $sheet->setCellValueExplicit("D{$row}", $r['gender'] ?: '', DataType::TYPE_STRING);
-        $sheet->setCellValueExplicit("E{$row}", $r['designation'] ?: '', DataType::TYPE_STRING);
-        $sheet->setCellValueExplicit("F{$row}", $r['division'] ?: '', DataType::TYPE_STRING);
-        $sheet->setCellValueExplicit("G{$row}", $r['department'] ?: '', DataType::TYPE_STRING);
-        $sheet->setCellValueExplicit("H{$row}", $r['section'] ?: '', DataType::TYPE_STRING);
-        $sheet->setCellValueExplicit("I{$row}", $r['status'] ?: '', DataType::TYPE_STRING);
-        $sheet->setCellValueExplicit("J{$row}", $r['date_join'] ?: '', DataType::TYPE_STRING);
-        $sheet->setCellValueExplicit("K{$row}", $r['plant'] ?: '', DataType::TYPE_STRING);
+        $sheet->setCellValueExplicit("C{$row}", $r['gender'] ?: '', DataType::TYPE_STRING);
+        $sheet->setCellValueExplicit("D{$row}", $r['division'] ?: '', DataType::TYPE_STRING);
+        $sheet->setCellValueExplicit("E{$row}", $r['department'] ?: '', DataType::TYPE_STRING);
+        $sheet->setCellValueExplicit("F{$row}", $r['section'] ?: '', DataType::TYPE_STRING);
+        $sheet->setCellValueExplicit("G{$row}", $r['status'] ?: '', DataType::TYPE_STRING);
         $row++;
     }
     $lastRow = $row - 1;
@@ -77,20 +55,18 @@
     foreach (array_keys($columns) as $col) {
         $sheet->getColumnDimension($col)->setAutoSize(true);
     }
-    $sheet->getStyle('A1:K1')->getFont()->setBold(true);
-    $sheet->getStyle('A1:K1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D9E8FF');
+    $sheet->getStyle('A1:G1')->getFont()->setBold(true);
+    $sheet->getStyle('A1:G1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D9E8FF');
     $sheet->freezePane('A2');
 
     // ===== OPTIONS SHEET (dropdown validation sources) =====
     $optionsSheet = $spreadsheet->createSheet();
     $optionsSheet->setTitle('Options');
-    $optionsSheet->fromArray(['Plant', 'Gender', 'Designation', 'Division', 'Status'], null, 'A1');
+    $optionsSheet->fromArray(['Gender', 'Division', 'Status'], null, 'A1');
     $optionLists = [
-        'A' => $plantOptions,
-        'B' => $genderOptions,
-        'C' => $designationOptions,
-        'D' => $divisionOptions,
-        'E' => $statusOptions,
+        'A' => $genderOptions,
+        'B' => $divisionOptions,
+        'C' => $statusOptions,
     ];
     foreach ($optionLists as $col => $values) {
         $r = 2;
@@ -102,7 +78,7 @@
     foreach (array_keys($optionLists) as $col) {
         $optionsSheet->getColumnDimension($col)->setAutoSize(true);
     }
-    $optionsSheet->getStyle('A1:E1')->getFont()->setBold(true);
+    $optionsSheet->getStyle('A1:C1')->getFont()->setBold(true);
 
     // ===== ORG REFERENCE SHEET (valid Division / Department / Section combinations) =====
     $orgSheet = $spreadsheet->createSheet();
@@ -132,11 +108,8 @@
     $orgSheet->getStyle('A1:C1')->getFont()->setBold(true);
 
     // ===== CASCADING LOOKUP HELPER SHEETS (Division -> Department -> Section) =====
-    // Department list per division, keyed by the division's 1-based position in $divisionOptions.
     $departmentsByDivisionIndex = [];
-    // Every department, in the same flat order used to key the per-department section lists.
     $deptFlatList = [];
-    // Section list per department, keyed by that department's 1-based position in $deptFlatList.
     $sectionsByDeptFlatIndex = [];
 
     foreach ($divisionOptions as $divIdx0 => $divisionName) {
@@ -188,7 +161,7 @@
     }
     $secListsSheet->setSheetState(Worksheet::SHEETSTATE_HIDDEN);
 
-    $spreadsheet->addNamedRange(new NamedRange('DIVLIST', $optionsSheet, '$D$2:$D$' . (count($divisionOptions) + 1)));
+    $spreadsheet->addNamedRange(new NamedRange('DIVLIST', $optionsSheet, '$B$2:$B$' . (count($divisionOptions) + 1)));
 
     // ===== DROPDOWN VALIDATION on Staff Data sheet =====
     $applyListValidation = function ($colLetter, $optionCol, $count) use ($sheet, $lastRow) {
@@ -207,16 +180,14 @@
             $sheet->getCell("{$colLetter}{$r}")->setDataValidation(clone $validation);
         }
     };
-    $applyListValidation('D', 'B', count($genderOptions));
-    $applyListValidation('E', 'C', count($designationOptions));
-    $applyListValidation('F', 'D', count($divisionOptions));
-    $applyListValidation('I', 'E', count($statusOptions));
-    $applyListValidation('K', 'A', count($plantOptions));
+    $applyListValidation('C', 'A', count($genderOptions));
+    $applyListValidation('D', 'B', count($divisionOptions));
+    $applyListValidation('G', 'C', count($statusOptions));
 
-    // Department (G) and Section (H) dropdowns cascade off the Division/Department picked
+    // Department (E) and Section (F) dropdowns cascade off the Division/Department picked
     // in the same row, so each row needs its own row-relative formula (can't be cloned).
     for ($r = 2; $r <= $lastRow; $r++) {
-        $deptValidation = $sheet->getCell("G{$r}")->getDataValidation();
+        $deptValidation = $sheet->getCell("E{$r}")->getDataValidation();
         $deptValidation->setType(DataValidation::TYPE_LIST);
         $deptValidation->setErrorStyle(DataValidation::STYLE_STOP);
         $deptValidation->setAllowBlank(true);
@@ -224,9 +195,9 @@
         $deptValidation->setShowErrorMessage(true);
         $deptValidation->setErrorTitle('Invalid Value');
         $deptValidation->setError('Please select a Division first, then pick a Department from its dropdown.');
-        $deptValidation->setFormula1("INDIRECT(\"DEPT_\"&MATCH(\$F{$r},DIVLIST,0))");
+        $deptValidation->setFormula1("INDIRECT(\"DEPT_\"&MATCH(\$D{$r},DIVLIST,0))");
 
-        $secValidation = $sheet->getCell("H{$r}")->getDataValidation();
+        $secValidation = $sheet->getCell("F{$r}")->getDataValidation();
         $secValidation->setType(DataValidation::TYPE_LIST);
         $secValidation->setErrorStyle(DataValidation::STYLE_STOP);
         $secValidation->setAllowBlank(true);
@@ -234,12 +205,12 @@
         $secValidation->setShowErrorMessage(true);
         $secValidation->setErrorTitle('Invalid Value');
         $secValidation->setError('Please select a Department first, then pick a Section from its dropdown.');
-        $secValidation->setFormula1("INDIRECT(\"SEC_\"&MATCH(\$G{$r},DEPTFLAT,0))");
+        $secValidation->setFormula1("INDIRECT(\"SEC_\"&MATCH(\$E{$r},DEPTFLAT,0))");
     }
 
     $spreadsheet->setActiveSheetIndex(0);
 
-    $filename = 'staff_bulk_update_template_' . date('Ymd_His') . '.xlsx';
+    $filename = 'contract_staff_bulk_update_template_' . date('Ymd_His') . '.xlsx';
     header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     header('Content-Disposition: attachment;filename="' . $filename . '"');
     header('Cache-Control: max-age=0');

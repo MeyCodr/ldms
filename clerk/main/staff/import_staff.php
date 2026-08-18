@@ -1,10 +1,8 @@
 <?php
     session_start();
-    require '../../asset/vendor/autoload.php';
-    include "../../dbconn.php";
-    include_once __DIR__ . '/../../division_department_section.php';
-
-    use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
+    require '../../../asset/vendor/autoload.php';
+    include "../../../dbconn.php";
+    include_once __DIR__ . '/../../../division_department_section.php';
 
     header('Content-Type: application/json; charset=utf-8');
 
@@ -15,7 +13,7 @@
         exit();
     }
 
-    if (!isset($_SESSION['fullname']) || $_SESSION['role'] != 'ADMIN') {
+    if (!isset($_SESSION['fullname']) || $_SESSION['role'] != 'CLERK') {
         respond(['message' => 'error', 'detail' => 'Unauthorized']);
     }
 
@@ -35,21 +33,7 @@
         respond(['message' => 'error', 'detail' => 'Could not read the file: ' . $e->getMessage()]);
     }
 
-    $validPlants = [
-        'ALAM IMPIAN PLANT',
-        'ALAM MEGAH PLANT',
-        'BUKIT BERUNTUNG PLANT',
-        'FIF TANJUNG MALIM',
-        'PEGOH PLANT',
-        'PEKAN PLANT',
-        'RASA PLANT',
-        'SHAH ALAM 1 PLANT',
-        'SHAH ALAM 2 PLANT',
-        'TANJUNG MALIM 2',
-        'WAREHOUSE BB',
-    ];
     $validGenders = ['MALE', 'FEMALE'];
-    $validDesignations = ['CONTRACT', 'EXECUTIVE', 'MANAGER (AM/HOS & ABOVE)', 'NON EXECUTIVE', 'TRAINEE'];
     $validStatuses = ['ACTIVE' => 'ACTIVE', 'RESIGN' => 'RESIGN', 'NOT ACTIVE' => 'RESIGN'];
     $orgStructure = getDbOrgStructure();
 
@@ -67,16 +51,16 @@
         if ($staffno === '') continue;
         $staffno = strtoupper($staffno);
 
-        $check = $conn->prepare("SELECT staffname, email, gender, designation, division, department, section, division_id, department_id, section_id, status, hodid, date_join, plant FROM user WHERE staffno = ?");
+        // Only CONTRACT staff belong to this list, matching the page's scope.
+        $check = $conn->prepare("SELECT staffname, gender, division, department, section, division_id, department_id, section_id, status FROM user WHERE staffno = ? AND designation = 'CONTRACT'");
         $check->bind_param('s', $staffno);
         $check->execute();
         $existing = $check->get_result()->fetch_assoc();
         if (!$existing) {
-            $summary['errors'][] = "Staff No {$staffno}: not found, skipped.";
+            $summary['errors'][] = "Staff No {$staffno}: not found in contract staff list, skipped.";
             continue;
         }
 
-        $rowHasError = false;
         $setClauses = [];
         $types = '';
         $params = [];
@@ -92,26 +76,12 @@
             }
         }
 
-        // ===== Email (column C) =====
-        $emailRaw = trim((string) $sheet->getCell("C{$rowIndex}")->getValue());
-        if ($emailRaw !== '') {
-            if (!filter_var($emailRaw, FILTER_VALIDATE_EMAIL)) {
-                $summary['errors'][] = "Staff No {$staffno}: '{$emailRaw}' is not a valid email, email left unchanged.";
-                $rowHasError = true;
-            } elseif ($emailRaw !== $existing['email']) {
-                $setClauses[] = 'email = ?';
-                $types .= 's';
-                $params[] = $emailRaw;
-            }
-        }
-
-        // ===== Gender (column D) =====
-        $genderRaw = trim((string) $sheet->getCell("D{$rowIndex}")->getValue());
+        // ===== Gender (column C) =====
+        $genderRaw = trim((string) $sheet->getCell("C{$rowIndex}")->getValue());
         if ($genderRaw !== '') {
             $genderUpper = strtoupper($genderRaw);
             if (!in_array($genderUpper, $validGenders, true)) {
                 $summary['errors'][] = "Staff No {$staffno}: '{$genderRaw}' is not a valid gender, gender left unchanged.";
-                $rowHasError = true;
             } elseif ($genderUpper !== $existing['gender']) {
                 $setClauses[] = 'gender = ?';
                 $types .= 's';
@@ -119,30 +89,10 @@
             }
         }
 
-        // ===== Designation (column E) =====
-        $designationRaw = trim((string) $sheet->getCell("E{$rowIndex}")->getValue());
-        $designationMatch = null;
-        foreach ($validDesignations as $option) {
-            if (strcasecmp($option, $designationRaw) === 0) {
-                $designationMatch = $option;
-                break;
-            }
-        }
-        if ($designationRaw !== '') {
-            if ($designationMatch === null) {
-                $summary['errors'][] = "Staff No {$staffno}: '{$designationRaw}' is not a valid designation, designation left unchanged.";
-                $rowHasError = true;
-            } elseif ($designationMatch !== $existing['designation']) {
-                $setClauses[] = 'designation = ?';
-                $types .= 's';
-                $params[] = $designationMatch;
-            }
-        }
-
-        // ===== Division / Department / Section (columns F, G, H) =====
-        $divisionRaw = trim((string) $sheet->getCell("F{$rowIndex}")->getValue());
-        $departmentRaw = trim((string) $sheet->getCell("G{$rowIndex}")->getValue());
-        $sectionRaw = trim((string) $sheet->getCell("H{$rowIndex}")->getValue());
+        // ===== Division / Department / Section (columns D, E, F) =====
+        $divisionRaw = trim((string) $sheet->getCell("D{$rowIndex}")->getValue());
+        $departmentRaw = trim((string) $sheet->getCell("E{$rowIndex}")->getValue());
+        $sectionRaw = trim((string) $sheet->getCell("F{$rowIndex}")->getValue());
 
         if ($divisionRaw !== '' || $departmentRaw !== '' || $sectionRaw !== '') {
             $effectiveDivision = $divisionRaw !== '' ? $divisionRaw : $existing['division'];
@@ -156,7 +106,6 @@
 
             if ($divisionMatch === null) {
                 $summary['errors'][] = "Staff No {$staffno}: division '{$effectiveDivision}' not found, division/department/section left unchanged.";
-                $rowHasError = true;
             } else {
                 $departmentMatch = null;
                 foreach (array_keys($orgStructure[$divisionMatch]) as $depName) {
@@ -165,7 +114,6 @@
 
                 if ($departmentMatch === null) {
                     $summary['errors'][] = "Staff No {$staffno}: department '{$effectiveDepartment}' not found under division '{$divisionMatch}', division/department/section left unchanged.";
-                    $rowHasError = true;
                 } else {
                     $sectionOptions = $orgStructure[$divisionMatch][$departmentMatch];
                     $sectionMatch = null;
@@ -179,7 +127,6 @@
 
                     if ($sectionMatch === null) {
                         $summary['errors'][] = "Staff No {$staffno}: section '{$effectiveSection}' not found under department '{$departmentMatch}', division/department/section left unchanged.";
-                        $rowHasError = true;
                     } else {
                         $divisionId = getDivisionIdByName($divisionMatch);
                         $departmentId = getDepartmentIdByName($divisionId, $departmentMatch);
@@ -201,38 +148,19 @@
                             $setClauses[] = 'department_id = ?'; $types .= 'i'; $params[] = $departmentId;
                         }
                         if ($sectionId != $existing['section_id']) {
-                            $setClauses[] = 'section_id = ?';
-                            $types .= 'i';
-                            $params[] = $sectionId;
-                        }
-
-                        // Recompute HOD link when department changes, same rule as the single-staff edit form.
-                        if ($departmentMatch !== $existing['department']) {
-                            $hodnew = 0;
-                            $hodLookup = $conn->prepare("SELECT id FROM user WHERE department = ? AND usertype = 'HOD' LIMIT 1");
-                            $hodLookup->bind_param('s', $departmentMatch);
-                            $hodLookup->execute();
-                            if ($hodRow = $hodLookup->get_result()->fetch_assoc()) {
-                                $hodnew = (int) $hodRow['id'];
-                            }
-                            if ((int) $existing['hodid'] !== 0) {
-                                $setClauses[] = 'hodid = ?';
-                                $types .= 'i';
-                                $params[] = $hodnew;
-                            }
+                            $setClauses[] = 'section_id = ?'; $types .= 'i'; $params[] = $sectionId;
                         }
                     }
                 }
             }
         }
 
-        // ===== Status (column I) =====
-        $statusRaw = trim((string) $sheet->getCell("I{$rowIndex}")->getValue());
+        // ===== Status (column G) =====
+        $statusRaw = trim((string) $sheet->getCell("G{$rowIndex}")->getValue());
         if ($statusRaw !== '') {
             $statusKey = strtoupper($statusRaw);
             if (!isset($validStatuses[$statusKey])) {
                 $summary['errors'][] = "Staff No {$staffno}: '{$statusRaw}' is not a valid status, status left unchanged.";
-                $rowHasError = true;
             } else {
                 $statusValue = $validStatuses[$statusKey];
                 if ($statusValue !== $existing['status']) {
@@ -240,43 +168,6 @@
                     $types .= 's';
                     $params[] = $statusValue;
                 }
-            }
-        }
-
-        // ===== Date Join (column J) =====
-        $dateCell = $sheet->getCell("J{$rowIndex}");
-        $dateRaw = $dateCell->getValue();
-        if ($dateRaw !== null && trim((string) $dateRaw) !== '') {
-            $dateJoin = null;
-            if (is_numeric($dateRaw) && ExcelDate::isDateTime($dateCell)) {
-                $dateJoin = ExcelDate::excelToDateTimeObject($dateRaw)->format('Y-m-d');
-            } else {
-                $ts = strtotime(trim((string) $dateRaw));
-                if ($ts !== false) {
-                    $dateJoin = date('Y-m-d', $ts);
-                }
-            }
-            if ($dateJoin === null) {
-                $summary['errors'][] = "Staff No {$staffno}: could not parse date '{$dateRaw}', date join left unchanged.";
-                $rowHasError = true;
-            } elseif ($dateJoin !== $existing['date_join']) {
-                $setClauses[] = 'date_join = ?';
-                $types .= 's';
-                $params[] = $dateJoin;
-            }
-        }
-
-        // ===== Plant (column K) =====
-        $plantRaw = trim((string) $sheet->getCell("K{$rowIndex}")->getValue());
-        if ($plantRaw !== '') {
-            $plantUpper = strtoupper($plantRaw);
-            if (!in_array($plantUpper, $validPlants, true)) {
-                $summary['errors'][] = "Staff No {$staffno}: '{$plantRaw}' is not a valid plant, plant left unchanged.";
-                $rowHasError = true;
-            } elseif ($plantUpper !== $existing['plant']) {
-                $setClauses[] = 'plant = ?';
-                $types .= 's';
-                $params[] = $plantUpper;
             }
         }
 
@@ -288,7 +179,7 @@
         $params[] = $staffno;
         $types .= 's';
 
-        $stmt = $conn->prepare("UPDATE user SET " . implode(', ', $setClauses) . " WHERE staffno = ?");
+        $stmt = $conn->prepare("UPDATE user SET " . implode(', ', $setClauses) . " WHERE staffno = ? AND designation = 'CONTRACT'");
         $refs = [$types];
         foreach ($params as $key => $value) {
             $refs[] = &$params[$key];

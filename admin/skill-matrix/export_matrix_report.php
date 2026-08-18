@@ -58,7 +58,7 @@ $staffSql = "SELECT
                 LEFT JOIN sections s ON u.section_id = s.id
                 WHERE YEAR(sme.evaluation_date) = ?
                 AND QUARTER(sme.evaluation_date) = ?
-                AND sme.approval_status = 'APPROVED'
+                AND sme.approval_status IN ('APPROVED', 'PENDING')
                 ";
 
 $staffTypes = "ii";

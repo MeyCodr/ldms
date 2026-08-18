@@ -76,7 +76,7 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                             )
                             AND YEAR(sme.evaluation_date) = ?
                             AND QUARTER(sme.evaluation_date) = ?
-                            AND sme.approval_status = 'APPROVED'
+                            AND sme.approval_status IN ('APPROVED', 'PENDING')
                             ORDER BY u.staffname");
     $creatorDesignation = "MANAGER (AM/HOS & ABOVE)";
     $stmt->bind_param("isii", $hodId, $creatorDesignation, $currentYear, $currentQuarter);

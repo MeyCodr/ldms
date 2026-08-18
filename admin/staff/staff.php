@@ -90,7 +90,7 @@
                 <div class="col-md-12">
                     <div class="panel panel-default">
                         <div class="panel-body" style="padding:12px 14px;">
-                            <strong style="margin-right:10px;"><i class="fa fa-file-excel"></i> Bulk Update Date Join &amp; Plant via Excel</strong>
+                            <strong style="margin-right:10px;"><i class="fa fa-file-excel"></i> Bulk Update Staff Details via Excel</strong>
                             <a href="export_datejoin_template.php" class="btn btn-default btn-sm">
                                 <i class="fa fa-download"></i> Download Template
                             </a>
@@ -101,7 +101,7 @@
                                 </button>
                             </span>
                             <div class="text-muted" style="font-size:11px;margin-top:6px;">
-                                Download the template first, fill in the "Date Join" (format YYYY-MM-DD) and/or "Plant" (pick from the dropdown provided in the sheet) columns without changing the Staff No column, then upload it here to bulk-update staff. Blank cells are left unchanged.
+                                Download the template first, fill in any of Staff Name, Email, Gender, Designation, Division, Department, Section, Status, Date Join and/or Plant columns without changing the Staff No column, then upload it here to bulk-update staff. Use the dropdowns provided in each cell &mdash; picking a Division narrows the Department dropdown to that division, and picking a Department narrows the Section dropdown to that department. Blank cells are left unchanged.
                             </div>
                         </div>
                     </div>
