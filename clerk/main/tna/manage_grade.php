@@ -128,8 +128,7 @@
                             </div>
                             <br>
                             <div class="row">
-                                <div class="col-sm-1"></div>
-                                <div class="col-sm-10 table-responsive" align="left">
+                                <div class="col-sm-12 table-responsive" align="left">
                                     <table class="table table-bordered table-striped">
                                         <thead>
                                             <tr>
@@ -160,12 +159,10 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                <div class="col-sm-1"></div>
                             </div>
                             <br>
                             <div class="row">
-                                <div class="col-sm-1"></div>
-                                <div class="col-sm-10 table-responsive">
+                                <div class="col-sm-12 table-responsive">
                                     <!-- ESG -->
                                     <table id="tnaesglist" class="table table-bordered table-striped">
                                         <thead>
@@ -426,7 +423,6 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                <div class="col-sm-1"></div>
                             </div>
                             <div class="row">
                                 <div class="col-md-1"></div>

@@ -343,12 +343,12 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'CLERK')) {
 
         var starttrdate = localStorage.getItem("setstarttr");
         var endtrdate = localStorage.getItem("setendtr");
-        if (starttrdate == null) {
+        if (!starttrdate || starttrdate === 'null' || starttrdate === 'undefined') {
             $('#startdate').val('');
             $('#enddate').val('');
             fetch_data('load_ojt', '', '', userid);
             getTotalSummary('load_ojtsummary', userid, '', '');
-        } else if (starttrdate != null) {
+        } else {
             $('#startdate').val(starttrdate);
             $('#enddate').val(endtrdate);
             fetch_data('load_ojt', starttrdate, endtrdate, userid);

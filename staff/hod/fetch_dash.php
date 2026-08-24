@@ -1,10 +1,52 @@
 <?php
 include "../../dbconn.php";
+include_once __DIR__ . '/../../division_department_section.php';
 
 $data = '';
 $data1 = array();
 date_default_timezone_set("Asia/Kuala_Lumpur");
 $currenttime = date("Y-m-d H:i:s");
+
+function hasChartDepartment($departmentName)
+{
+    return $departmentName !== null && trim((string) $departmentName) !== '';
+}
+
+function getDepartmentChartLabel($departmentName)
+{
+    static $dbLabels = null;
+    global $conn;
+
+    if (!hasChartDepartment($departmentName)) {
+        return '-';
+    }
+
+    if ($dbLabels === null) {
+        $dbLabels = [];
+        $hasShortname = false;
+        $columnCheck = mysqli_query($conn, "SHOW COLUMNS FROM departments LIKE 'shortname'");
+        if ($columnCheck && mysqli_num_rows($columnCheck) > 0) {
+            $hasShortname = true;
+        }
+
+        if ($hasShortname) {
+            $result = mysqli_query($conn, "SELECT name, shortname FROM departments");
+            if ($result) {
+                while ($row = mysqli_fetch_assoc($result)) {
+                    $label = trim((string) $row['shortname']);
+                    $dbLabels[$row['name']] = $label !== '' ? $label : $row['name'];
+                }
+            }
+        }
+    }
+
+    if (isset($dbLabels[$departmentName])) {
+        return $dbLabels[$departmentName];
+    }
+
+    $fallback = getDepartmentShortName($departmentName);
+    return $fallback !== null ? $fallback : $departmentName;
+}
 
 if($_POST["action"] == 'fetch_overview'){
     $userid = $_POST["userid"];
@@ -145,8 +187,13 @@ if($_POST["action"] == 'fetch_overview'){
 }else if($_POST["action"] == "fetch_top10"){
     $startdate = $_POST["startdate"];
     $enddate = $_POST["enddate"];
+    $mode = isset($_POST["mode"]) ? $_POST["mode"] : 'manhour';
     if ($_POST["startdate"] != '') {
-        $sql = "select tablea.department,ifnull(sumtotalhour,0) as sumtotalhours from (select distinct(department) from user)tablea left join (select department,sum(totaldays*totalhours*totalman) as sumtotalhour from (select training.id as trainingid,participation.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,department,1 as totalman from training_all training join participation_all participation on training.id = trainingid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance = 'COMPLETED' union select ojt.id as trainingid,participateojt.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,user.department,participateojt.totalman from ojt_all ojt join participateojt_all participateojt on ojt.id = ojtid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance in ('COMPLETEDOJT'))tablea group by department)tableb on tablea.department = tableb.department where sumtotalhour != '0.00' order by sumtotalhour desc;";
+        if ($mode == 'totalhour') {
+            $sql = "select tablea.department,ifnull(ROUND(sumtotalhour/tablea.totaluser,2),0) as avghour from (select department,count(*) as totaluser from user where (dateresign is null or cast(dateresign as char) in ('', '0000-00-00') or dateresign >= '$enddate') group by department)tablea left join (select department,sum(totaldays*totalhours*totalman) as sumtotalhour from (select training.id as trainingid,participation.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,department,1 as totalman from training_all training join participation_all participation on training.id = trainingid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance = 'COMPLETED' union select ojt.id as trainingid,participateojt.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,user.department,participateojt.totalman from ojt_all ojt join participateojt_all participateojt on ojt.id = ojtid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance in ('COMPLETEDOJT'))tablea group by department)tableb on tablea.department = tableb.department where sumtotalhour != '0.00' order by avghour desc;";
+        } else {
+            $sql = "select tablea.department,ifnull(sumtotalhour,0) as sumtotalhours from (select distinct(department) from user)tablea left join (select department,sum(totaldays*totalhours*totalman) as sumtotalhour from (select training.id as trainingid,participation.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,department,1 as totalman from training_all training join participation_all participation on training.id = trainingid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance = 'COMPLETED' union select ojt.id as trainingid,participateojt.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,user.department,participateojt.totalman from ojt_all ojt join participateojt_all participateojt on ojt.id = ojtid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance in ('COMPLETEDOJT'))tablea group by department)tableb on tablea.department = tableb.department where sumtotalhour != '0.00' order by sumtotalhour desc;";
+        }
         $query = mysqli_query($conn,$sql);
         while($row = mysqli_fetch_assoc($query)){
             if($row["department"] == 'BUSINESS DEVELOPMENT') {
@@ -222,13 +269,21 @@ if($_POST["action"] == 'fetch_overview'){
             }else if($row["department"] == 'HICOM INTELLIGENT MOBILITY') {
                 $department = 'HIM';
             }else {
-                $department = '-';
-            }		
+                $department = getDepartmentChartLabel($row["department"]);
+            }
+
+            if ($mode == 'totalhour') {
+                $value = $row["avghour"];
+                $color = ($row["avghour"] < 4) ? '#FF0000' : '#00FF00';
+            } else {
+                $value = $row["sumtotalhours"];
+                $color = '#' . rand(100000, 999999) . '';
+            }
 
             $data1[] = array(
                 'category'	  =>	$department,
-                'totalsend' =>	$row["sumtotalhours"],
-                'colorplant' =>	'#' . rand(100000, 999999) . ''
+                'totalsend' =>	$value,
+                'colorplant' =>	$color
             );
         }
     }
@@ -236,6 +291,7 @@ if($_POST["action"] == 'fetch_overview'){
 }else if($_POST["action"] == "fetch_business"){
     $startdate = $_POST["startdate"];
     $enddate = $_POST["enddate"];
+    $mode = isset($_POST["mode"]) ? $_POST["mode"] : 'manhour';
     if ($_POST["startdate"] != '') {
         $sql = "select tablea.department,ifnull(sumtotalhour,0) as sumtotalhours, ifnull(round(sumtotalhour/totalstaff,2),0) as avghours from (select department,count(*) as totalstaff from user where division = 'BUSINESS DEVELOPMENT & STRATEGY' and (dateresign is null or cast(dateresign as char) in ('', '0000-00-00') or dateresign >= '$enddate') group by department)tablea left join (select department,sum(totaldays*totalhours*totalman) as sumtotalhour from (select training.id as trainingid,participation.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,department,1 as totalman from training_all training join participation_all participation on training.id = trainingid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance = 'COMPLETED' union select ojt.id as trainingid,participateojt.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,user.department,participateojt.totalman from ojt_all ojt join participateojt_all participateojt on ojt.id = ojtid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance in ('COMPLETEDOJT'))tablea group by department)tableb on tablea.department = tableb.department order by department;";
         $query = mysqli_query($conn,$sql);
@@ -253,21 +309,21 @@ if($_POST["action"] == 'fetch_overview'){
                 }else if($row["department"] == 'COSTING & COMMERCIAL') {
                     $department = 'C&C';
                 }else {
-                    $department = $row["department"];
+                    $department = getDepartmentChartLabel($row["department"]);
                 }
 
-            // if ($row["avghours"] < 4.00) {
-            //     $coloravg = '#FF0000';
-            // }else {
-            //     $coloravg = '#008000';
-            // }
+            if ($mode == 'totalhour') {
+                $value = $row["avghours"];
+                $color = ($row["avghours"] < 4) ? '#FF0000' : '#00FF00';
+            } else {
+                $value = $row["sumtotalhours"];
+                $color = '#' . rand(100000, 999999) . '';
+            }
 
             $data1[] = array(
                 'category'	    =>	$department,
-                'totalsend'     =>	$row["sumtotalhours"],
-                'totalsend1'    =>	$row["avghours"],
-                'colorplant'    =>	'#' . rand(100000, 999999) . '',
-                'colorplant1'   =>	'#FF0000'
+                'totalsend'     =>	$value,
+                'colorplant'    =>	$color
             );
         }
     }
@@ -275,6 +331,7 @@ if($_POST["action"] == 'fetch_overview'){
 }else if($_POST["action"] == "fetch_dhmsb"){
     $startdate = $_POST["startdate"];
     $enddate = $_POST["enddate"];
+    $mode = isset($_POST["mode"]) ? $_POST["mode"] : 'manhour';
     if ($_POST["startdate"] != '') {
         $sql = "select tablea.department,ifnull(sumtotalhour,0) as sumtotalhours, ifnull(round(sumtotalhour/totalstaff,2),0) as avghours from (select department,count(*) as totalstaff from user where division = 'DHMSB OPERATIONS' and (dateresign is null or cast(dateresign as char) in ('', '0000-00-00') or dateresign >= '$enddate') group by department)tablea left join (select department,sum(totaldays*totalhours*totalman) as sumtotalhour from (select training.id as trainingid,participation.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,department,1 as totalman from training_all training join participation_all participation on training.id = trainingid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance = 'COMPLETED' union select ojt.id as trainingid,participateojt.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,user.department,participateojt.totalman from ojt_all ojt join participateojt_all participateojt on ojt.id = ojtid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance in ('COMPLETEDOJT'))tablea group by department)tableb on tablea.department = tableb.department order by department;";
         $query = mysqli_query($conn,$sql);
@@ -284,23 +341,30 @@ if($_POST["action"] == 'fetch_overview'){
                 }else if($row["department"] == 'MANUFACTURING & SCM (DHMSB)') {
                     $department = 'MAN. & SCM';
                 }else {
-					$department = $row["department"];
+					$department = getDepartmentChartLabel($row["department"]);
 				}
+
+            if ($mode == 'totalhour') {
+                $value = $row["avghours"];
+                $color = ($row["avghours"] < 4) ? '#FF0000' : '#00FF00';
+            } else {
+                $value = $row["sumtotalhours"];
+                $color = '#' . rand(100000, 999999) . '';
+            }
 
             $data1[] = array(
                 'category'	    =>	$department,
-                'totalsend'     =>	$row["sumtotalhours"],
-                'totalsend1'    =>	$row["avghours"],
-                'colorplant'    =>	'#' . rand(100000, 999999) . '',
-                'colorplant1'   =>	'#FF0000'
+                'totalsend'     =>	$value,
+                'colorplant'    =>	$color
             );
         }
     }
-	
+
 	echo json_encode($data1);
 }else if($_POST["action"] == "fetch_finance"){
     $startdate = $_POST["startdate"];
     $enddate = $_POST["enddate"];
+    $mode = isset($_POST["mode"]) ? $_POST["mode"] : 'manhour';
     if ($_POST["startdate"] != '') {
         $sql = "select tablea.department,ifnull(sumtotalhour,0) as sumtotalhours, ifnull(round(sumtotalhour/totalstaff,2),0) as avghours from (select department,count(*) as totalstaff from user where division = 'FINANCE, PROCUREMENT & IT' and (dateresign is null or cast(dateresign as char) in ('', '0000-00-00') or dateresign >= '$enddate') group by department)tablea left join (select department,sum(totaldays*totalhours*totalman) as sumtotalhour from (select training.id as trainingid,participation.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,department,1 as totalman from training_all training join participation_all participation on training.id = trainingid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance = 'COMPLETED' union select ojt.id as trainingid,participateojt.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,user.department,participateojt.totalman from ojt_all ojt join participateojt_all participateojt on ojt.id = ojtid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance in ('COMPLETEDOJT'))tablea group by department)tableb on tablea.department = tableb.department order by department;";
         $query = mysqli_query($conn,$sql);
@@ -312,23 +376,30 @@ if($_POST["action"] == 'fetch_overview'){
                 }else if($row["department"] == 'PROCUREMENT & VENDOR DEVELOPMENT') {
                     $department = 'PVD';
                 }else {
-                    $department = $row["department"];
+                    $department = getDepartmentChartLabel($row["department"]);
                 }
-    
+
+            if ($mode == 'totalhour') {
+                $value = $row["avghours"];
+                $color = ($row["avghours"] < 4) ? '#FF0000' : '#00FF00';
+            } else {
+                $value = $row["sumtotalhours"];
+                $color = '#' . rand(100000, 999999) . '';
+            }
+
             $data1[] = array(
                 'category'	    =>	$department,
-                'totalsend'     =>	$row["sumtotalhours"],
-                'totalsend1'    =>	$row["avghours"],
-                'colorplant'    =>	'#' . rand(100000, 999999) . '',
-                'colorplant1'   =>	'#FF0000'
+                'totalsend'     =>	$value,
+                'colorplant'    =>	$color
             );
         }
     }
-	
+
 	echo json_encode($data1);
 }else if($_POST["action"] == "fetch_human"){
     $startdate = $_POST["startdate"];
     $enddate = $_POST["enddate"];
+    $mode = isset($_POST["mode"]) ? $_POST["mode"] : 'manhour';
     if ($_POST["startdate"] != '') {
         $sql = "select tablea.department,ifnull(sumtotalhour,0) as sumtotalhours, ifnull(round(sumtotalhour/totalstaff,2),0) as avghours from (select department,count(*) as totalstaff from user where division = 'HUMAN CAPITAL' and (dateresign is null or cast(dateresign as char) in ('', '0000-00-00') or dateresign >= '$enddate') group by department)tablea left join (select department,sum(totaldays*totalhours*totalman) as sumtotalhour from (select training.id as trainingid,participation.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,department,1 as totalman from training_all training join participation_all participation on training.id = trainingid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance = 'COMPLETED' union select ojt.id as trainingid,participateojt.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,user.department,participateojt.totalman from ojt_all ojt join participateojt_all participateojt on ojt.id = ojtid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance in ('COMPLETEDOJT'))tablea group by department)tableb on tablea.department = tableb.department order by department;";
         $query = mysqli_query($conn,$sql);
@@ -340,15 +411,21 @@ if($_POST["action"] == 'fetch_overview'){
                 }else if($row["department"] == 'ESG, HEALTH AND SAFETY') {
                     $department = 'ESG';
                 }else {
-                    $department = $row["department"];
+                    $department = getDepartmentChartLabel($row["department"]);
                 }
-    
+
+            if ($mode == 'totalhour') {
+                $value = $row["avghours"];
+                $color = ($row["avghours"] < 4) ? '#FF0000' : '#00FF00';
+            } else {
+                $value = $row["sumtotalhours"];
+                $color = '#' . rand(100000, 999999) . '';
+            }
+
             $data1[] = array(
                 'category'	    =>	$department,
-                'totalsend'     =>	$row["sumtotalhours"],
-                'totalsend1'    =>	$row["avghours"],
-                'colorplant'    =>	'#' . rand(100000, 999999) . '',
-                'colorplant1'   =>	'#FF0000'
+                'totalsend'     =>	$value,
+                'colorplant'    =>	$color
             );
         }
     }
@@ -356,6 +433,7 @@ if($_POST["action"] == 'fetch_overview'){
 }else if($_POST["action"] == "fetch_operation"){
     $startdate = $_POST["startdate"];
     $enddate = $_POST["enddate"];
+    $mode = isset($_POST["mode"]) ? $_POST["mode"] : 'manhour';
     if ($_POST["startdate"] != '') {
         $sql = "select tablea.department,ifnull(sumtotalhour,0) as sumtotalhours, ifnull(round(sumtotalhour/totalstaff,2),0) as avghours from (select department,count(*) as totalstaff from user where division in ('OPERATION MANAGEMENT', 'Operation Management') and (dateresign is null or cast(dateresign as char) in ('', '0000-00-00') or dateresign >= '$enddate') group by department)tablea left join (select department,sum(totaldays*totalhours*totalman) as sumtotalhour from (select training.id as trainingid,participation.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,department,1 as totalman from training_all training join participation_all participation on training.id = trainingid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance = 'COMPLETED' union select ojt.id as trainingid,participateojt.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,user.department,participateojt.totalman from ojt_all ojt join participateojt_all participateojt on ojt.id = ojtid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance in ('COMPLETEDOJT'))tablea group by department)tableb on tablea.department = tableb.department order by department;";
         $query = mysqli_query($conn,$sql);
@@ -388,15 +466,21 @@ if($_POST["action"] == 'fetch_overview'){
                 }else if($row["department"] == 'QUALITY SYSTEM & BCM') {
                     $department = 'QS';
                 }else {
-                    $department = $row["department"];
+                    $department = getDepartmentChartLabel($row["department"]);
                 }
-				
+
+            if ($mode == 'totalhour') {
+                $value = $row["avghours"];
+                $color = ($row["avghours"] < 4) ? '#FF0000' : '#00FF00';
+            } else {
+                $value = $row["sumtotalhours"];
+                $color = '#' . rand(100000, 999999) . '';
+            }
+
             $data1[] = array(
                 'category'	    =>	$department,
-                'totalsend'     =>	$row["sumtotalhours"],
-                'totalsend1'    =>	$row["avghours"],
-                'colorplant'    =>	'#' . rand(100000, 999999) . '',
-                'colorplant1'   =>	'#FF0000'
+                'totalsend'     =>	$value,
+                'colorplant'    =>	$color
             );
         }
     }
@@ -436,6 +520,7 @@ if($_POST["action"] == 'fetch_overview'){
 }else if($_POST["action"] == "fetch_quality"){
     $startdate = $_POST["startdate"];
     $enddate = $_POST["enddate"];
+    $mode = isset($_POST["mode"]) ? $_POST["mode"] : 'manhour';
     if ($_POST["startdate"] != '') {
         $sql = "select tablea.department,ifnull(sumtotalhour,0) as sumtotalhours, ifnull(round(sumtotalhour/totalstaff,2),0) as avghours from (select department,count(*) as totalstaff from user where division = 'QUALITY MANAGEMENT' and (dateresign is null or cast(dateresign as char) in ('', '0000-00-00') or dateresign >= '$enddate') group by department)tablea left join (select department,sum(totaldays*totalhours*totalman) as sumtotalhour from (select training.id as trainingid,participation.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,department,1 as totalman from training_all training join participation_all participation on training.id = trainingid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance = 'COMPLETED' union select ojt.id as trainingid,participateojt.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,user.department,participateojt.totalman from ojt_all ojt join participateojt_all participateojt on ojt.id = ojtid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance in ('COMPLETEDOJT'))tablea group by department)tableb on tablea.department = tableb.department order by department;";
         $query = mysqli_query($conn,$sql);
@@ -460,23 +545,30 @@ if($_POST["action"] == 'fetch_overview'){
                 }else if($row["department"] == 'QUALITY SYSTEM & BCM') {
                     $department = 'QMS';
                 }else {
-                    $department = $row["department"];
+                    $department = getDepartmentChartLabel($row["department"]);
                 }
-    
+
+            if ($mode == 'totalhour') {
+                $value = $row["avghours"];
+                $color = ($row["avghours"] < 4) ? '#FF0000' : '#00FF00';
+            } else {
+                $value = $row["sumtotalhours"];
+                $color = '#' . rand(100000, 999999) . '';
+            }
+
             $data1[] = array(
                 'category'	    =>	$department,
-                'totalsend'     =>	$row["sumtotalhours"],
-                'totalsend1'    =>	$row["avghours"],
-                'colorplant'    =>	'#' . rand(100000, 999999) . '',
-                'colorplant1'   =>	'#FF0000'
+                'totalsend'     =>	$value,
+                'colorplant'    =>	$color
             );
         }
     }
-	
+
 	echo json_encode($data1);
 }else if($_POST["action"] == "fetch_rnd"){
     $startdate = $_POST["startdate"];
     $enddate = $_POST["enddate"];
+    $mode = isset($_POST["mode"]) ? $_POST["mode"] : 'manhour';
     if ($_POST["startdate"] != '') {
         $sql = "select tablea.department,ifnull(sumtotalhour,0) as sumtotalhours, ifnull(round(sumtotalhour/totalstaff,2),0) as avghours from (select department,count(*) as totalstaff from user where division = 'ENGINEERING AND R&D' and (dateresign is null or cast(dateresign as char) in ('', '0000-00-00') or dateresign >= '$enddate') group by department)tablea left join (select department,sum(totaldays*totalhours*totalman) as sumtotalhour from (select training.id as trainingid,participation.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,department,1 as totalman from training_all training join participation_all participation on training.id = trainingid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance = 'COMPLETED' union select ojt.id as trainingid,participateojt.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,user.department,participateojt.totalman from ojt_all ojt join participateojt_all participateojt on ojt.id = ojtid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance in ('COMPLETEDOJT'))tablea group by department)tableb on tablea.department = tableb.department order by department;";
         $query = mysqli_query($conn,$sql);
@@ -498,20 +590,25 @@ if($_POST["action"] == 'fetch_overview'){
                 }else if($row["department"] == 'TOOLING DESIGN & DEVELOPMENT') {
                     $department = 'TDD';
                 }else {
-					$department = $row["department"];
+					$department = getDepartmentChartLabel($row["department"]);
                 }
-    
-    
+
+            if ($mode == 'totalhour') {
+                $value = $row["avghours"];
+                $color = ($row["avghours"] < 4) ? '#FF0000' : '#00FF00';
+            } else {
+                $value = $row["sumtotalhours"];
+                $color = '#' . rand(100000, 999999) . '';
+            }
+
             $data1[] = array(
                 'category'	    =>	$department,
-                'totalsend'     =>	$row["sumtotalhours"],
-                'totalsend1'    =>	$row["avghours"],
-                'colorplant'    =>	'#' . rand(100000, 999999) . '',
-                'colorplant1'   =>	'#FF0000'
+                'totalsend'     =>	$value,
+                'colorplant'    =>	$color
             );
         }
     }
-	
+
 	echo json_encode($data1);
 }
 

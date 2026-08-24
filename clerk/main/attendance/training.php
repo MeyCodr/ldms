@@ -28,6 +28,11 @@
         <script src="../../../asset/js/bootstrap-datepicker1.js"></script>
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-flash-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.css"/>
         <script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-flash-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js"></script>
+        <style>
+            #traininglist {
+                width: 100% !important;
+            }
+        </style>
     </head>
 
     <style>
@@ -105,7 +110,7 @@
                                     <div class="col-md-5">
                                         <input type="text" name="enddate" id="enddate" class="form-control" placeholder="Insert End Date" autocomplete="off" />
                                     </div>
-                                    <div class="col-md-2" align="left">
+                                    <div class="col-md-2" style="display:flex; gap:5px;">
                                         <button type="button" name="filter_date" id="filter_date" class="btn btn-info btn-md">Filter <i class="fa fa-search"></i> </button>
                                         <button type="button" name="clear_filter" id="clear_filter" class="btn btn-info btn-md">Clear <i class="fa fa-times"></i> </button>
                                     </div>
@@ -114,8 +119,7 @@
                             </div>
                             <br>
                             <div class="row">
-                                <div class="col-sm-2"></div>
-                                <div class="col-sm-8 table-responsive">
+                                <div class="col-sm-12 table-responsive">
                                     <table id="traininglist" class="table table-bordered table-striped">
                                     <thead>
                                             <tr>
@@ -139,7 +143,6 @@
                                         </tfoot>
                                     </table>
                                 </div>
-                                <div class="col-sm-2"></div>
                             </div>
                         </div>
 					</div>
@@ -208,6 +211,7 @@
                 "searching": true,
                 "ordering": true,
                 "responsive": true,
+                "autoWidth": false,
                 "pageLength": 10,
                 "info": true,
                 "ajax": {

@@ -527,8 +527,16 @@
 
         $('#back_training').click(function(){
             window.location = "training_ojt.php";
-            localStorage.setItem("setstarttr", starttrdate);
-            localStorage.setItem("setendtr", endtrdate);
+            if (starttrdate) {
+                localStorage.setItem("setstarttr", starttrdate);
+            } else {
+                localStorage.removeItem("setstarttr");
+            }
+            if (endtrdate) {
+                localStorage.setItem("setendtr", endtrdate);
+            } else {
+                localStorage.removeItem("setendtr");
+            }
         });
 
         $(document).on('submit', '#training_form', function(event){

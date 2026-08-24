@@ -10,107 +10,56 @@
     }else if($_POST["action"] == "load_ojt"){
         $userid = $_POST["userid"];
         $output= array();
-        $trainid = '';
         $startdate = $_POST["startdate"];
         $enddate = $_POST["enddate"];
-        if ($_POST["startdate"] != '') {
-            $sql = "select * from ojt where id in (select distinct(ojtid) as id from participateojt where clerkid = '$userid') and startdate between '$startdate' and '$enddate';";
-            $query = mysqli_query($conn,$sql);
-            while ($row = mysqli_fetch_assoc($query))
-            {
-                $trainid = $row['id'];
-    
-                $query5 = "select sum(totalman) as totalpeople from participateojt where ojtid = '$trainid'";
-                $result5 = mysqli_query($conn, $query5);
-                while($row5 = mysqli_fetch_array($result5)) {
-                    if ($row5['totalpeople'] != '') {
-                        $totalpeople = $row5['totalpeople'];
-                    }else {
-                        $totalpeople = 0;
-                    }
-                }
+        $hasDateFilter = $startdate !== '' && $startdate !== 'null' && $startdate !== 'undefined'
+            && $enddate !== '' && $enddate !== 'null' && $enddate !== 'undefined';
 
-                $query2 = "select sum(totalman) as totalpeople from participateojt where ojtid = '$trainid' and attendance = 'COMPLETEDOJT'";
-                $result2 = mysqli_query($conn, $query2);
-                while($row2 = mysqli_fetch_array($result2)) {
-                    if ($row2['totalpeople'] != '') {
-                        $totalcomplete = $row2['totalpeople'];
-                    }else {
-                        $totalcomplete = 0;
-                    }
-                }
+        $dateFilter = $hasDateFilter
+            ? "and o.startdate between '$startdate' and '$enddate'"
+            : '';
 
-                if ($totalpeople != '0') {
-                    $percentage = ($totalcomplete/$totalpeople)*100;
-                }else {
-                    $percentage = 0;
-                }
-                $percentageround = round($percentage,2);
+        $sql = "select o.*,
+                       ifnull(p.totalpeople,0) as totalpeople,
+                       ifnull(p.totalcomplete,0) as totalcomplete
+                from ojt o
+                join (select distinct ojtid from participateojt where clerkid = '$userid') filt on filt.ojtid = o.id
+                left join (
+                    select ojtid,
+                           sum(totalman) as totalpeople,
+                           sum(case when attendance = 'COMPLETEDOJT' then totalman else 0 end) as totalcomplete
+                    from participateojt
+                    group by ojtid
+                ) p on p.ojtid = o.id
+                where 1=1 $dateFilter;";
+        $query = mysqli_query($conn,$sql);
+        while ($row = mysqli_fetch_assoc($query))
+        {
+            $totalpeople = $row['totalpeople'];
+            $totalcomplete = $row['totalcomplete'];
 
-                $output[]= array(
-                    'id' => $row['id'],
-                    'title' => $row['title'],
-                    'startdate' => $row['startdate'],
-                    'enddate' => $row['enddate'],
-                    'starttime' => $row['starttime'],
-                    'endtime' => $row['endtime'],
-                    'totalday' => $row['totalday'],
-                    'totalhour' => $row['totalhour'],
-                    'trainername' => $row['trainername'],
-                    'totalman' => $totalpeople.'<br>('.$percentageround.' %)',
-                    'btnmodify' => '<button type="submit" id="'.$row['id'].'" class="btn btn-info btn-sm view" style="margin-left:5px;"><i class="fa fa-search"></i> </button><button type="submit" id="'.$row['id'].'" class="btn btn-warning btn-sm edit" style="margin-left:5px;"><i class="fa fa-edit"></i> </button><button type="submit" id="'.$row['id'].'" class="btn btn-danger btn-sm delete" style="margin-left:5px;"><i class="fa fa-trash"></i> </button>',
-                ); 
+            if ($totalpeople != '0') {
+                $percentage = ($totalcomplete/$totalpeople)*100;
+            }else {
+                $percentage = 0;
             }
-        }else {
-            $sql = "select * from ojt where id in (select distinct(ojtid) as id from participateojt where clerkid = '$userid');";
-            $query = mysqli_query($conn,$sql);
-            while ($row = mysqli_fetch_assoc($query))
-            {
-                $trainid = $row['id'];
-    
-                $query5 = "select sum(totalman) as totalpeople from participateojt where ojtid = '$trainid'";
-                $result5 = mysqli_query($conn, $query5);
-                while($row5 = mysqli_fetch_array($result5)) {
-                    if ($row5['totalpeople'] != '') {
-                        $totalpeople = $row5['totalpeople'];
-                    }else {
-                        $totalpeople = 0;
-                    }
-                }
+            $percentageround = round($percentage,2);
 
-                $query2 = "select sum(totalman) as totalpeople from participateojt where ojtid = '$trainid' and attendance = 'COMPLETEDOJT'";
-                $result2 = mysqli_query($conn, $query2);
-                while($row2 = mysqli_fetch_array($result2)) {
-                    if ($row2['totalpeople'] != '') {
-                        $totalcomplete = $row2['totalpeople'];
-                    }else {
-                        $totalcomplete = 0;
-                    }
-                }
-
-                if ($totalpeople != '0') {
-                    $percentage = ($totalcomplete/$totalpeople)*100;
-                }else {
-                    $percentage = 0;
-                }
-                $percentageround = round($percentage,2);
-
-                $output[]= array(
-                    'id' => $row['id'],
-                    'title' => $row['title'],
-                    'startdate' => $row['startdate'],
-                    'enddate' => $row['enddate'],
-                    'starttime' => $row['starttime'],
-                    'endtime' => $row['endtime'],
-                    'totalday' => $row['totalday'],
-                    'totalhour' => $row['totalhour'],
-                    'trainername' => $row['trainername'],
-                    'totalman' => $totalpeople.'<br>('.$percentageround.' %)',
-                    'btnmodify' => '<button type="submit" id="'.$row['id'].'" class="btn btn-info btn-sm view" style="margin-left:5px;"><i class="fa fa-search"></i> </button><button type="submit" id="'.$row['id'].'" class="btn btn-warning btn-sm edit" style="margin-left:5px;"><i class="fa fa-edit"></i> </button><button type="submit" id="'.$row['id'].'" class="btn btn-danger btn-sm delete" style="margin-left:5px;"><i class="fa fa-trash"></i> </button>',
-                ); 
-            }
+            $output[]= array(
+                'id' => $row['id'],
+                'title' => $row['title'],
+                'startdate' => $row['startdate'],
+                'enddate' => $row['enddate'],
+                'starttime' => $row['starttime'],
+                'endtime' => $row['endtime'],
+                'totalday' => $row['totalday'],
+                'totalhour' => $row['totalhour'],
+                'trainername' => $row['trainername'],
+                'totalman' => $totalpeople.'<br>('.$percentageround.' %)',
+                'btnmodify' => '<button type="submit" id="'.$row['id'].'" class="btn btn-info btn-sm view" style="margin-left:5px;"><i class="fa fa-search"></i> </button><button type="submit" id="'.$row['id'].'" class="btn btn-warning btn-sm edit" style="margin-left:5px;"><i class="fa fa-edit"></i> </button><button type="submit" id="'.$row['id'].'" class="btn btn-danger btn-sm delete" style="margin-left:5px;"><i class="fa fa-trash"></i> </button>',
+            );
         }
-        
+
         echo json_encode($output);
     }else if($_POST["action"] == "fetch_training"){
         $id = $_POST["id"];
@@ -164,7 +113,8 @@
             $enddate = '';
         }
 
-        if ($startdate != '') {
+        if ($startdate !== '' && $startdate !== 'null' && $startdate !== 'undefined'
+            && $enddate !== '' && $enddate !== 'null' && $enddate !== 'undefined') {
             $sql = "select sum(totalman) as totalmans from ojt join (select ojtid,clerkid from participateojt group by ojtid)tablea on ojt.id = tablea.ojtid where clerkid = '$clerkid' and startdate between '$startdate' and '$enddate';";
             $query = mysqli_query($conn,$sql);
 			while($row = mysqli_fetch_assoc($query))

@@ -79,8 +79,7 @@
                         </div>
                         <div class="panel-body" align="center">
                             <div class="row">
-                                <div class="col-sm-4"></div>
-                                <div class="col-sm-4">
+                                <div class="col-sm-12">
                                     <table id="userlist" class="table">
                                         <thead>
                                             <tr>
@@ -118,7 +117,6 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                <div class="col-sm-4"></div>
                             </div>
                         </div>
 					</div>

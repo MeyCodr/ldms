@@ -88,9 +88,15 @@
 								<div class="col-md-6" align="left" style="margin-top:10px;"><span id="datarecord"></span></div>
 								<div class="col-md-6">
 									<div class="col-md-4">
+										<select class="form-control" id="mode" name="mode">
+											<option value="manhour">TOTAL MAN HOUR</option>
+											<option value="totalhour">AVERAGE TOTAL HOUR</option>
+										</select>
+									</div>
+									<div class="col-md-2">
 										<input type="text" name="startdate" id="startdate" class="form-control" placeholder="Insert Start Date" autocomplete="off" />
 									</div>
-									<div class="col-md-4">
+									<div class="col-md-2">
 										<input type="text" name="enddate" id="enddate" class="form-control" placeholder="Insert End Date" autocomplete="off" />
 									</div>
 									<div class="col-md-2" align="right">
@@ -217,7 +223,7 @@
 				<div class="col-md-12">
 					<div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>All Department List (Total Man Hour Vs Avg Hour)</strong>
+                            <strong>All Department List (<span id="modeLabelTop10">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
 							<div class="row">
@@ -233,7 +239,7 @@
                 <div class="col-md-4">
 					<div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>Business Development Division (Total Man Hour Vs Avg Hour)</strong>
+                            <strong>Business Development Division (<span id="modeLabelBusiness">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
 							<div class="row">
@@ -247,7 +253,7 @@
 				<div class="col-md-4">
 					<div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>DHMSB/Subang Division (Total Man Hour Vs Avg Hour)</strong>
+                            <strong>DHMSB/Subang Division (<span id="modeLabelDhmsb">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
 							<div class="row">
@@ -261,7 +267,7 @@
 				<div class="col-md-4">
 					<div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>Quality Management Division (Total Man Hour Vs Avg Hour)</strong>
+                            <strong>Quality Management Division (<span id="modeLabelQuality">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
 							<div class="row">
@@ -277,7 +283,7 @@
                 <div class="col-md-4">
 					<div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>Finance Division (Total Man Hour Vs Avg Hour)</strong>
+                            <strong>Finance Division (<span id="modeLabelFinance">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
 							<div class="row">
@@ -291,7 +297,7 @@
 				<div class="col-md-4">
 					<div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>Human Capital Division (Total Man Hour Vs Avg Hour)</strong>
+                            <strong>Human Capital Division (<span id="modeLabelHuman">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
 							<div class="row">
@@ -305,7 +311,7 @@
 				<div class="col-md-4">
 					<div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>R&D And Engineering Division (Total Man Hour Vs Avg Hour)</strong>
+                            <strong>R&D And Engineering Division (<span id="modeLabelRnd">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
 							<div class="row">
@@ -319,7 +325,7 @@
 				<div class="col-md-12">
 					<div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>Operation Division (Total Man Hour Vs Avg Hour)</strong>
+                            <strong>Operation Division (<span id="modeLabelOperation">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
 							<div class="row">
@@ -525,11 +531,11 @@
 		var canvasTop10 = document.getElementById("top10Chart");
 		var top10Chart;
 
-		function maketop10chart(startdate,enddate) {
+		function maketop10chart(mode,startdate,enddate) {
 			$.ajax({
 				url:"fetch_dash.php",
 				method:"POST",
-				data:{action:'fetch_top10',startdate:startdate,enddate:enddate},
+				data:{action:'fetch_top10',mode:mode,startdate:startdate,enddate:enddate},
 				dataType:"JSON",
 				success:function(data)
 				{
@@ -595,16 +601,16 @@
             destroyChartInstance(top10Chart);
         }
 
-		maketop10chart(fd,ld);
+		maketop10chart('manhour',fd,ld);
 
 		var canvasBusiness = document.getElementById("businessChart");
 		var businessChart;
 
-		function makebusinesschart(startdate,enddate) {
+		function makebusinesschart(mode,startdate,enddate) {
 			$.ajax({
 				url:"fetch_dash.php",
 				method:"POST",
-				data:{action:'fetch_business',startdate:startdate,enddate:enddate},
+				data:{action:'fetch_business',mode:mode,startdate:startdate,enddate:enddate},
 				dataType:"JSON",
 				success:function(data)
 				{
@@ -614,16 +620,12 @@
                     }
                     var category = [];
 					var totalsend = [];
-					var totalsend1 = [];
 					var colorplant = [];
-					var colorplant1 = [];
 
 					for(var count = 0; count < data.length; count++) {
 						category.push(data[count].category);
 						totalsend.push(data[count].totalsend);
-						totalsend1.push(data[count].totalsend1);
 						colorplant.push(data[count].colorplant);
-						colorplant1.push(data[count].colorplant1);
 					}
 
                     businessChart = new Chart(ctxBusiness, {
@@ -634,14 +636,7 @@
                                 {
                                     label: "Total Hours",
                                     backgroundColor: colorplant,
-                                    data: totalsend,
-									stack: 'Stack 0'
-                                },
-								{
-                                    label: "Avg Hours",
-                                    backgroundColor: colorplant1,
-                                    data: totalsend1,
-									stack: 'Stack 1'
+                                    data: totalsend
                                 }
                             ]
                         },
@@ -649,12 +644,9 @@
                             responsive: true,
                             maintainAspectRatio: false,
                             legend: {
-                                display: true
+                                display: false
                             },
                             scales: {
-								xAxes: [{
-                                    stacked: true,
-                                }],
                                 yAxes:[{
 									min:0,
 									ticks:{
@@ -684,16 +676,16 @@
             destroyChartInstance(businessChart);
         }
 
-		makebusinesschart(fd,ld);
+		makebusinesschart('manhour',fd,ld);
 
 		var canvasDhmsb = document.getElementById("dhmsbChart");
 		var dhmsbChart;
 
-		function makedhmsbchart(startdate,enddate) {
+		function makedhmsbchart(mode,startdate,enddate) {
 			$.ajax({
 				url:"fetch_dash.php",
 				method:"POST",
-				data:{action:'fetch_dhmsb',startdate:startdate,enddate:enddate},
+				data:{action:'fetch_dhmsb',mode:mode,startdate:startdate,enddate:enddate},
 				dataType:"JSON",
 				success:function(data)
 				{
@@ -703,16 +695,12 @@
                     }
                     var category = [];
 					var totalsend = [];
-					var totalsend1 = [];
 					var colorplant = [];
-					var colorplant1 = [];
 
 					for(var count = 0; count < data.length; count++) {
 						category.push(data[count].category);
 						totalsend.push(data[count].totalsend);
-						totalsend1.push(data[count].totalsend1);
 						colorplant.push(data[count].colorplant);
-						colorplant1.push(data[count].colorplant1);
 					}
 
                     dhmsbChart = new Chart(ctxDhmsb, {
@@ -723,14 +711,7 @@
                                 {
                                     label: "Total Hours",
                                     backgroundColor: colorplant,
-                                    data: totalsend,
-									stack: 'Stack 0'
-                                },
-								{
-                                    label: "Avg Hours",
-                                    backgroundColor: colorplant1,
-                                    data: totalsend1,
-									stack: 'Stack 1'
+                                    data: totalsend
                                 }
                             ]
                         },
@@ -738,12 +719,9 @@
                             responsive: true,
                             maintainAspectRatio: false,
                             legend: {
-                                display: true
+                                display: false
                             },
                             scales: {
-								xAxes: [{
-                                    stacked: true,
-                                }],
                                 yAxes:[{
 									min:0,
 									ticks:{
@@ -773,16 +751,16 @@
             destroyChartInstance(dhmsbChart);
         }
 
-		makedhmsbchart(fd,ld);
+		makedhmsbchart('manhour',fd,ld);
 
 		var canvasFinance = document.getElementById("financeChart");
 		var financeChart;
 
-		function makefinancechart(startdate,enddate) {
+		function makefinancechart(mode,startdate,enddate) {
 			$.ajax({
 				url:"fetch_dash.php",
 				method:"POST",
-				data:{action:'fetch_finance',startdate:startdate,enddate:enddate},
+				data:{action:'fetch_finance',mode:mode,startdate:startdate,enddate:enddate},
 				dataType:"JSON",
 				success:function(data)
 				{
@@ -792,16 +770,12 @@
                     }
                     var category = [];
 					var totalsend = [];
-					var totalsend1 = [];
 					var colorplant = [];
-					var colorplant1 = [];
 
 					for(var count = 0; count < data.length; count++) {
 						category.push(data[count].category);
 						totalsend.push(data[count].totalsend);
-						totalsend1.push(data[count].totalsend1);
 						colorplant.push(data[count].colorplant);
-						colorplant1.push(data[count].colorplant1);
 					}
 
                     financeChart = new Chart(ctxFinance, {
@@ -812,14 +786,7 @@
                                 {
                                     label: "Total Hours",
                                     backgroundColor: colorplant,
-                                    data: totalsend,
-									stack: 'Stack 0'
-                                },
-								{
-                                    label: "Avg Hours",
-                                    backgroundColor: colorplant1,
-                                    data: totalsend1,
-									stack: 'Stack 1'
+                                    data: totalsend
                                 }
                             ]
                         },
@@ -827,12 +794,9 @@
                             responsive: true,
                             maintainAspectRatio: false,
                             legend: {
-                                display: true
+                                display: false
                             },
                             scales: {
-								xAxes: [{
-                                    stacked: true,
-                                }],
                                 yAxes:[{
 									min:0,
 									ticks:{
@@ -862,16 +826,16 @@
             destroyChartInstance(financeChart);
         }
 
-		makefinancechart(fd,ld);
+		makefinancechart('manhour',fd,ld);
 
 		var canvasHuman = document.getElementById("humanChart");
 		var humanChart;
 
-		function makehumanchart(startdate,enddate) {
+		function makehumanchart(mode,startdate,enddate) {
 			$.ajax({
 				url:"fetch_dash.php",
 				method:"POST",
-				data:{action:'fetch_human',startdate:startdate,enddate:enddate},
+				data:{action:'fetch_human',mode:mode,startdate:startdate,enddate:enddate},
 				dataType:"JSON",
 				success:function(data)
 				{
@@ -881,16 +845,12 @@
                     }
                     var category = [];
 					var totalsend = [];
-					var totalsend1 = [];
 					var colorplant = [];
-					var colorplant1 = [];
 
 					for(var count = 0; count < data.length; count++) {
 						category.push(data[count].category);
 						totalsend.push(data[count].totalsend);
-						totalsend1.push(data[count].totalsend1);
 						colorplant.push(data[count].colorplant);
-						colorplant1.push(data[count].colorplant1);
 					}
 
                     humanChart = new Chart(ctxHuman, {
@@ -901,14 +861,7 @@
                                 {
                                     label: "Total Hours",
                                     backgroundColor: colorplant,
-                                    data: totalsend,
-									stack: 'Stack 0'
-                                },
-								{
-                                    label: "Avg Hours",
-                                    backgroundColor: colorplant1,
-                                    data: totalsend1,
-									stack: 'Stack 1'
+                                    data: totalsend
                                 }
                             ]
                         },
@@ -916,12 +869,9 @@
                             responsive: true,
                             maintainAspectRatio: false,
                             legend: {
-                                display: true
+                                display: false
                             },
                             scales: {
-								xAxes: [{
-                                    stacked: true,
-                                }],
                                 yAxes:[{
 									min:0,
 									ticks:{
@@ -951,16 +901,16 @@
             destroyChartInstance(humanChart);
         }
 
-		makehumanchart(fd,ld);
+		makehumanchart('manhour',fd,ld);
 
 		var canvasOperation = document.getElementById("operationChart");
 		var operationChart;
 
-		function makeoperationchart(startdate,enddate) {
+		function makeoperationchart(mode,startdate,enddate) {
 			$.ajax({
 				url:"fetch_dash.php",
 				method:"POST",
-				data:{action:'fetch_operation',startdate:startdate,enddate:enddate},
+				data:{action:'fetch_operation',mode:mode,startdate:startdate,enddate:enddate},
 				dataType:"JSON",
 				success:function(data)
 				{
@@ -970,16 +920,12 @@
                     }
                     var category = [];
 					var totalsend = [];
-					var totalsend1 = [];
 					var colorplant = [];
-					var colorplant1 = [];
 
 					for(var count = 0; count < data.length; count++) {
 						category.push(data[count].category);
 						totalsend.push(data[count].totalsend);
-						totalsend1.push(data[count].totalsend1);
 						colorplant.push(data[count].colorplant);
-						colorplant1.push(data[count].colorplant1);
 					}
 
                     operationChart = new Chart(ctxOperation, {
@@ -990,14 +936,7 @@
                                 {
                                     label: "Total Hours",
                                     backgroundColor: colorplant,
-                                    data: totalsend,
-									stack: 'Stack 0'
-                                },
-								{
-                                    label: "Avg Hours",
-                                    backgroundColor: colorplant1,
-                                    data: totalsend1,
-									stack: 'Stack 1'
+                                    data: totalsend
                                 }
                             ]
                         },
@@ -1005,12 +944,9 @@
                             responsive: true,
                             maintainAspectRatio: false,
                             legend: {
-                                display: true
+                                display: false
                             },
                             scales: {
-								xAxes: [{
-                                    stacked: true,
-                                }],
                                 yAxes:[{
 									min:0,
 									ticks:{
@@ -1040,16 +976,16 @@
             destroyChartInstance(operationChart);
         }
 
-		makeoperationchart(fd,ld);
+		makeoperationchart('manhour',fd,ld);
 
 		var canvasQuality = document.getElementById("qualityChart");
 		var qualityChart;
 
-		function makequalitychart(startdate,enddate) {
+		function makequalitychart(mode,startdate,enddate) {
 			$.ajax({
 				url:"fetch_dash.php",
 				method:"POST",
-				data:{action:'fetch_quality',startdate:startdate,enddate:enddate},
+				data:{action:'fetch_quality',mode:mode,startdate:startdate,enddate:enddate},
 				dataType:"JSON",
 				success:function(data)
 				{
@@ -1059,16 +995,12 @@
                     }
                     var category = [];
 					var totalsend = [];
-					var totalsend1 = [];
 					var colorplant = [];
-					var colorplant1 = [];
 
 					for(var count = 0; count < data.length; count++) {
 						category.push(data[count].category);
 						totalsend.push(data[count].totalsend);
-						totalsend1.push(data[count].totalsend1);
 						colorplant.push(data[count].colorplant);
-						colorplant1.push(data[count].colorplant1);
 					}
 
                     qualityChart = new Chart(ctxQuality, {
@@ -1079,14 +1011,7 @@
                                 {
                                     label: "Total Hours",
                                     backgroundColor: colorplant,
-                                    data: totalsend,
-									stack: 'Stack 0'
-                                },
-								{
-                                    label: "Avg Hours",
-                                    backgroundColor: colorplant1,
-                                    data: totalsend1,
-									stack: 'Stack 1'
+                                    data: totalsend
                                 }
                             ]
                         },
@@ -1094,12 +1019,9 @@
                             responsive: true,
                             maintainAspectRatio: false,
                             legend: {
-                                display: true
+                                display: false
                             },
                             scales: {
-								xAxes: [{
-                                    stacked: true,
-                                }],
                                 yAxes:[{
 									min:0,
 									ticks:{
@@ -1129,16 +1051,16 @@
             destroyChartInstance(qualityChart);
         }
 
-		makequalitychart(fd,ld);
+		makequalitychart('manhour',fd,ld);
 
 		var canvasRnd = document.getElementById("rndChart");
 		var rndChart;
 
-		function makerndchart(startdate,enddate) {
+		function makerndchart(mode,startdate,enddate) {
 			$.ajax({
 				url:"fetch_dash.php",
 				method:"POST",
-				data:{action:'fetch_rnd',startdate:startdate,enddate:enddate},
+				data:{action:'fetch_rnd',mode:mode,startdate:startdate,enddate:enddate},
 				dataType:"JSON",
 				success:function(data)
 				{
@@ -1148,16 +1070,12 @@
                     }
                     var category = [];
 					var totalsend = [];
-					var totalsend1 = [];
 					var colorplant = [];
-					var colorplant1 = [];
 
 					for(var count = 0; count < data.length; count++) {
 						category.push(data[count].category);
 						totalsend.push(data[count].totalsend);
-						totalsend1.push(data[count].totalsend1);
 						colorplant.push(data[count].colorplant);
-						colorplant1.push(data[count].colorplant1);
 					}
 
                     rndChart = new Chart(ctxRnd, {
@@ -1168,14 +1086,7 @@
                                 {
                                     label: "Total Hours",
                                     backgroundColor: colorplant,
-                                    data: totalsend,
-									stack: 'Stack 0'
-                                },
-								{
-                                    label: "Avg Hours",
-                                    backgroundColor: colorplant1,
-                                    data: totalsend1,
-									stack: 'Stack 1'
+                                    data: totalsend
                                 }
                             ]
                         },
@@ -1183,12 +1094,9 @@
                             responsive: true,
                             maintainAspectRatio: false,
                             legend: {
-                                display: true
+                                display: false
                             },
                             scales: {
-								xAxes: [{
-                                    stacked: true,
-                                }],
                                 yAxes:[{
 									min:0,
 									ticks:{
@@ -1218,11 +1126,19 @@
             destroyChartInstance(rndChart);
         }
 
-		makerndchart(fd,ld);
+		makerndchart('manhour',fd,ld);
+
+		function updateModeLabels(mode) {
+            var label = mode === 'totalhour' ? 'Average Total Hour' : 'Total Man Hour';
+            $('#modeLabelTop10, #modeLabelBusiness, #modeLabelDhmsb, #modeLabelQuality, #modeLabelFinance, #modeLabelHuman, #modeLabelOperation, #modeLabelRnd').text(label);
+        }
 
 		$('#filter_date').click(function(){
             var startdate = $('#startdate').val();
             var enddate = $('#enddate').val();
+            var mode = $('#mode').val();
+
+            updateModeLabels(mode);
 
 			$('#datarecord').fadeIn().html('<label>Data summary : '+startdate+' - '+enddate+'</label');
             getOverview('fetch_overview',userid,startdate,enddate);
@@ -1231,26 +1147,52 @@
 			destroyTrainerDataTable();
 			fetch_data('load_top5',startdate,enddate);
 			destroyChartTop10();
-			maketop10chart(startdate,enddate);
+			maketop10chart(mode,startdate,enddate);
 			destroyChartbusiness();
-			makebusinesschart(startdate,enddate);
+			makebusinesschart(mode,startdate,enddate);
 			destroyChartdhmsb();
-			makedhmsbchart(startdate,enddate);
+			makedhmsbchart(mode,startdate,enddate);
 			// destroyChartdirector();
 			// makedirectorchart(startdate,enddate);
 			destroyChartfinance();
-			makefinancechart(startdate,enddate);
+			makefinancechart(mode,startdate,enddate);
 			destroyCharthuman();
-			makehumanchart(startdate,enddate);
+			makehumanchart(mode,startdate,enddate);
 			destroyChartoperation();
-			makeoperationchart(startdate,enddate);
+			makeoperationchart(mode,startdate,enddate);
 			destroyChartquality();
-			makequalitychart(startdate,enddate);
+			makequalitychart(mode,startdate,enddate);
 			destroyChartrnd();
-			makerndchart(startdate,enddate);
+			makerndchart(mode,startdate,enddate);
+        });
+
+        $('#mode').change(function(){
+            var startdate = $('#startdate').val() || fd;
+            var enddate = $('#enddate').val() || ld;
+            var mode = $('#mode').val();
+
+            updateModeLabels(mode);
+
+            destroyChartTop10();
+			maketop10chart(mode,startdate,enddate);
+			destroyChartbusiness();
+			makebusinesschart(mode,startdate,enddate);
+			destroyChartdhmsb();
+			makedhmsbchart(mode,startdate,enddate);
+			destroyChartfinance();
+			makefinancechart(mode,startdate,enddate);
+			destroyCharthuman();
+			makehumanchart(mode,startdate,enddate);
+			destroyChartoperation();
+			makeoperationchart(mode,startdate,enddate);
+			destroyChartquality();
+			makequalitychart(mode,startdate,enddate);
+			destroyChartrnd();
+			makerndchart(mode,startdate,enddate);
         });
 
         $('#clear_filter').click(function(){
+            updateModeLabels('manhour');
 			$('#datarecord').fadeIn().html('<label>Data summary : '+fd+' - '+ld+'</label');
             getOverview('fetch_overview',userid,fd,ld);
 			destroyChartpublicojt();
@@ -1258,23 +1200,24 @@
 			destroyTrainerDataTable();
 			fetch_data('load_top5',fd,ld);
 			destroyChartTop10();
-			maketop10chart(fd,ld);
+			maketop10chart('manhour',fd,ld);
 			destroyChartbusiness();
-			makebusinesschart(fd,ld);
+			makebusinesschart('manhour',fd,ld);
 			destroyChartdhmsb();
-			makedhmsbchart(fd,ld);
+			makedhmsbchart('manhour',fd,ld);
 			destroyChartfinance();
-			makefinancechart(fd,ld);
+			makefinancechart('manhour',fd,ld);
 			destroyCharthuman();
-			makehumanchart(fd,ld);
+			makehumanchart('manhour',fd,ld);
 			destroyChartoperation();
-			makeoperationchart(fd,ld);
+			makeoperationchart('manhour',fd,ld);
 			destroyChartquality();
-			makequalitychart(fd,ld);
+			makequalitychart('manhour',fd,ld);
 			destroyChartrnd();
-			makerndchart(fd,ld);
+			makerndchart('manhour',fd,ld);
             $('#startdate').val('');
             $('#enddate').val('');
+            $('#mode').val('manhour');
         });
 
 </script>

@@ -26,6 +26,11 @@
         <script src="../../../asset/js/bootstrap-datepicker1.js"></script>
 		<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-flash-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.css"/>
         <script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-flash-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js"></script>
+        <style>
+            #traininglist {
+                width: 100% !important;
+            }
+        </style>
     </head>
 
     <body onload="startTime()" style="background-image:url('../../../asset/image/bg-try.png');zoom: 75%;">
@@ -155,9 +160,21 @@
                     <div class="modal-body">
                         <div class="row">
                             <div class="col-sm-12">
+                                <div class="col-md-3"></div>
+                                <div class="col-md-6">
+                                    <p align="left">
+                                        New here? <a href="export_ojt_template.php">Download the Excel template</a> first -
+                                        it explains the format and has example rows.
+                                    </p>
+                                </div>
+                                <div class="col-md-3"></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12">
                                 <form id="upload_csv" align= "center" class="form-horizontal"  method="post" enctype="multipart/form-data">
-                                    <div class="col-md-3"></div>    
-                                    <div class="col-md-6">        
+                                    <div class="col-md-3"></div>
+                                    <div class="col-md-6">
                                         <div class="form-group">
                                             <input type="file" name="import_file" class="form-control"> <br>
                                         </div>
@@ -252,6 +269,7 @@
                 "searching": true,
                 "ordering": true,
                 "responsive": true,
+                "autoWidth": false,
                 "pageLength": 10,
                 "info": true,
                 "ajax":{
@@ -335,12 +353,12 @@
 
         var starttrdate = localStorage.getItem("setstarttr");
         var endtrdate = localStorage.getItem("setendtr");
-        if (starttrdate == null) {
+        if (!starttrdate || starttrdate === 'null' || starttrdate === 'undefined') {
             $('#startdate').val('');
             $('#enddate').val('');
             fetch_data('load_ojt','','',userid);
             getTotalSummary('load_ojtsummary',userid,'','');
-        }else if (starttrdate != null){
+        }else{
             $('#startdate').val(starttrdate);
             $('#enddate').val(endtrdate);
             fetch_data('load_ojt',starttrdate,endtrdate,userid);
@@ -457,7 +475,8 @@
         });
 
         $(document).on("submit",'#upload_csv', function(e){
-            event.preventDefault();
+            e.preventDefault();
+            var uploadForm = this;
             swal({
                 title: "Import this file?",
                 text: "Are you sure?",
@@ -468,24 +487,37 @@
             })
             .then((isConfirm) => {
                 if (isConfirm) {
-                    swal(
-                        'Imported!',
-                        'Your file has been imported.',
-                        'success'
-                    )
-                    .then(function() {
-                        location.reload();
-                    });
                     $.ajax({
                         url:"import_action.php",
                         method:"POST",
-                        data:new FormData(this),
+                        data:new FormData(uploadForm),
                         contentType:false,          // The content type used when sending data to the server.
                         cache:false,                // To unable request pages to be cached
                         processData:false,          // To send DOMDocument or non processed data file it is set to false
+                        dataType:"json",
                         success:function(data)
                         {
-                            console.log("data: ", data);
+                            if (data.message === 'ok') {
+                                swal(
+                                    'Imported!',
+                                    data.trainings_created + ' training(s) added with ' + data.participants_added + ' participant(s) in total.',
+                                    'success'
+                                ).then(function() {
+                                    location.reload();
+                                });
+                            } else {
+                                var errors = data.errors || ['The file could not be imported.'];
+                                swal(
+                                    'Nothing was imported',
+                                    errors.join('\n'),
+                                    'error'
+                                );
+                            }
+                        },
+                        error:function(xhr)
+                        {
+                            swal('Import failed', 'The server returned an unexpected response. Please try again.', 'error');
+                            console.error('import_action.php error:', xhr.status, xhr.responseText);
                         }
                     });
                 }else{
