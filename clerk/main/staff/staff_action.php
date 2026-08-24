@@ -1,6 +1,7 @@
 <?php 
     include "../../../dbconn.php";
     include_once __DIR__ . '/../../../division_department_section.php';
+    include_once __DIR__ . '/../../../admin/staff/delete_impact.php';
 
     if (isset($_POST['btn_action'])) {
         if ($_POST['btn_action'] == 'adduser') {
@@ -52,14 +53,34 @@
             }else {
                 echo json_encode(['message' => 'error']);
             } 
+        }else if ($_POST['btn_action'] == 'delete_impact') {
+            // Asked before the confirmation dialog, so the clerk is told what
+            // deleting actually destroys instead of a bare "Are you sure?".
+            $impact = staffDeleteImpact($conn, $_POST['id']);
+            if ($impact === null) {
+                echo json_encode(['message' => 'error', 'detail' => 'Staff not found.']);
+            } else {
+                echo json_encode([
+                    'message' => 'ok',
+                    'staffno' => $impact['staffno'],
+                    'staffname' => $impact['staffname'],
+                    'warnings' => staffDeleteImpactWarnings($impact),
+                    'blockers' => staffDeleteBlockers($impact),
+                    'has_approved_matrix' => $impact['matrix_approved'] > 0,
+                ]);
+            }
         }else if ($_POST['btn_action'] == 'deleteuser') {
-            $id = $_POST['id'];
-            $sql = "DELETE FROM `user` WHERE `id` = '$id'";
-            if(mysqli_query($conn, $sql)){
-                echo json_encode(['message' => 'delete']);
-            }else {
-                echo json_encode(['message' => 'error']);
-            } 
+            // Refuses when the delete would orphan or destroy history, and
+            // clears dangling reporting links when it does proceed.
+            $result = staffDeleteSafely($conn, $_POST['id']);
+            if ($result['ok']) {
+                echo json_encode(['message' => 'delete', 'cleared' => $result['cleared']]);
+            } else {
+                echo json_encode([
+                    'message' => $result['blocked'] ? 'blocked' : 'error',
+                    'detail'  => $result['detail'],
+                ]);
+            }
         }
     }
 ?>

@@ -209,14 +209,58 @@
         $(document).on('click', '.delete', function(){
             var id = $(this).attr("id");
             var btn_action = 'deleteuser';
-            swal({
-                title: "Delete User?",
-                text: "Are you sure?",
-                icon: "warning",
-                buttons: true,
-                dangerMode: true,
-                buttons: ["Cancel", "Confirm"]
+            // Ask the server what this delete would destroy before confirming.
+            // A staff's skill matrix is removed by an ON DELETE CASCADE, so a
+            // bare "Are you sure?" hides real, unrecoverable data loss.
+            $.ajax({
+                url: "staff_action.php",
+                method: "POST",
+                data: { id: id, btn_action: 'delete_impact' },
+                dataType: 'json'
             })
+            .always(function (res) {
+                var who = "this user";
+                var body = "Are you sure?";
+                var danger = false;
+
+                // Blocked outright: say so here rather than letting the admin
+                // confirm a delete the server is going to refuse anyway.
+                if (res && res.message === 'ok' && res.blockers && res.blockers.length > 0) {
+                    swal({
+                        title: "Cannot Delete " + res.staffno,
+                        text: res.staffname + "\n\nDeleting would lose data:\n\n- "
+                            + res.blockers.join("\n- ")
+                            + "\n\nEdit the staff and set Status to RESIGN instead. That keeps their"
+                            + " training history and removes them from active headcount.",
+                        icon: "error",
+                        buttons: ["Close", "Edit Staff"]
+                    }).then(function (goEdit) {
+                        if (goEdit) {
+                            localStorage.setItem("setaction", 'edituser');
+                            localStorage.setItem("setid", id);
+                            window.location = "manage_staff.php";
+                        }
+                    });
+                    return;
+                }
+
+                if (res && res.message === 'ok') {
+                    who = res.staffno + " - " + res.staffname;
+                    if (res.warnings && res.warnings.length > 0) {
+                        danger = true;
+                        body = who + "\n\nDeleting will:\n\n- " + res.warnings.join("\n- ")
+                             + "\n\nThis cannot be undone.";
+                    } else {
+                        body = who + "\n\nThis staff has no training, TNA, PME or skill matrix records.\nAre you sure?";
+                    }
+                }
+                swal({
+                    title: danger ? "Delete User - DATA WILL BE LOST" : "Delete User?",
+                    text: body,
+                    icon: "warning",
+                    dangerMode: true,
+                    buttons: ["Cancel", danger ? "Delete anyway" : "Confirm"]
+                })
             .then((isConfirm) => {
                 if (isConfirm) {
                     $.ajax({
@@ -249,7 +293,8 @@
                 }else{
                     swal("Cancelled", "The user has not been deleted", "error");
                 }
-            })
+                });
+            });
         });
     </script>
 </html>

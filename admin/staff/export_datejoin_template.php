@@ -49,6 +49,9 @@
         'I' => 'Status (ACTIVE / RESIGN)',
         'J' => 'Date Join (YYYY-MM-DD)',
         'K' => 'Plant',
+        'L' => 'Grade',
+        'M' => 'HOD Staff No',
+        'N' => 'Current HOD Name (reference only)',
     ];
 
     $spreadsheet = new Spreadsheet();
@@ -57,7 +60,17 @@
     $sheet->fromArray(array_values($columns), null, 'A1');
 
     $row = 2;
-    $res = $conn->query("SELECT staffno, staffname, email, gender, designation, division, department, section, status, date_join, plant FROM user WHERE staffno IS NOT NULL AND staffno <> '' ORDER BY staffno");
+    // hod.* is joined so the sheet round-trips: the HOD Staff No column is
+    // what the importer reads back, the name beside it is only there so the
+    // admin can see who they are editing.
+    $res = $conn->query("SELECT u.staffno, u.staffname, u.email, u.gender, u.designation,
+                                u.division, u.department, u.section, u.status, u.date_join,
+                                u.plant, u.grade,
+                                hod.staffno AS hod_staffno, hod.staffname AS hod_staffname
+                         FROM user u
+                         LEFT JOIN user hod ON hod.id = u.hodid
+                         WHERE u.staffno IS NOT NULL AND u.staffno <> ''
+                         ORDER BY u.staffno");
     while ($r = $res->fetch_assoc()) {
         $sheet->setCellValueExplicit("A{$row}", $r['staffno'], DataType::TYPE_STRING);
         $sheet->setCellValue("B{$row}", $r['staffname']);
@@ -70,6 +83,9 @@
         $sheet->setCellValueExplicit("I{$row}", $r['status'] ?: '', DataType::TYPE_STRING);
         $sheet->setCellValueExplicit("J{$row}", $r['date_join'] ?: '', DataType::TYPE_STRING);
         $sheet->setCellValueExplicit("K{$row}", $r['plant'] ?: '', DataType::TYPE_STRING);
+        $sheet->setCellValueExplicit("L{$row}", $r['grade'] !== null ? (string) $r['grade'] : '', DataType::TYPE_STRING);
+        $sheet->setCellValueExplicit("M{$row}", $r['hod_staffno'] ?: '', DataType::TYPE_STRING);
+        $sheet->setCellValueExplicit("N{$row}", $r['hod_staffname'] ?: '', DataType::TYPE_STRING);
         $row++;
     }
     $lastRow = $row - 1;
@@ -77,8 +93,10 @@
     foreach (array_keys($columns) as $col) {
         $sheet->getColumnDimension($col)->setAutoSize(true);
     }
-    $sheet->getStyle('A1:K1')->getFont()->setBold(true);
-    $sheet->getStyle('A1:K1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D9E8FF');
+    $sheet->getStyle('A1:N1')->getFont()->setBold(true);
+    $sheet->getStyle('A1:N1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D9E8FF');
+    // Reference-only column, greyed so it reads as not-for-editing.
+    $sheet->getStyle("N1:N{$lastRow}")->getFont()->getColor()->setRGB('808080');
     $sheet->freezePane('A2');
 
     // ===== OPTIONS SHEET (dropdown validation sources) =====

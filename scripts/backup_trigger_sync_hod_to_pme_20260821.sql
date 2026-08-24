@@ -1,0 +1,1 @@
+CREATE DEFINER=`admin`@`%` TRIGGER `sync_hod_to_pme` AFTER UPDATE ON `user` FOR EACH ROW BEGIN\n    IF NEW.hodid <> OLD.hodid THEN\n        UPDATE pme\n        SET hodid = NEW.hodid\n        WHERE userid = NEW.id;\n    END IF;\nEND
