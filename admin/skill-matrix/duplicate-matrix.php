@@ -304,7 +304,7 @@ if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
                             <li><a href="../tna/tna_summary.php">TNA SUMMARY</a></li>
                             <li class="active"><a href="skill-matrix.php">SKILL MATRIX</a></li>
                             <li><a href="../organization/org.php">ORGANIZATION</a></li>
-                            <li><a href="../archive/archive.php">ARCHIVE</a></li>
+                            <li><a href="../archive/export.php">EXPORT</a></li>
                         <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
                         <?php } ?>
                     </ul>                    <ul class="nav navbar-nav navbar-right">

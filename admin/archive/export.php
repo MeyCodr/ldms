@@ -68,7 +68,7 @@ if (archiveUserCanAccess()) {
                         <li><a href="../tna/tna_summary.php">TNA SUMMARY</a></li>
                         <li><a href="../skill-matrix/skill-matrix.php">SKILL MATRIX</a></li>
                         <li><a href="../organization/org.php">ORGANIZATION</a></li>
-                        <li class="active"><a href="archive.php">ARCHIVE</a></li>
+                        <li class="active"><a href="export.php">EXPORT</a></li>
                         <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
                         <?php } else { ?>
                         <li><a href="../../clerk/main/dashboard.php">HOME</a></li>
@@ -78,7 +78,7 @@ if (archiveUserCanAccess()) {
                         <li><a href="../../clerk/main/attendance/pme.php">PME</a></li>
                         <li><a href="../../clerk/main/tna/tna_list.php">TNA</a></li>
                         <?php if ($canViewSkillMatrix) { ?><li><a href="../../clerk/main/skill-matrix/skill-matrix.php">SKILL MATRIX</a></li><?php } ?>
-                        <li class="active"><a href="archive.php">ARCHIVE</a></li>
+                        <li class="active"><a href="export.php">EXPORT</a></li>
                         <li><a href="../../clerk/main/password/password.php">CHANGE PASSWORD</a></li>
                         <?php } ?>
                     </ul>
@@ -99,12 +99,12 @@ if (archiveUserCanAccess()) {
                 <div class="col-md-12">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>Archive Filter</strong>
+                            <strong>Export Filter</strong>
                         </div>
                         <div class="panel-body">
                             <div class="row">
                                 <div class="col-md-3">
-                                    <label>Archive Type</label>
+                                    <label>Export Type</label>
                                     <select id="entity" class="form-control">
                                         <?php foreach ($ARCHIVE_ENTITIES as $key => $info): ?>
                                             <option value="<?php echo htmlspecialchars($key); ?>"><?php echo htmlspecialchars($info['label']); ?></option>
@@ -154,7 +154,7 @@ if (archiveUserCanAccess()) {
                 <div class="col-md-12">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>Archived Records</strong>
+                            <strong>Exported Records</strong>
                         </div>
                         <div class="panel-body">
                             <div class="row">

@@ -47,7 +47,7 @@
 						<li><a href="../attendance/pme.php">PME</a></li>
                         <li><a href="../tna/tna_list.php">TNA</a></li>
                         <?php if ($canViewSkillMatrix) { ?><li><a href="../skill-matrix/skill-matrix.php">SKILL MATRIX</a></li><?php } ?>
-                        <li><a href="../../../admin/archive/archive.php">ARCHIVE</a></li>
+                        <li><a href="../../../admin/archive/export.php">EXPORT</a></li>
                         <li><a href="../password/password.php">CHANGE PASSWORD</a></li>
     				</ul>
     				<ul class="nav navbar-nav navbar-right">
