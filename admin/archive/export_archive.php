@@ -82,6 +82,70 @@ function exportParticipantHistory($conn)
     exit();
 }
 
+function exportPmeIncomplete($conn)
+{
+    $archiveReady = mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'pme_archive'")) > 0;
+
+    $dateFrom = isset($_GET['date_from']) ? trim($_GET['date_from']) : '';
+    $dateTo = isset($_GET['date_to']) ? trim($_GET['date_to']) : '';
+    if (!preg_match('/^\d{4}(-\d{2}-\d{2})?$/', $dateFrom)) {
+        $dateFrom = '';
+    }
+    if (!preg_match('/^\d{4}(-\d{2}-\d{2})?$/', $dateTo)) {
+        $dateTo = '';
+    }
+    $keyword = isset($_GET['keyword']) ? trim($_GET['keyword']) : '';
+
+    $selectCols = "hod.staffname AS boss_name, hod.staffno AS boss_staffno, hod.department AS boss_department,
+                p.training_title AS training_title, p.staffname AS staff_name, p.staffno AS staff_staffno,
+                p.department AS staff_department, p.from_date AS from_date, p.to_date AS to_date, p.status AS status";
+
+    $tables = ['pme'];
+    if ($archiveReady) {
+        $tables[] = 'pme_archive';
+    }
+
+    $parts = [];
+    foreach ($tables as $table) {
+        $sql = "SELECT $selectCols FROM `$table` p LEFT JOIN user hod ON hod.id = p.hodid
+                WHERE p.status NOT IN ('completed', 'approved', 'verified')";
+        if ($dateFrom !== '') {
+            $sql .= " AND p.from_date >= '" . mysqli_real_escape_string($conn, $dateFrom) . "'";
+        }
+        if ($dateTo !== '') {
+            $sql .= " AND p.from_date <= '" . mysqli_real_escape_string($conn, $dateTo) . "'";
+        }
+        if ($keyword !== '') {
+            $escapedKeyword = mysqli_real_escape_string($conn, $keyword);
+            $sql .= " AND (hod.staffname LIKE '%$escapedKeyword%' OR hod.staffno LIKE '%$escapedKeyword%'
+                OR p.staffname LIKE '%$escapedKeyword%' OR p.staffno LIKE '%$escapedKeyword%' OR p.training_title LIKE '%$escapedKeyword%')";
+        }
+        $parts[] = $sql;
+    }
+
+    $sql = implode(' UNION ALL ', $parts) . ' ORDER BY training_title ASC, boss_name ASC';
+    $columns = ['boss_name', 'boss_staffno', 'boss_department', 'training_title', 'staff_name', 'staff_staffno', 'staff_department', 'from_date', 'to_date', 'status'];
+
+    $filename = 'pme_incomplete_' . date('Ymd_His') . '.csv';
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Cache-Control: max-age=0');
+    header('Pragma: public');
+
+    $out = fopen('php://output', 'w');
+    fputcsv($out, $columns);
+
+    $result = mysqli_query($conn, $sql, MYSQLI_USE_RESULT);
+    if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+            fputcsv($out, $row);
+        }
+        mysqli_free_result($result);
+    }
+    fclose($out);
+    exit();
+}
+
 $entityKey = isset($_GET['entity']) ? $_GET['entity'] : '';
 if (!isset($ARCHIVE_ENTITIES[$entityKey])) {
     header('Content-Type: text/plain');
@@ -92,6 +156,10 @@ $entity = $ARCHIVE_ENTITIES[$entityKey];
 
 if (($entity['type'] ?? 'table') === 'participant_history') {
     exportParticipantHistory($conn);
+}
+
+if (($entity['type'] ?? 'table') === 'pme_incomplete') {
+    exportPmeIncomplete($conn);
 }
 
 $table = $entity['table'];       // trusted - comes from whitelist, never from request

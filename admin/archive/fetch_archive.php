@@ -16,6 +16,9 @@ function archiveRespond($data)
 
 function archiveBindParams($stmt, $types, $params)
 {
+    if ($types === '') {
+        return;
+    }
     $refs = [$types];
     foreach ($params as $key => $value) {
         $refs[] = &$params[$key];
@@ -182,6 +185,119 @@ function handleParticipantHistory($conn, $action)
     archiveRespond(['error' => 'invalid_action']);
 }
 
+// Builds the pme (+ pme_archive, if present) join to `user` for bosses whose
+// assigned PME evaluations are not yet done. $dateFrom/$dateTo filter on
+// from_date (the evaluation period start); $keyword filters across the boss
+// / staff names, staff numbers and training title.
+function buildPmeIncompleteSql($archiveReady, $dateFrom, $dateTo, $keyword)
+{
+    $selectCols = "hod.staffname AS boss_name, hod.staffno AS boss_staffno, hod.department AS boss_department,
+                p.training_title AS training_title, p.staffname AS staff_name, p.staffno AS staff_staffno,
+                p.department AS staff_department, p.from_date AS from_date, p.to_date AS to_date, p.status AS status";
+
+    $tables = ['pme'];
+    if ($archiveReady) {
+        $tables[] = 'pme_archive';
+    }
+
+    $parts = [];
+    $types = '';
+    $params = [];
+    foreach ($tables as $table) {
+        $sql = "SELECT $selectCols FROM `$table` p LEFT JOIN user hod ON hod.id = p.hodid
+                WHERE p.status NOT IN ('completed', 'approved', 'verified')";
+        if ($dateFrom !== '') {
+            $sql .= " AND p.from_date >= ?";
+            $types .= 's';
+            $params[] = $dateFrom;
+        }
+        if ($dateTo !== '') {
+            $sql .= " AND p.from_date <= ?";
+            $types .= 's';
+            $params[] = $dateTo;
+        }
+        if ($keyword !== '') {
+            $sql .= " AND (hod.staffname LIKE ? OR hod.staffno LIKE ? OR p.staffname LIKE ? OR p.staffno LIKE ? OR p.training_title LIKE ?)";
+            $like = '%' . $keyword . '%';
+            for ($i = 0; $i < 5; $i++) {
+                $types .= 's';
+                $params[] = $like;
+            }
+        }
+        $parts[] = $sql;
+    }
+
+    return [implode(' UNION ALL ', $parts), $types, $params];
+}
+
+function handlePmeIncomplete($conn, $action)
+{
+    $columns = ['boss_name', 'boss_staffno', 'boss_department', 'training_title', 'staff_name', 'staff_staffno', 'staff_department', 'from_date', 'to_date', 'status'];
+
+    $archiveReady = mysqli_num_rows(mysqli_query($conn, "SHOW TABLES LIKE 'pme_archive'")) > 0;
+
+    if ($action === 'get_columns') {
+        archiveRespond(['exists' => true, 'columns' => $columns, 'date_column' => 'from_date']);
+    }
+
+    if ($action === 'list') {
+        $draw = isset($_POST['draw']) ? (int) $_POST['draw'] : 0;
+        $start = isset($_POST['start']) ? (int) $_POST['start'] : 0;
+        $length = isset($_POST['length']) ? (int) $_POST['length'] : 25;
+        if ($length <= 0 || $length > 500) {
+            $length = 25;
+        }
+        $dateFrom = isset($_POST['date_from']) ? trim($_POST['date_from']) : '';
+        $dateTo = isset($_POST['date_to']) ? trim($_POST['date_to']) : '';
+        if (!preg_match('/^\d{4}(-\d{2}-\d{2})?$/', $dateFrom)) {
+            $dateFrom = '';
+        }
+        if (!preg_match('/^\d{4}(-\d{2}-\d{2})?$/', $dateTo)) {
+            $dateTo = '';
+        }
+        $keyword = isset($_POST['keyword']) ? trim($_POST['keyword']) : '';
+
+        [$totalSql, $totalTypes, $totalParams] = buildPmeIncompleteSql($archiveReady, '', '', '');
+        $totalStmt = $conn->prepare("SELECT COUNT(*) AS c FROM ($totalSql) u");
+        archiveBindParams($totalStmt, $totalTypes, $totalParams);
+        $totalStmt->execute();
+        $recordsTotal = (int) $totalStmt->get_result()->fetch_assoc()['c'];
+
+        [$filteredSql, $filteredTypes, $filteredParams] = buildPmeIncompleteSql($archiveReady, $dateFrom, $dateTo, $keyword);
+        $countStmt = $conn->prepare("SELECT COUNT(*) AS c FROM ($filteredSql) u");
+        archiveBindParams($countStmt, $filteredTypes, $filteredParams);
+        $countStmt->execute();
+        $recordsFiltered = (int) $countStmt->get_result()->fetch_assoc()['c'];
+
+        $dataSql = "SELECT * FROM ($filteredSql) u ORDER BY training_title ASC, boss_name ASC LIMIT ?, ?";
+        $dataTypes = $filteredTypes . 'ii';
+        $dataParams = $filteredParams;
+        $dataParams[] = $start;
+        $dataParams[] = $length;
+
+        $dataStmt = $conn->prepare($dataSql);
+        archiveBindParams($dataStmt, $dataTypes, $dataParams);
+        $dataStmt->execute();
+        $dataResult = $dataStmt->get_result();
+
+        $rows = [];
+        while ($row = $dataResult->fetch_assoc()) {
+            $rows[] = $row;
+        }
+
+        archiveRespond([
+            'draw' => $draw,
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'columns' => $columns,
+            'data' => $rows,
+            'exists' => true,
+        ]);
+    }
+
+    archiveRespond(['error' => 'invalid_action']);
+}
+
 if (!archiveUserCanAccess()) {
     archiveRespond(['error' => 'unauthorized']);
 }
@@ -197,6 +313,10 @@ $entity = $ARCHIVE_ENTITIES[$entityKey];
 
 if (($entity['type'] ?? 'table') === 'participant_history') {
     handleParticipantHistory($conn, $action);
+}
+
+if (($entity['type'] ?? 'table') === 'pme_incomplete') {
+    handlePmeIncomplete($conn, $action);
 }
 
 $table = $entity['table'];       // trusted - comes from whitelist, never from request

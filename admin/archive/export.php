@@ -234,16 +234,25 @@ if (archiveUserCanAccess()) {
                 }
                 $('#archive_missing_msg').hide();
 
-                var headHtml = '<tr>';
+                var headHtml = '<tr><th>No.</th>';
                 $.each(resp.columns, function (i, col) {
                     headHtml += '<th>' + col + '</th>';
                 });
                 headHtml += '</tr>';
                 $('#archivelist_head').html(headHtml);
 
-                var dtColumns = $.map(resp.columns, function (col) {
+                var dtColumns = [{
+                    data: null,
+                    orderable: false,
+                    searchable: false,
+                    defaultContent: '',
+                    render: function (data, type, row, meta) {
+                        return meta.settings._iDisplayStart + meta.row + 1;
+                    }
+                }];
+                dtColumns = dtColumns.concat($.map(resp.columns, function (col) {
                     return { data: col, defaultContent: '' };
-                });
+                }));
 
                 archiveTable = $('#archivelist').DataTable({
                     "processing": true,

@@ -42,6 +42,14 @@ $ARCHIVE_ENTITIES = [
         'type' => 'participant_history',
         'label' => 'Participant Training History',
     ],
+    // Not a single archive table - a live join across pme (+ pme_archive, if
+    // present) and user, listing every PME evaluation still not completed by
+    // its assigned boss (hodid), by training. Handled specially in
+    // fetch_archive.php / export_archive.php (see 'pme_incomplete' branch).
+    'pme_incomplete' => [
+        'type' => 'pme_incomplete',
+        'label' => 'PME - Incompleted',
+    ],
 ];
 
 // Who can view/filter/download archive data: ADMIN, or any Clerk-Main user
