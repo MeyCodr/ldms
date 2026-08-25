@@ -11,4 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Call PME reminder endpoint
-        run: curl -fsS "${{ vars.LDMS_BASE_URL }}/scripts/notify_pme_incomplete.php?key=${{ secrets.PME_REMINDER_KEY }}"
+        env:
+          PME_REMINDER_KEY: ${{ secrets.PME_REMINDER_KEY }}
+        run: |
+          # Secrets pasted into GitHub's textarea can pick up a trailing
+          # newline/space invisibly (write-only once saved, so it can't be
+          # inspected afterwards) - strip whitespace defensively before use.
+          KEY=$(printf '%s' "$PME_REMINDER_KEY" | tr -d '[:space:]')
+          curl -fsS "${{ vars.LDMS_BASE_URL }}/scripts/notify_pme_incomplete.php?key=$KEY"
