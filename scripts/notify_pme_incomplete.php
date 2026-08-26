@@ -11,9 +11,12 @@
 //  - HTTP GET with a matching ?key= token, for hosts with no cron feature -
 //    point an external scheduler at this URL once a day:
 //      https://<your-domain>/ldms/scripts/notify_pme_incomplete.php?key=c23c26f50df52e734e73c1e4e43c598b476594355ff6e8bc
-//    Either cron-job.org (hits the URL directly) or the GitHub Actions
-//    workflow at .github/workflows/pme-reminder.yml (same URL, via curl on
-//    a schedule) can be the scheduler - see that file for setup.
+//    portal2.phn.com.my sits behind Cloudflare with Bot Fight Mode on, which
+//    challenges/blocks non-browser HTTP clients (confirmed: GitHub Actions'
+//    and likely cron-job.org's datacenter IPs get a "Just a moment" 403,
+//    while a normal office/ISP-IP client passes straight through) - so the
+//    scheduler needs to run somewhere with an IP Cloudflare doesn't flag,
+//    e.g. Windows Task Scheduler on an ordinary server, not a cloud CI runner.
 //    Change PME_REMINDER_TOKEN below before relying on this in production -
 //    the value here is a placeholder generated for setup, not a secret kept
 //    out of source control.
@@ -40,15 +43,26 @@ require __DIR__ . '/../dbconn.php';
 
 $today = date('Y-m-d');
 
-// Guard against sending the same day's digest twice (e.g. an HTTP scheduler
+// Guard against sending the same day's digest twice (e.g. a scheduler
 // retrying after a slow response, or someone hitting the URL manually after
-// script.bat already ran it). Not needed for correctness of the "stop once
-// done" behaviour - just avoids duplicate emails within the same day.
-$lastRunFile = __DIR__ . '/.notify_pme_incomplete_last_run';
-if (file_exists($lastRunFile) && trim(file_get_contents($lastRunFile)) === $today) {
+// Task Scheduler already ran it). Not needed for correctness of the "stop
+// once done" behaviour - just avoids duplicate emails within the same day.
+// Kept in the database rather than a file next to the script, since a file
+// here gets wiped by any deploy that re-syncs this folder from source
+// control - a DB row survives that.
+$conn->query("CREATE TABLE IF NOT EXISTS pme_reminder_log (run_date DATE NOT NULL PRIMARY KEY)");
+$checkStmt = $conn->prepare("SELECT 1 FROM pme_reminder_log WHERE run_date = ?");
+$checkStmt->bind_param("s", $today);
+$checkStmt->execute();
+if ($checkStmt->get_result()->num_rows > 0) {
     echo "Already sent today ($today). Skipping.<br>";
     exit();
 }
+// Marked as sent up front, before the loop, so a mid-run failure (PHP
+// timeout, SMTP outage) can't cause a retry to resend everyone who already
+// got their email that day - worst case a few bosses wait until tomorrow's
+// run instead, which is a much smaller problem than duplicate reminders.
+$conn->query("INSERT IGNORE INTO pme_reminder_log (run_date) VALUES ('" . $conn->real_escape_string($today) . "')");
 
 $sql = "SELECT pme.hodid, pme.staffname, pme.staffno, pme.training_title,
                DATE_FORMAT(pme.from_date, '%e/%c/%Y') AS formatted_from_date,
@@ -153,8 +167,6 @@ foreach ($hod_subordinates as $hodid => $subordinates) {
         echo "Email failed for HOD ID: $hodid ($hod_email). Error: {$mail->ErrorInfo} <br>";
     }
 }
-
-file_put_contents($lastRunFile, $today);
 
 $conn->close();
 ?>

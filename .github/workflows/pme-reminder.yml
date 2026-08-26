@@ -1,9 +1,13 @@
 name: PME Incomplete Reminder
 
+# Not on a schedule: portal2.phn.com.my is behind Cloudflare with Bot Fight
+# Mode on, which challenges/blocks GitHub-hosted runners' datacenter IPs
+# (confirmed via a real run - got Cloudflare's "Just a moment" 403, not the
+# script). The actual daily trigger is Windows Task Scheduler on a normal
+# (non-datacenter-IP) server instead - see scripts/notify_pme_incomplete.php
+# for the URL. Kept here, manual-only, as a fallback you can try again if
+# Cloudflare's settings change (e.g. Bot Fight Mode gets turned off).
 on:
-  schedule:
-    # 01:00 UTC = 09:00 MYT (UTC+8). Adjust if a different send time is wanted.
-    - cron: '0 1 * * *'
   workflow_dispatch: {}
 
 jobs:
@@ -14,13 +18,5 @@ jobs:
         env:
           PME_REMINDER_KEY: ${{ secrets.PME_REMINDER_KEY }}
         run: |
-          # Secrets pasted into GitHub's textarea can pick up a trailing
-          # newline/space invisibly (write-only once saved, so it can't be
-          # inspected afterwards) - strip whitespace defensively before use.
           KEY=$(printf '%s' "$PME_REMINDER_KEY" | tr -d '[:space:]')
-          # TEMP DIAGNOSTIC: print status + body instead of failing silently,
-          # so we can tell a host/WAF-level 403 apart from the script's own.
-          # Revert to the plain -fsS curl once the real cause is confirmed.
-          curl -sS -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
-            -w "\nHTTP_STATUS:%{http_code}\n" \
-            "${{ vars.LDMS_BASE_URL }}/scripts/notify_pme_incomplete.php?key=$KEY"
+          curl -fsS "${{ vars.LDMS_BASE_URL }}/scripts/notify_pme_incomplete.php?key=$KEY"
