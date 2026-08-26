@@ -22,11 +22,10 @@
 //    out of source control.
 define('PME_REMINDER_TOKEN', 'c23c26f50df52e734e73c1e4e43c598b476594355ff6e8bc');
 
-// TEST MODE: every email is redirected here instead of the real boss, with
-// the subject tagged with who it was actually meant for, so a test run can
-// be verified without spamming real inboxes. Set to '' to send to the real
-// boss addresses again - MUST be done before relying on this in production.
-define('PME_REMINDER_TEST_EMAIL', 'amir.anwar@phn.com.my');
+// TEST MODE: when non-empty, every email is redirected here instead of the
+// real boss, with the subject tagged with who it was actually meant for.
+// Empty string = live - sends to the real boss addresses.
+define('PME_REMINDER_TEST_EMAIL', '');
 
 if (PHP_SAPI !== 'cli') {
     if (!isset($_GET['key']) || !hash_equals(PME_REMINDER_TOKEN, (string) $_GET['key'])) {
@@ -55,7 +54,7 @@ $checkStmt = $conn->prepare("SELECT 1 FROM pme_reminder_log WHERE run_date = ?")
 $checkStmt->bind_param("s", $today);
 $checkStmt->execute();
 if ($checkStmt->get_result()->num_rows > 0) {
-    echo "Already sent today ($today). Skipping.<br>";
+    echo "[" . date('Y-m-d H:i:s') . "] Already sent today ($today). Skipping.\n";
     exit();
 }
 // Marked as sent up front, before the loop, so a mid-run failure (PHP
@@ -100,9 +99,13 @@ if (!empty($hod_ids)) {
     }
 }
 
+$sentCount = 0;
+$failedList = [];
+$skippedList = [];
+
 foreach ($hod_subordinates as $hodid => $subordinates) {
     if (!isset($hod_emails[$hodid]) || $hod_emails[$hodid] === '') {
-        echo "No email found for HOD ID: $hodid, skipping...<br>";
+        $skippedList[] = $hodid;
         continue;
     }
 
@@ -162,9 +165,27 @@ foreach ($hod_subordinates as $hodid => $subordinates) {
         $mail->Body    = $message;
 
         $mail->send();
-        echo "Email sent to HOD ID: $hodid (intended: $hod_email, actually sent to: $sendTo) <br>";
+        $sentCount++;
     } catch (Exception $e) {
-        echo "Email failed for HOD ID: $hodid ($hod_email). Error: {$mail->ErrorInfo} <br>";
+        $failedList[] = ['hodid' => $hodid, 'email' => $hod_email, 'error' => $mail->ErrorInfo];
+    }
+}
+
+echo "[" . date('Y-m-d H:i:s') . "] PME reminder run\n";
+echo "- Bosses due: " . count($hod_subordinates) . "\n";
+echo "- Sent: $sentCount\n";
+echo "- Failed: " . count($failedList) . "\n";
+echo "- Skipped (no email on file): " . count($skippedList) . "\n";
+if (!empty($failedList)) {
+    echo "- Failed sends:\n";
+    foreach ($failedList as $f) {
+        echo "  - HOD ID {$f['hodid']} ({$f['email']}): {$f['error']}\n";
+    }
+}
+if (!empty($skippedList)) {
+    echo "- Skipped, no email on file:\n";
+    foreach ($skippedList as $hodid) {
+        echo "  - HOD ID $hodid\n";
     }
 }
 
