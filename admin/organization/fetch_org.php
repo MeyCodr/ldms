@@ -135,5 +135,49 @@ if ($action == 'load_all_departments') {
     respond($rows);
 }
 
+if ($action == 'load_sm_whitelist') {
+    // user.staffno and skill_matrix_whitelist.staffno were created with different
+    // default collations (general_ci vs 0900_ai_ci) - joining them without an
+    // explicit COLLATE throws "Illegal mix of collations".
+    $sql = "SELECT w.staffno, u.id AS user_id, u.staffname, u.department, u.designation
+            FROM skill_matrix_whitelist w
+            LEFT JOIN user u ON u.staffno COLLATE utf8mb4_0900_ai_ci = w.staffno
+            ORDER BY u.staffname IS NULL, u.staffname";
+    $result = $conn->query($sql);
+    $rows = [];
+    while ($row = $result->fetch_assoc()) {
+        $rows[] = $row;
+    }
+    respond($rows);
+}
+
+if ($action == 'search_staff') {
+    $q = isset($_POST['q']) ? trim($_POST['q']) : '';
+    if ($q === '') respond([]);
+    $like = '%' . $q . '%';
+    $stmt = $conn->prepare("SELECT id, staffno, staffname, department, designation
+                             FROM user
+                             WHERE (staffno LIKE ? OR staffname LIKE ?) AND status != 'RESIGN'
+                             ORDER BY staffname LIMIT 20");
+    $stmt->bind_param('ss', $like, $like);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $rows = [];
+    while ($row = $result->fetch_assoc()) {
+        $rows[] = $row;
+    }
+    respond($rows);
+}
+
+if ($action == 'check_sm_data') {
+    $user_id = isset($_POST['user_id']) ? (int) $_POST['user_id'] : 0;
+    if (!$user_id) respond(['count' => 0]);
+    $stmt = $conn->prepare("SELECT COUNT(*) AS c FROM skill_matrix_evaluations WHERE staffid = ?");
+    $stmt->bind_param('i', $user_id);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    respond(['count' => (int) $row['c']]);
+}
+
 respond([]);
 ?>

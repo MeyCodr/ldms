@@ -249,5 +249,34 @@ if ($action == 'transfer_staff') {
     }
 }
 
+// ===== SKILL MATRIX CONFIG =====
+
+if ($action == 'add_sm_whitelist') {
+    $staffno = trim($_POST['staffno'] ?? '');
+    if ($staffno === '') respond(['message' => 'error', 'detail' => 'No staff selected.']);
+    $stmt = $conn->prepare("INSERT IGNORE INTO skill_matrix_whitelist (staffno) VALUES (?)");
+    $stmt->bind_param('s', $staffno);
+    respond($stmt->execute() ? ['message' => 'insert'] : ['message' => 'error', 'detail' => $conn->error]);
+}
+
+if ($action == 'remove_sm_whitelist') {
+    $staffno = trim($_POST['staffno'] ?? '');
+    if ($staffno === '') respond(['message' => 'error', 'detail' => 'Invalid input.']);
+    $stmt = $conn->prepare("DELETE FROM skill_matrix_whitelist WHERE staffno = ?");
+    $stmt->bind_param('s', $staffno);
+    respond($stmt->execute() ? ['message' => 'delete'] : ['message' => 'error', 'detail' => $conn->error]);
+}
+
+if ($action == 'delete_sm_data') {
+    $user_id = (int) ($_POST['user_id'] ?? 0);
+    if (!$user_id) respond(['message' => 'error', 'detail' => 'Invalid input.']);
+    // skill_matrix_topics / skill_matrix_items cascade-delete via FK ON DELETE
+    // CASCADE from skill_matrix_evaluations - only the header row needs deleting.
+    $stmt = $conn->prepare("DELETE FROM skill_matrix_evaluations WHERE staffid = ?");
+    $stmt->bind_param('i', $user_id);
+    if (!$stmt->execute()) respond(['message' => 'error', 'detail' => $conn->error]);
+    respond(['message' => 'delete', 'count' => $stmt->affected_rows]);
+}
+
 respond(['message' => 'error', 'detail' => 'Unknown action.']);
 ?>

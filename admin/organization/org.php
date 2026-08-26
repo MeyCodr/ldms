@@ -96,86 +96,167 @@ if (!isset($_SESSION['fullname']) || $_SESSION['role'] != 'ADMIN') {
         <img src="../../asset/image/loading.gif" title="working..." style="margin-top:350px;" />
     </div>
 
-    <div class="row">
-        <div class="col-md-12">
-            <div class="panel panel-default">
-                <div class="panel-body" style="padding:12px 14px;">
-                    <strong style="margin-right:10px;"><i class="fa fa-file-excel"></i> Bulk Rename via Excel</strong>
-                    <a href="export_org_template.php" class="btn btn-default btn-sm">
-                        <i class="fa fa-download"></i> Download Template
-                    </a>
-                    <span style="margin-left:10px;">
-                        <input type="file" id="import-file-input" accept=".xls,.xlsx" style="display:inline-block;width:auto;">
-                        <button class="btn btn-primary btn-sm" onclick="uploadOrgTemplate()">
-                            <i class="fa fa-upload"></i> Upload &amp; Update
-                        </button>
-                    </span>
-                    <div style="margin-top:8px;">
-                        <label style="font-weight:normal;font-size:12px;color:#a94442;">
-                            <input type="checkbox" id="delete-missing-chk">
-                            Also delete rows removed from the sheet
-                            <span class="text-muted">(only if no staff are assigned to them)</span>
-                        </label>
+    <div class="panel panel-default" style="margin-bottom:20px;">
+        <div class="panel-heading"><strong><i class="fa fa-sitemap"></i> ORGANIZATION STRUCTURE</strong></div>
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="panel panel-default">
+                        <div class="panel-body" style="padding:12px 14px;">
+                            <strong style="margin-right:10px;"><i class="fa fa-file-excel"></i> Bulk Rename via Excel</strong>
+                            <a href="export_org_template.php" class="btn btn-default btn-sm">
+                                <i class="fa fa-download"></i> Download Template
+                            </a>
+                            <span style="margin-left:10px;">
+                                <input type="file" id="import-file-input" accept=".xls,.xlsx" style="display:inline-block;width:auto;">
+                                <button class="btn btn-primary btn-sm" onclick="uploadOrgTemplate()">
+                                    <i class="fa fa-upload"></i> Upload &amp; Update
+                                </button>
+                            </span>
+                            <div style="margin-top:8px;">
+                                <label style="font-weight:normal;font-size:12px;color:#a94442;">
+                                    <input type="checkbox" id="delete-missing-chk">
+                                    Also delete rows removed from the sheet
+                                    <span class="text-muted">(only if no staff are assigned to them)</span>
+                                </label>
+                            </div>
+                            <div class="text-muted" style="font-size:11px;margin-top:6px;">
+                                Download the template first, edit the Name / Short Name columns only (do not change the ID columns), then upload it here to bulk-update division, department, and section names.
+                            </div>
+                        </div>
                     </div>
-                    <div class="text-muted" style="font-size:11px;margin-top:6px;">
-                        Download the template first, edit the Name / Short Name columns only (do not change the ID columns), then upload it here to bulk-update division, department, and section names.
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- DIVISIONS -->
+                <div class="col-md-4">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading">
+                            <span class="panel-title-text"><i class="fa fa-sitemap"></i> DIVISIONS</span>
+                            <div class="panel-heading-actions">
+                                <button class="btn btn-success btn-xs" onclick="openAddDivision()">
+                                    <i class="fa fa-plus"></i> ADD
+                                </button>
+                            </div>
+                        </div>
+                        <div class="org-panel-body" id="division-list">
+                            <div class="panel-loading"><i class="fa fa-spinner fa-spin"></i> Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DEPARTMENTS -->
+                <div class="col-md-4">
+                    <div class="panel panel-info">
+                        <div class="panel-heading">
+                            <span class="panel-title-text"><i class="fa fa-building"></i> DEPARTMENTS</span>
+                            <span id="dept-division-label" style="font-size:11px;margin-left:8px;opacity:0.8;"></span>
+                            <div class="panel-heading-actions">
+                                <button class="btn btn-success btn-xs" id="btn-add-dept" onclick="openAddDepartment()" disabled>
+                                    <i class="fa fa-plus"></i> ADD
+                                </button>
+                            </div>
+                        </div>
+                        <div class="org-panel-body" id="department-list">
+                            <div class="panel-empty">Select a division to view its departments.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTIONS -->
+                <div class="col-md-4">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <span class="panel-title-text"><i class="fa fa-layer-group"></i> SECTIONS</span>
+                            <span id="sect-dept-label" style="font-size:11px;margin-left:8px;opacity:0.7;"></span>
+                            <div class="panel-heading-actions">
+                                <button class="btn btn-success btn-xs" id="btn-add-sect" onclick="openAddSection()" disabled>
+                                    <i class="fa fa-plus"></i> ADD
+                                </button>
+                            </div>
+                        </div>
+                        <div class="org-panel-body" id="section-list">
+                            <div class="panel-empty">Select a department to view its sections.</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row">
-        <!-- DIVISIONS -->
-        <div class="col-md-4">
-            <div class="panel panel-primary">
-                <div class="panel-heading">
-                    <span class="panel-title-text"><i class="fa fa-sitemap"></i> DIVISIONS</span>
-                    <div class="panel-heading-actions">
-                        <button class="btn btn-success btn-xs" onclick="openAddDivision()">
-                            <i class="fa fa-plus"></i> ADD
-                        </button>
+    <div class="panel panel-default" style="margin-bottom:20px;">
+        <div class="panel-heading"><strong><i class="fa fa-user-check"></i> SKILL MATRIX CONFIG</strong></div>
+        <div class="panel-body">
+            <div class="row">
+                <!-- SKILL MATRIX WHITELIST -->
+                <div class="col-md-6">
+                    <div class="panel panel-warning">
+                        <div class="panel-heading">
+                            <span class="panel-title-text"><i class="fa fa-user-check"></i> WHITELIST</span>
+                            <div class="panel-heading-actions">
+                                <button class="btn btn-success btn-xs" onclick="openAddSmWhitelist()">
+                                    <i class="fa fa-plus"></i> ADD
+                                </button>
+                            </div>
+                        </div>
+                        <div style="padding:8px 10px;border-bottom:1px solid #eee;">
+                            <input type="text" id="sm-whitelist-search" class="form-control input-sm" placeholder="Search whitelist by name or staff no...">
+                        </div>
+                        <div class="org-panel-body" id="sm-whitelist-list">
+                            <div class="panel-loading"><i class="fa fa-spinner fa-spin"></i> Loading...</div>
+                        </div>
                     </div>
                 </div>
-                <div class="org-panel-body" id="division-list">
-                    <div class="panel-loading"><i class="fa fa-spinner fa-spin"></i> Loading...</div>
+
+                <!-- DELETE SKILL MATRIX DATA -->
+                <div class="col-md-6">
+                    <div class="panel panel-danger">
+                        <div class="panel-heading">
+                            <span class="panel-title-text"><i class="fa fa-eraser"></i> DELETE DATA</span>
+                        </div>
+                        <div class="panel-body" style="padding:14px;">
+                            <div class="form-group" style="position:relative;margin-bottom:6px;">
+                                <label>Search Staff</label>
+                                <input type="text" id="sm-delete-search" class="form-control" placeholder="Search by staff no or name..." autocomplete="off">
+                                <input type="hidden" id="sm-delete-user-id">
+                                <div id="sm-delete-results" class="list-group" style="display:none;position:absolute;z-index:1000;width:100%;max-height:220px;overflow-y:auto;"></div>
+                            </div>
+                            <div id="sm-delete-selected" style="display:none;">
+                                <p style="margin-bottom:4px;"><strong id="sm-delete-selected-name"></strong> <span class="text-muted" id="sm-delete-selected-meta"></span></p>
+                                <p id="sm-delete-count-label" class="text-muted"></p>
+                                <button class="btn btn-danger btn-sm" id="sm-delete-btn" onclick="deleteSmData()">
+                                    <i class="fa fa-trash"></i> Delete Skill Matrix Data
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- DEPARTMENTS -->
-        <div class="col-md-4">
-            <div class="panel panel-info">
-                <div class="panel-heading">
-                    <span class="panel-title-text"><i class="fa fa-building"></i> DEPARTMENTS</span>
-                    <span id="dept-division-label" style="font-size:11px;margin-left:8px;opacity:0.8;"></span>
-                    <div class="panel-heading-actions">
-                        <button class="btn btn-success btn-xs" id="btn-add-dept" onclick="openAddDepartment()" disabled>
-                            <i class="fa fa-plus"></i> ADD
-                        </button>
-                    </div>
-                </div>
-                <div class="org-panel-body" id="department-list">
-                    <div class="panel-empty">Select a division to view its departments.</div>
-                </div>
+<!-- SKILL MATRIX WHITELIST MODAL -->
+<div class="modal fade" id="modalSmWhitelist" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Add to Skill Matrix Whitelist</h4>
             </div>
-        </div>
-
-        <!-- SECTIONS -->
-        <div class="col-md-4">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <span class="panel-title-text"><i class="fa fa-layer-group"></i> SECTIONS</span>
-                    <span id="sect-dept-label" style="font-size:11px;margin-left:8px;opacity:0.7;"></span>
-                    <div class="panel-heading-actions">
-                        <button class="btn btn-success btn-xs" id="btn-add-sect" onclick="openAddSection()" disabled>
-                            <i class="fa fa-plus"></i> ADD
-                        </button>
-                    </div>
+            <div class="modal-body">
+                <div class="form-group" style="position:relative;">
+                    <label>Search Staff <span class="text-danger">*</span></label>
+                    <input type="text" id="sm-add-search" class="form-control" placeholder="Search by staff no or name..." autocomplete="off">
+                    <input type="hidden" id="sm-add-staffno">
+                    <div id="sm-add-results" class="list-group" style="display:none;position:absolute;z-index:1000;width:100%;max-height:220px;overflow-y:auto;"></div>
                 </div>
-                <div class="org-panel-body" id="section-list">
-                    <div class="panel-empty">Select a department to view its sections.</div>
-                </div>
+                <p id="sm-add-selected-label" class="text-muted"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary" onclick="saveSmWhitelist()">Add</button>
             </div>
         </div>
     </div>
@@ -937,6 +1018,200 @@ if (!isset($_SESSION['fullname']) || $_SESSION['role'] != 'ADMIN') {
         });
     }
 
+    // ===== SKILL MATRIX CONFIG - WHITELIST =====
+
+    function loadSmWhitelist() {
+        $.post('fetch_org.php', { action: 'load_sm_whitelist' }, function (data) {
+            var html = '';
+            if (!data || data.length === 0) {
+                html = '<div class="panel-empty">No staff whitelisted yet. Click ADD to whitelist someone.</div>';
+            } else {
+                $.each(data, function (i, row) {
+                    var searchName = ((row.staffname || '') + ' ' + row.staffno).toLowerCase();
+                    html += '<div class="org-list-item sm-whitelist-row" style="cursor:default;" data-search="' + escHtml(searchName) + '">';
+                    html += '<div class="org-item-actions">';
+                    html += '<button class="btn btn-xs btn-danger" title="Remove" onclick="removeSmWhitelist(\'' + escJs(row.staffno) + '\',\'' + escJs(row.staffname || row.staffno) + '\')"><i class="fa fa-trash"></i></button>';
+                    html += '</div>';
+                    if (row.user_id) {
+                        html += '<div class="org-item-name">' + escHtml(row.staffname) + ' <small class="text-muted">(' + escHtml(row.staffno) + ')</small></div>';
+                        html += '<div class="org-item-meta">' + escHtml(row.department || '') + (row.designation ? ' &middot; ' + escHtml(row.designation) : '') + '</div>';
+                    } else {
+                        html += '<div class="org-item-name">' + escHtml(row.staffno) + '</div>';
+                        html += '<div class="org-item-meta" style="color:#c00;"><i class="fa fa-exclamation-triangle"></i> No matching staff record found</div>';
+                    }
+                    html += '</div>';
+                });
+                html += '<div class="panel-empty" id="sm-whitelist-no-match" style="display:none;">No whitelisted staff match your search.</div>';
+            }
+            $('#sm-whitelist-list').html(html);
+            filterSmWhitelist();
+        }, 'json');
+    }
+
+    function filterSmWhitelist() {
+        var q = $.trim($('#sm-whitelist-search').val()).toLowerCase();
+        var matched = 0;
+        $('.sm-whitelist-row').each(function () {
+            var isMatch = !q || ($(this).data('search') || '').indexOf(q) > -1;
+            $(this).toggle(isMatch);
+            if (isMatch) matched++;
+        });
+        $('#sm-whitelist-no-match').toggle(matched === 0 && $('.sm-whitelist-row').length > 0);
+    }
+
+    $(document).on('keyup', '#sm-whitelist-search', filterSmWhitelist);
+
+    function removeSmWhitelist(staffno, label) {
+        swal({ title: 'Remove from Whitelist?', text: '"' + label + '" will lose skill matrix access.', icon: 'warning', buttons: ['Cancel', 'Remove'], dangerMode: true })
+            .then(function (confirmed) {
+                if (!confirmed) return;
+                showSpinner();
+                $.post('org_action.php', { btn_action: 'remove_sm_whitelist', staffno: staffno }, function (res) {
+                    hideSpinner();
+                    if (res.message === 'delete') {
+                        loadSmWhitelist();
+                    } else {
+                        alertError(res.detail || 'Failed to remove from whitelist.');
+                    }
+                }, 'json');
+            });
+    }
+
+    var smAddSearchTimer = null;
+
+    function openAddSmWhitelist() {
+        $('#sm-add-search').val('');
+        $('#sm-add-staffno').val('');
+        $('#sm-add-selected-label').text('');
+        $('#sm-add-results').hide().empty();
+        $('#modalSmWhitelist').modal('show');
+    }
+
+    $('#sm-add-search').on('input', function () {
+        var q = $.trim($(this).val());
+        $('#sm-add-staffno').val('');
+        $('#sm-add-selected-label').text('');
+        clearTimeout(smAddSearchTimer);
+        if (q.length < 2) { $('#sm-add-results').hide().empty(); return; }
+        smAddSearchTimer = setTimeout(function () {
+            $.post('fetch_org.php', { action: 'search_staff', q: q }, function (data) {
+                if (!data || data.length === 0) {
+                    $('#sm-add-results').html('<div class="list-group-item text-muted">No match</div>').show();
+                    return;
+                }
+                var html = '';
+                $.each(data, function (i, row) {
+                    html += '<a href="#" class="list-group-item sm-add-option" data-staffno="' + escHtml(row.staffno) + '" data-label="' + escHtml(row.staffname + ' (' + row.staffno + ')') + '">' + escHtml(row.staffname) + ' (' + escHtml(row.staffno) + ') &mdash; <small class="text-muted">' + escHtml(row.department || '') + '</small></a>';
+                });
+                $('#sm-add-results').html(html).show();
+            }, 'json');
+        }, 250);
+    });
+
+    $(document).on('click', '.sm-add-option', function (e) {
+        e.preventDefault();
+        $('#sm-add-staffno').val($(this).data('staffno'));
+        $('#sm-add-search').val($(this).data('label'));
+        $('#sm-add-selected-label').text('Selected: ' + $(this).data('label'));
+        $('#sm-add-results').hide().empty();
+    });
+
+    function saveSmWhitelist() {
+        var staffno = $('#sm-add-staffno').val();
+        if (!staffno) { alertError('Please search and select a staff member.'); return; }
+        showSpinner();
+        $.post('org_action.php', { btn_action: 'add_sm_whitelist', staffno: staffno }, function (res) {
+            hideSpinner();
+            if (res.message === 'insert') {
+                $('#modalSmWhitelist').modal('hide');
+                loadSmWhitelist();
+            } else {
+                alertError(res.detail || 'Failed to add to whitelist.');
+            }
+        }, 'json');
+    }
+
+    // ===== SKILL MATRIX CONFIG - DELETE DATA =====
+
+    var smDeleteSearchTimer = null;
+
+    $('#sm-delete-search').on('input', function () {
+        var q = $.trim($(this).val());
+        $('#sm-delete-user-id').val('');
+        $('#sm-delete-selected').hide();
+        clearTimeout(smDeleteSearchTimer);
+        if (q.length < 2) { $('#sm-delete-results').hide().empty(); return; }
+        smDeleteSearchTimer = setTimeout(function () {
+            $.post('fetch_org.php', { action: 'search_staff', q: q }, function (data) {
+                if (!data || data.length === 0) {
+                    $('#sm-delete-results').html('<div class="list-group-item text-muted">No match</div>').show();
+                    return;
+                }
+                var html = '';
+                $.each(data, function (i, row) {
+                    html += '<a href="#" class="list-group-item sm-delete-option" data-id="' + row.id + '" data-name="' + escHtml(row.staffname) + '" data-meta="' + escHtml(row.staffno + ' · ' + (row.department || '')) + '">' + escHtml(row.staffname) + ' (' + escHtml(row.staffno) + ') &mdash; <small class="text-muted">' + escHtml(row.department || '') + '</small></a>';
+                });
+                $('#sm-delete-results').html(html).show();
+            }, 'json');
+        }, 250);
+    });
+
+    $(document).on('click', '.sm-delete-option', function (e) {
+        e.preventDefault();
+        var id = $(this).data('id');
+        var name = $(this).data('name');
+        var meta = $(this).data('meta');
+        $('#sm-delete-user-id').val(id);
+        $('#sm-delete-search').val(name);
+        $('#sm-delete-results').hide().empty();
+        $('#sm-delete-selected-name').text(name);
+        $('#sm-delete-selected-meta').text('(' + meta + ')');
+        $('#sm-delete-count-label').html('<i class="fa fa-spinner fa-spin"></i> Checking skill matrix data...');
+        $('#sm-delete-btn').prop('disabled', true);
+        $('#sm-delete-selected').show();
+        $.post('fetch_org.php', { action: 'check_sm_data', user_id: id }, function (res) {
+            var count = res.count || 0;
+            if (count === 0) {
+                $('#sm-delete-count-label').text('No skill matrix evaluations found for this staff member.');
+                $('#sm-delete-btn').prop('disabled', true);
+            } else {
+                $('#sm-delete-count-label').text(count + ' skill matrix evaluation(s) found.');
+                $('#sm-delete-btn').prop('disabled', false);
+            }
+        }, 'json');
+    });
+
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('#sm-add-search').length && !$(e.target).closest('#sm-add-results').length) {
+            $('#sm-add-results').hide();
+        }
+        if (!$(e.target).closest('#sm-delete-search').length && !$(e.target).closest('#sm-delete-results').length) {
+            $('#sm-delete-results').hide();
+        }
+    });
+
+    function deleteSmData() {
+        var userId = $('#sm-delete-user-id').val();
+        var name = $('#sm-delete-selected-name').text();
+        if (!userId) return;
+        swal({ title: 'Delete Skill Matrix Data?', text: 'All skill matrix evaluations for "' + name + '" will be permanently deleted. This cannot be undone.', icon: 'warning', buttons: ['Cancel', 'Delete'], dangerMode: true })
+            .then(function (confirmed) {
+                if (!confirmed) return;
+                showSpinner();
+                $.post('org_action.php', { btn_action: 'delete_sm_data', user_id: userId }, function (res) {
+                    hideSpinner();
+                    if (res.message === 'delete') {
+                        swal('Deleted', res.count + ' evaluation(s) deleted for "' + name + '".', 'success');
+                        $('#sm-delete-search').val('');
+                        $('#sm-delete-user-id').val('');
+                        $('#sm-delete-selected').hide();
+                    } else {
+                        alertError(res.detail || 'Failed to delete skill matrix data.');
+                    }
+                }, 'json');
+            });
+    }
+
     // ===== BULK RENAME VIA EXCEL =====
 
     function uploadOrgTemplate() {
@@ -1020,6 +1295,7 @@ if (!isset($_SESSION['fullname']) || $_SESSION['role'] != 'ADMIN') {
 
     $(document).ready(function () {
         loadDivisions();
+        loadSmWhitelist();
     });
 </script>
 </body>
