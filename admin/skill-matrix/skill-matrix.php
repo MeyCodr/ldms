@@ -225,8 +225,13 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
                     <div class="panel panel-default">
                         <div class="panel-heading">
                             <div class="row">
-                                <div class="col-md-12" style="margin-top: 10px;">
+                                <div class="col-md-8" style="margin-top: 10px;">
                                     <strong>Staff List</strong>
+                                </div>
+                                <div class="col-md-4" align="right">
+                                    <button type="button" id="export_excel_btn" class="btn btn-success btn-md">
+                                        <i class="fa fa-file-excel"></i> Export Excel
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -674,6 +679,15 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
         $('#department').change(function () {
             disableMatrixChartButton();
             loadSections($(this).val());
+        });
+
+        $('#export_excel_btn').click(function () {
+            var params = new URLSearchParams({
+                department: $('#department').val() || 'ALL',
+                section: $('#section').val() || 'ALL',
+                plant: $('#plant').val() || 'ALL'
+            });
+            window.location.href = 'export_skill_matrix_list.php?' + params.toString();
         });
 
         $('#reset_filter').click(function () {

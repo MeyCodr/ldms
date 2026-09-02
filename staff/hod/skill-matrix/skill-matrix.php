@@ -113,6 +113,9 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
                         <a href="matrix-chart.php" class="btn btn-info btn-md">
                             <i class="fa fa-chart-bar"></i> Matrix Chart
                         </a>
+                        <a href="export_skill_matrix_list.php" class="btn btn-success btn-md">
+                            <i class="fa fa-file-excel"></i> Export Excel
+                        </a>
                     </div>
                 </div>
             </div>

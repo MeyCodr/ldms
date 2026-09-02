@@ -104,8 +104,13 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                     <div class="panel panel-default">
                         <div class="panel-heading">
                             <div class="row">
-                                <div class="col-md-12" style="margin-top: 10px;">
+                                <div class="col-md-8" style="margin-top: 10px;">
                                     <strong>Staff List</strong>
+                                </div>
+                                <div class="col-md-4" align="right">
+                                    <a href="export_skill_matrix_list.php" class="btn btn-success btn-md">
+                                        <i class="fa fa-file-excel"></i> Export Excel
+                                    </a>
                                 </div>
                             </div>
                         </div>
