@@ -1,0 +1,8 @@
+# This repo is worked on from Windows with core.autocrlf=true, which rewrites
+# checked-out files to CRLF. That is harmless for PHP, but fatal for a shell
+# script running on the Linux VPS: bash reads the trailing \r as part of the
+# shebang and fails with "bad interpreter: /usr/bin/env bash^M".
+#
+# Pin shell scripts to LF so they stay executable wherever they are checked out
+# or copied to.
+*.sh text eol=lf

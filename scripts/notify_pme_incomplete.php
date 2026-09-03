@@ -6,8 +6,9 @@
 // below simply won't return them anymore.
 //
 // Runnable two ways:
-//  - CLI (php scripts/notify_pme_incomplete.php), e.g. from script.bat / Task
-//    Scheduler - no token needed, CLI access already implies server access.
+//  - CLI (php scripts/notify_pme_incomplete.php) - no token needed, CLI access
+//    already implies server access. This is how cron runs it on the VPS, via
+//    scripts/run_reminders.sh. See that file for the crontab line.
 //  - HTTP GET with a matching ?key= token, for hosts with no cron feature -
 //    point an external scheduler at this URL once a day:
 //      https://<your-domain>/ldms/scripts/notify_pme_incomplete.php?key=c23c26f50df52e734e73c1e4e43c598b476594355ff6e8bc
@@ -33,12 +34,28 @@ if (PHP_SAPI !== 'cli') {
         header('Content-Type: text/plain');
         die('Forbidden');
     }
+
+    // Over HTTP, PHP applies the web server's max_execution_time (commonly 30-60s)
+    // where the CLI has no limit. Each Office365 SMTP send takes a second or two,
+    // so once enough bosses are due the run can exceed it and be killed partway.
+    // Because the dedup row is written up front, a kill skips the remaining bosses
+    // for the whole day rather than merely delaying them, and the truncation would
+    // repeat daily - the bosses early in the sort order would be the only ones
+    // ever reminded.
+    @set_time_limit(0);
+    @ignore_user_abort(true);
 }
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/../dbconn.php';
+
+// Pinned explicitly because $today below drives both the dedup log key and the
+// from_date comparison. A VPS almost always runs on UTC, 8 hours behind
+// Malaysia, so a cron firing early in the Malaysian morning would otherwise see
+// the previous day's date. Matches the rest of the codebase (admin/fetch_dash.php:13).
+date_default_timezone_set('Asia/Kuala_Lumpur');
 
 $today = date('Y-m-d');
 
