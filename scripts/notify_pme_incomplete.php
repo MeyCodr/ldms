@@ -1,6 +1,14 @@
 <?php
 // Daily reminder: emails every boss (pme.hodid) a digest of their PME
-// evaluations that are due (from_date <= today) but still not completed.
+// evaluations whose evaluation period has ENDED (to_date < today) but that are
+// still not completed.
+//
+// The to_date cutoff deliberately matches the Evaluate button's unlock rule in
+// staff/hod/pme/pme.php - that button stays locked ("Evaluation period not
+// ended yet") until today is past to_date, so reminding a boss any earlier
+// would nag them daily about a row they physically cannot open. Same reasoning
+// as scripts/notify_attendance_incomplete.php, which waits for the training to
+// end before chasing anyone.
 // A boss stops appearing - and stops being emailed - the moment all their
 // pending rows move to 'approved'/'completed'/'verified', since the query
 // below simply won't return them anymore.
@@ -52,7 +60,7 @@ require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/../dbconn.php';
 
 // Pinned explicitly because $today below drives both the dedup log key and the
-// from_date comparison. A VPS almost always runs on UTC, 8 hours behind
+// to_date comparison. A VPS almost always runs on UTC, 8 hours behind
 // Malaysia, so a cron firing early in the Malaysian morning would otherwise see
 // the previous day's date. Matches the rest of the codebase (admin/fetch_dash.php:13).
 date_default_timezone_set('Asia/Kuala_Lumpur');
@@ -84,7 +92,7 @@ $sql = "SELECT pme.hodid, pme.staffname, pme.staffno, pme.training_title,
                DATE_FORMAT(pme.from_date, '%e/%c/%Y') AS formatted_from_date,
                DATE_FORMAT(pme.to_date, '%e/%c/%Y') AS formatted_to_date
         FROM pme
-        WHERE pme.from_date <= ?
+        WHERE pme.to_date < ?
           AND pme.designation IN ('Executive', 'MANAGER (AM/HOS & ABOVE)')
           AND pme.status = 'pending'
         ORDER BY pme.training_title, pme.staffname";
