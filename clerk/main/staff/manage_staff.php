@@ -165,7 +165,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'CLERK')) {
                                                 <label>Status</label>
                                                 <select class="form-control" id="status" name="status">
                                                     <option selected disabled="disabled">-- Select Status --</option>
-                                                    <option value="">ACTIVE</option>
+                                                    <option value="ACTIVE">ACTIVE</option>
                                                     <option value="RESIGN">NOT ACTIVE</option>
                                                 </select>
                                             </div>

@@ -27,13 +27,9 @@
                 $section_id = null;
             }
 
-            // set hodid for department staff (if department has a HOD account)
-            $hodid = 0;
-            $sqlHod = "SELECT id FROM user WHERE department = '$department' AND usertype = 'HOD' LIMIT 1";
-            $queryHod = mysqli_query($conn, $sqlHod);
-            if ($queryHod && $rowHod = mysqli_fetch_assoc($queryHod)) {
-                $hodid = mysqli_real_escape_string($conn, $rowHod['id']);
-            }
+            // hodid follows the department's assigned HOD (org.php > Assign HOD),
+            // the single source of truth - see getDepartmentHodId().
+            $hodid = getDepartmentHodId($department_id) ?: 0;
 
             $password = md5('P@ss1234');
             $sectionIdValue = is_null($section_id) ? 'NULL' : "'$section_id'";
@@ -59,23 +55,17 @@
             $date_join = !empty($_POST['date_join']) ? $_POST['date_join'] : null;
             $plant = !empty($_POST['plant']) ? $_POST['plant'] : null;
 
-            $hodnew = 0;
-            $sql1 = "select id from user where department = '$department' and usertype = 'HOD'";
-            $query1 = mysqli_query($conn,$sql1);
-            while($row1 = mysqli_fetch_assoc($query1)) {
-                $hodnew = (int) $row1['id'];
-            }
-
-            $hodprev = 0;
-            $sql2 = "select hodid from user where id = '$id'";
-            $query2 = mysqli_query($conn,$sql2);
-            while($row2 = mysqli_fetch_assoc($query2)) {
-                $hodprev = $row2['hodid'] !== null ? (int) $row2['hodid'] : 0;
-            }
-
             $division_id = getDivisionIdByName($division);
             $department_id = getDepartmentIdByName($division_id, $department);
             $section_id = getSectionIdByName($department_id, $section);
+
+            // hodid follows the department's assigned HOD (org.php > Assign HOD),
+            // the single source of truth - see getDepartmentHodId(). Guarded so a
+            // department's own HOD is never recorded as reporting to themselves.
+            $hodnew = getDepartmentHodId($department_id) ?: 0;
+            if ($hodnew === (int) $id) {
+                $hodnew = 0;
+            }
 
             // HOD users should not have section_id and section should be blank
             if ($designation === 'HOD' || (isset($_POST['usertype']) && $_POST['usertype'] === 'HOD')) {
@@ -86,20 +76,11 @@
             $dateJoinValue = is_null($date_join) ? 'NULL' : "'" . mysqli_real_escape_string($conn, $date_join) . "'";
             $plantValue = is_null($plant) ? 'NULL' : "'" . mysqli_real_escape_string($conn, $plant) . "'";
 
-            if ($hodprev != 0) {
-                $sql = "UPDATE `user` SET `staffno` = '$staffno', `staffname` = '$staffname', `email` = '$email', `gender` = '$gender', `designation` = '$designation', `department` = '$department', `division` = '$division', `section` = '$section', `division_id` = '$division_id', `department_id` = '$department_id', `section_id` = $sectionIdValue, `status` = '$status', `hodid` = '$hodnew', `date_join` = $dateJoinValue, `plant` = $plantValue WHERE `id` = '$id'";
-                if(mysqli_query($conn, $sql)){
-                    echo json_encode(['message' => 'update']);
-                }else {
-                    echo json_encode(['message' => 'error']);
-                }
+            $sql = "UPDATE `user` SET `staffno` = '$staffno', `staffname` = '$staffname', `email` = '$email', `gender` = '$gender', `designation` = '$designation', `department` = '$department', `division` = '$division', `section` = '$section', `division_id` = '$division_id', `department_id` = '$department_id', `section_id` = $sectionIdValue, `status` = '$status', `hodid` = '$hodnew', `date_join` = $dateJoinValue, `plant` = $plantValue WHERE `id` = '$id'";
+            if(mysqli_query($conn, $sql)){
+                echo json_encode(['message' => 'update']);
             }else {
-                $sql = "UPDATE `user` SET `staffno` = '$staffno', `staffname` = '$staffname', `email` = '$email', `gender` = '$gender', `designation` = '$designation', `department` = '$department', `division` = '$division', `section` = '$section', `division_id` = '$division_id', `department_id` = '$department_id', `section_id` = $sectionIdValue, `status` = '$status', `date_join` = $dateJoinValue, `plant` = $plantValue WHERE `id` = '$id'";
-                if(mysqli_query($conn, $sql)){
-                    echo json_encode(['message' => 'update']);
-                }else {
-                    echo json_encode(['message' => 'error']);
-                } 
+                echo json_encode(['message' => 'error']);
             }
         }else if ($_POST['btn_action'] == 'delete_impact') {
             // Asked before the confirmation dialog, so the admin is told what

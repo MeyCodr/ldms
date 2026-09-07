@@ -11,6 +11,7 @@
             $department = $_POST['department'];
             $division = $_POST['division'];
 			$section = $_POST['section'];
+            $status = $_POST['status'];
             $division_id = getDivisionIdByName($division);
             $department_id = getDepartmentIdByName($division_id, $department);
             $section_id = getSectionIdByName($department_id, $section);

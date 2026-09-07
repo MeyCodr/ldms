@@ -64,18 +64,21 @@
                 <div class="col-md-12">
                     <div class="panel panel-default">
                         <div class="panel-body" style="padding:12px 14px;">
-                            <strong style="margin-right:10px;"><i class="fa fa-file-excel"></i> Bulk Update Contract Staff via Excel</strong>
-                            <a href="export_staff_template.php" class="btn btn-default btn-sm">
-                                <i class="fa fa-download"></i> Download Template
+                            <strong style="margin-right:10px;"><i class="fa fa-file-import"></i> Import / Update Contract Staff via Excel</strong>
+                            <a href="export_staff_template.php" class="btn btn-default btn-sm" title="Every current contract staff record - edit and upload it straight back">
+                                <i class="fa fa-download"></i> Current Staff Template
+                            </a>
+                            <a href="export_new_staff_template.php" class="btn btn-default btn-sm" title="Blank template with one example row, for adding new staff only">
+                                <i class="fa fa-download"></i> Blank Template
                             </a>
                             <span style="margin-left:10px;">
-                                <input type="file" id="staff-file-input" accept=".xls,.xlsx" style="display:inline-block;width:auto;">
-                                <button class="btn btn-primary btn-sm" id="btn-upload-staff" onclick="uploadStaffTemplate()">
-                                    <i class="fa fa-upload"></i> Upload &amp; Update
+                                <input type="file" id="staff-import-input" accept=".xls,.xlsx" style="display:inline-block;width:auto;">
+                                <button class="btn btn-primary btn-sm" id="btn-preview-staff-import" onclick="previewStaffImport()">
+                                    <i class="fa fa-search"></i> Upload &amp; Preview
                                 </button>
                             </span>
                             <div class="text-muted" style="font-size:11px;margin-top:6px;">
-                                Download the template first, fill in any of Staff Name, Gender, Division, Department, Section and/or Status columns without changing the Staff No column, then upload it here to bulk-update contract staff. Use the dropdowns provided in each cell &mdash; picking a Division narrows the Department dropdown to that division, and picking a Department narrows the Section dropdown to that department. Blank cells are left unchanged.
+                                One file handles both adding and updating: a Staff No that does not exist yet is <strong>created</strong> as contract staff (default password <code>P@ss1234</code>); a Staff No already on the contract staff list is <strong>updated</strong>, and blank cells are left unchanged. Use the dropdowns provided in each cell &mdash; picking a Division narrows the Department dropdown to that division, and picking a Department narrows the Section dropdown to that department. Nothing is saved until you confirm the preview.
                             </div>
                         </div>
                     </div>
@@ -124,6 +127,43 @@
 				</div>
 			</div>
         </div>
+
+        <div class="modal fade" id="staff-import-modal" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title">Import Preview &mdash; <span id="staff-import-filename"></span></h4>
+                    </div>
+                    <div class="modal-body">
+                        <div id="staff-import-counts" style="font-size:13px;margin-bottom:10px;"></div>
+                        <div class="table-responsive" style="max-height:320px;overflow-y:auto;">
+                            <table class="table table-bordered table-condensed" style="font-size:12px;">
+                                <thead>
+                                    <tr>
+                                        <th width="60">Line</th>
+                                        <th width="90">Staff No.</th>
+                                        <th width="200">Staff Name</th>
+                                        <th width="80">Action</th>
+                                        <th>Detail</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="staff-import-rows"></tbody>
+                            </table>
+                        </div>
+                        <div class="text-muted" style="font-size:11px;">
+                            Rows marked <span class="label label-danger">error</span> are skipped; everything else is written when you confirm.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-success" id="btn-confirm-staff-import" onclick="confirmStaffImport()">
+                            <i class="fa fa-check"></i> Confirm Import
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </body>
     <footer>
         <div class="col-md-12" style="margin-bottom:15px;">
@@ -167,18 +207,26 @@
             window.location = "manage_staff.php";
         });
 
-        function uploadStaffTemplate() {
-            var fileInput = document.getElementById('staff-file-input');
+        /* ================= Staff import - preview then confirm, insert or update in one pass ================= */
+        var staffImportToken = null;
+
+        function escapeHtml(value) {
+            return $('<div>').text(value === null || value === undefined ? '' : value).html();
+        }
+
+        function previewStaffImport() {
+            var fileInput = document.getElementById('staff-import-input');
             if (!fileInput.files || fileInput.files.length === 0) {
                 swal('Error', 'Please choose a file to upload first.', 'error');
                 return;
             }
 
             var formData = new FormData();
+            formData.append('action', 'preview');
             formData.append('import_file', fileInput.files[0]);
 
-            var $btn = $('#btn-upload-staff');
-            $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Uploading...');
+            var $btn = $('#btn-preview-staff-import');
+            $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Reading...');
 
             $.ajax({
                 url: 'import_staff.php',
@@ -188,27 +236,104 @@
                 processData: false,
                 dataType: 'json',
                 success: function (res) {
-                    fileInput.value = '';
                     if (res.message !== 'done') {
-                        swal('Error', res.detail || 'Import failed.', 'error');
+                        swal('Error', res.detail || 'Could not read the file.', 'error');
                         return;
                     }
-                    var summaryText = res.updated + ' staff record(s) updated, ' + res.skipped + ' row(s) skipped (no changes).';
-                    if (res.errors && res.errors.length > 0) {
-                        summaryText += '\n\n' + res.errors.length + ' issue(s):\n' + res.errors.join('\n');
-                    }
-                    swal('Import Complete', summaryText, (res.errors && res.errors.length > 0) ? 'warning' : 'success');
-                    $('#userlist').DataTable().destroy();
-                    fetch_data('load_staff');
+                    staffImportToken = res.token;
+                    renderStaffImportPreview(res);
+                    $('#staff-import-modal').modal('show');
                 },
                 error: function () {
                     swal('Error', 'Upload failed. Please try again.', 'error');
                 },
                 complete: function () {
-                    $btn.prop('disabled', false).html('<i class="fa fa-upload"></i> Upload &amp; Update');
+                    $btn.prop('disabled', false).html('<i class="fa fa-search"></i> Upload &amp; Preview');
                 }
             });
         }
+
+        function renderStaffImportPreview(res) {
+            $('#staff-import-filename').text(res.filename);
+
+            var countsHtml =
+                '<span class="label label-success">' + res.counts.insert + ' to create</span> ' +
+                '<span class="label label-primary">' + res.counts.update + ' to update</span> ' +
+                '<span class="label label-default">' + res.counts.unchanged + ' unchanged</span> ' +
+                '<span class="label label-danger">' + res.counts.error + ' error</span>';
+            if (res.exampleSkipped > 0) {
+                countsHtml += ' <span class="text-muted">(' + res.exampleSkipped + ' example row(s) skipped)</span>';
+            }
+            $('#staff-import-counts').html(countsHtml);
+
+            var labelFor = { insert: 'label-success', update: 'label-primary', unchanged: 'label-default', error: 'label-danger' };
+            var actionText = { insert: 'create', update: 'update', unchanged: 'unchanged', error: 'error' };
+            var rowsHtml = '';
+            $.each(res.rows, function (i, row) {
+                rowsHtml += '<tr>' +
+                    '<td>' + row.line + '</td>' +
+                    '<td>' + escapeHtml(row.staffno) + '</td>' +
+                    '<td>' + escapeHtml(row.staffname) + '</td>' +
+                    '<td><span class="label ' + labelFor[row.action] + '">' + actionText[row.action] + '</span></td>' +
+                    '<td>' + escapeHtml(row.detail) + '</td>' +
+                    '</tr>';
+            });
+            if (rowsHtml === '') {
+                rowsHtml = '<tr><td colspan="5" class="text-center text-muted">No data rows found in the file.</td></tr>';
+            }
+            $('#staff-import-rows').html(rowsHtml);
+
+            var nothingToDo = (res.counts.insert + res.counts.update) === 0;
+            $('#btn-confirm-staff-import').prop('disabled', nothingToDo);
+        }
+
+        function confirmStaffImport() {
+            if (!staffImportToken) return;
+
+            var $btn = $('#btn-confirm-staff-import');
+            $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Importing...');
+
+            $.ajax({
+                url: 'import_staff.php',
+                type: 'POST',
+                data: { action: 'commit', token: staffImportToken },
+                dataType: 'json',
+                success: function (res) {
+                    if (res.message !== 'done') {
+                        swal('Error', res.detail || 'Import failed.', 'error');
+                        return;
+                    }
+                    staffImportToken = null;
+                    document.getElementById('staff-import-input').value = '';
+                    $('#staff-import-modal').modal('hide');
+
+                    var summaryText = res.inserted + ' staff created, ' + res.updated + ' updated, ' +
+                        res.unchanged + ' unchanged, ' + res.skipped + ' skipped.';
+                    if (res.errors && res.errors.length > 0) {
+                        summaryText += '\n\n' + res.errors.length + ' skipped row(s):\n' + res.errors.join('\n');
+                    }
+                    swal('Import Complete', summaryText, (res.errors && res.errors.length > 0) ? 'warning' : 'success');
+
+                    $('#userlist').DataTable().destroy();
+                    fetch_data('load_staff');
+                },
+                error: function () {
+                    swal('Error', 'Import failed. Please try again.', 'error');
+                },
+                complete: function () {
+                    $btn.prop('disabled', false).html('<i class="fa fa-check"></i> Confirm Import');
+                }
+            });
+        }
+
+        // Dismissing the preview without confirming - Cancel, the X, or Esc -
+        // releases the file the server parked for the confirm step.
+        $('#staff-import-modal').on('hidden.bs.modal', function () {
+            if (!staffImportToken) return;
+            $.post('import_staff.php', { action: 'cancel' });
+            staffImportToken = null;
+            document.getElementById('staff-import-input').value = '';
+        });
 
         function fetch_data(action){
             var userdataTable = $('#userlist').DataTable({

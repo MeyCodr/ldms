@@ -17,181 +17,464 @@
         respond(['message' => 'error', 'detail' => 'Unauthorized']);
     }
 
-    if (empty($_FILES['import_file']['name'])) {
-        respond(['message' => 'error', 'detail' => 'No file uploaded.']);
-    }
-
-    $fileName = $_FILES['import_file']['name'];
-    $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-    if (!in_array($fileExt, ['xls', 'xlsx'])) {
-        respond(['message' => 'error', 'detail' => 'Please upload an .xls or .xlsx file generated from the template.']);
-    }
-
-    try {
-        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($_FILES['import_file']['tmp_name']);
-    } catch (Exception $e) {
-        respond(['message' => 'error', 'detail' => 'Could not read the file: ' . $e->getMessage()]);
-    }
-
     $validGenders = ['MALE', 'FEMALE'];
     $validStatuses = ['ACTIVE' => 'ACTIVE', 'RESIGN' => 'RESIGN', 'NOT ACTIVE' => 'RESIGN'];
-    $orgStructure = getDbOrgStructure();
 
-    $summary = [
-        'updated' => 0,
-        'skipped' => 0,
-        'errors' => [],
+    $FIELD_LABELS = [
+        'staffname' => 'Staff Name',
+        'gender'    => 'Gender',
+        'division'  => 'Division',
+        'department'=> 'Department',
+        'section'   => 'Section',
+        'status'    => 'Status',
+        'hodid'     => 'HOD (auto, from department)',
     ];
 
-    $sheet = $spreadsheet->getActiveSheet();
-    $highestRow = $sheet->getHighestDataRow();
-
-    for ($rowIndex = 2; $rowIndex <= $highestRow; $rowIndex++) {
-        $staffno = trim((string) $sheet->getCell("A{$rowIndex}")->getValue());
-        if ($staffno === '') continue;
-        $staffno = strtoupper($staffno);
-
-        // Only CONTRACT staff belong to this list, matching the page's scope.
-        $check = $conn->prepare("SELECT staffname, gender, division, department, section, division_id, department_id, section_id, status FROM user WHERE staffno = ? AND designation = 'CONTRACT'");
-        $check->bind_param('s', $staffno);
-        $check->execute();
-        $existing = $check->get_result()->fetch_assoc();
-        if (!$existing) {
-            $summary['errors'][] = "Staff No {$staffno}: not found in contract staff list, skipped.";
-            continue;
-        }
-
-        $setClauses = [];
-        $types = '';
-        $params = [];
-
-        // ===== Staff Name (column B) =====
-        $staffnameRaw = trim((string) $sheet->getCell("B{$rowIndex}")->getValue());
-        if ($staffnameRaw !== '') {
-            $staffname = strtoupper($staffnameRaw);
-            if ($staffname !== $existing['staffname']) {
-                $setClauses[] = 'staffname = ?';
-                $types .= 's';
-                $params[] = $staffname;
+    function matchOption($value, array $options)
+    {
+        foreach ($options as $option) {
+            if (strcasecmp($option, $value) === 0) {
+                return $option;
             }
         }
-
-        // ===== Gender (column C) =====
-        $genderRaw = trim((string) $sheet->getCell("C{$rowIndex}")->getValue());
-        if ($genderRaw !== '') {
-            $genderUpper = strtoupper($genderRaw);
-            if (!in_array($genderUpper, $validGenders, true)) {
-                $summary['errors'][] = "Staff No {$staffno}: '{$genderRaw}' is not a valid gender, gender left unchanged.";
-            } elseif ($genderUpper !== $existing['gender']) {
-                $setClauses[] = 'gender = ?';
-                $types .= 's';
-                $params[] = $genderUpper;
-            }
-        }
-
-        // ===== Division / Department / Section (columns D, E, F) =====
-        $divisionRaw = trim((string) $sheet->getCell("D{$rowIndex}")->getValue());
-        $departmentRaw = trim((string) $sheet->getCell("E{$rowIndex}")->getValue());
-        $sectionRaw = trim((string) $sheet->getCell("F{$rowIndex}")->getValue());
-
-        if ($divisionRaw !== '' || $departmentRaw !== '' || $sectionRaw !== '') {
-            $effectiveDivision = $divisionRaw !== '' ? $divisionRaw : $existing['division'];
-            $effectiveDepartment = $departmentRaw !== '' ? $departmentRaw : $existing['department'];
-            $effectiveSection = $sectionRaw !== '' ? $sectionRaw : $existing['section'];
-
-            $divisionMatch = null;
-            foreach (array_keys($orgStructure) as $divName) {
-                if (strcasecmp($divName, $effectiveDivision) === 0) { $divisionMatch = $divName; break; }
-            }
-
-            if ($divisionMatch === null) {
-                $summary['errors'][] = "Staff No {$staffno}: division '{$effectiveDivision}' not found, division/department/section left unchanged.";
-            } else {
-                $departmentMatch = null;
-                foreach (array_keys($orgStructure[$divisionMatch]) as $depName) {
-                    if (strcasecmp($depName, $effectiveDepartment) === 0) { $departmentMatch = $depName; break; }
-                }
-
-                if ($departmentMatch === null) {
-                    $summary['errors'][] = "Staff No {$staffno}: department '{$effectiveDepartment}' not found under division '{$divisionMatch}', division/department/section left unchanged.";
-                } else {
-                    $sectionOptions = $orgStructure[$divisionMatch][$departmentMatch];
-                    $sectionMatch = null;
-                    if ($effectiveSection === '') {
-                        $sectionMatch = '';
-                    } else {
-                        foreach ($sectionOptions as $secName) {
-                            if (strcasecmp($secName, $effectiveSection) === 0) { $sectionMatch = $secName; break; }
-                        }
-                    }
-
-                    if ($sectionMatch === null) {
-                        $summary['errors'][] = "Staff No {$staffno}: section '{$effectiveSection}' not found under department '{$departmentMatch}', division/department/section left unchanged.";
-                    } else {
-                        $divisionId = getDivisionIdByName($divisionMatch);
-                        $departmentId = getDepartmentIdByName($divisionId, $departmentMatch);
-                        $sectionId = $sectionMatch === '' ? null : getSectionIdByName($departmentId, $sectionMatch);
-
-                        if ($divisionMatch !== $existing['division']) {
-                            $setClauses[] = 'division = ?'; $types .= 's'; $params[] = $divisionMatch;
-                        }
-                        if ($departmentMatch !== $existing['department']) {
-                            $setClauses[] = 'department = ?'; $types .= 's'; $params[] = $departmentMatch;
-                        }
-                        if ($sectionMatch !== $existing['section']) {
-                            $setClauses[] = 'section = ?'; $types .= 's'; $params[] = $sectionMatch;
-                        }
-                        if ($divisionId != $existing['division_id']) {
-                            $setClauses[] = 'division_id = ?'; $types .= 'i'; $params[] = $divisionId;
-                        }
-                        if ($departmentId != $existing['department_id']) {
-                            $setClauses[] = 'department_id = ?'; $types .= 'i'; $params[] = $departmentId;
-                        }
-                        if ($sectionId != $existing['section_id']) {
-                            $setClauses[] = 'section_id = ?'; $types .= 'i'; $params[] = $sectionId;
-                        }
-                    }
-                }
-            }
-        }
-
-        // ===== Status (column G) =====
-        $statusRaw = trim((string) $sheet->getCell("G{$rowIndex}")->getValue());
-        if ($statusRaw !== '') {
-            $statusKey = strtoupper($statusRaw);
-            if (!isset($validStatuses[$statusKey])) {
-                $summary['errors'][] = "Staff No {$staffno}: '{$statusRaw}' is not a valid status, status left unchanged.";
-            } else {
-                $statusValue = $validStatuses[$statusKey];
-                if ($statusValue !== $existing['status']) {
-                    $setClauses[] = 'status = ?';
-                    $types .= 's';
-                    $params[] = $statusValue;
-                }
-            }
-        }
-
-        if (empty($setClauses)) {
-            $summary['skipped']++;
-            continue;
-        }
-
-        $params[] = $staffno;
-        $types .= 's';
-
-        $stmt = $conn->prepare("UPDATE user SET " . implode(', ', $setClauses) . " WHERE staffno = ? AND designation = 'CONTRACT'");
-        $refs = [$types];
-        foreach ($params as $key => $value) {
-            $refs[] = &$params[$key];
-        }
-        call_user_func_array([$stmt, 'bind_param'], $refs);
-        if ($stmt->execute()) {
-            $summary['updated']++;
-        } else {
-            $summary['errors'][] = "Staff No {$staffno}: update failed ({$conn->error}).";
-        }
+        return null;
     }
 
-    $summary['message'] = 'done';
-    respond($summary);
+    /**
+     * Every existing user keyed by Staff No, fetched once so a large file
+     * does not run one lookup query per row.
+     */
+    function staffIndex()
+    {
+        global $conn;
+        static $index = null;
+        if ($index !== null) return $index;
+
+        $index = [];
+        $res = $conn->query("SELECT id, staffno, staffname, gender, designation, division, department, section, division_id, department_id, section_id, status, hodid FROM user");
+        while ($row = $res->fetch_assoc()) {
+            $staffno = strtoupper(trim((string) $row['staffno']));
+            if ($staffno !== '' && !isset($index[$staffno])) {
+                $index[$staffno] = $row;
+            }
+        }
+        return $index;
+    }
+
+    /**
+     * Runs for both preview and commit so the confirmed import is exactly
+     * the one that was previewed. One row = one CONTRACT staff: a Staff No
+     * not yet in the system is an insert, an existing CONTRACT Staff No is
+     * an update (blank cells left unchanged), and a Staff No that belongs
+     * to a non-CONTRACT record is refused - this page only manages
+     * contract staff.
+     */
+    function analyseStaffImport($path)
+    {
+        global $validGenders, $validStatuses, $FIELD_LABELS;
+
+        try {
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path);
+        } catch (\Throwable $e) {
+            return ['error' => 'Could not read the file: ' . $e->getMessage()];
+        }
+
+        $orgStructure = getDbOrgStructure();
+        $sheet = $spreadsheet->getActiveSheet();
+        $highestRow = $sheet->getHighestDataRow();
+        $staffLookup = staffIndex();
+
+        $rows = [];
+        $counts = ['insert' => 0, 'update' => 0, 'unchanged' => 0, 'error' => 0];
+        $seenStaffNo = [];
+        $exampleSkipped = 0;
+
+        for ($rowIndex = 2; $rowIndex <= $highestRow; $rowIndex++) {
+            $cell = function ($col) use ($sheet, $rowIndex) {
+                return trim((string) $sheet->getCell("{$col}{$rowIndex}")->getValue());
+            };
+
+            $staffno = strtoupper($cell('A'));
+            if (strpos($staffno, '(EXAMPLE)') === 0) {
+                $exampleSkipped++;
+                continue;
+            }
+
+            $isBlank = true;
+            foreach (['A', 'B', 'C', 'D', 'E', 'F', 'G'] as $col) {
+                if ($cell($col) !== '') { $isBlank = false; break; }
+            }
+            if ($isBlank) continue;
+
+            $entry = [
+                'line' => $rowIndex,
+                'staffno' => $staffno,
+                'staffname' => '',
+                'action' => 'error',
+                'messages' => [],
+                'changes' => [],
+            ];
+
+            if ($staffno === '') {
+                $entry['messages'][] = 'Staff No is blank.';
+                $rows[] = $entry;
+                $counts['error']++;
+                continue;
+            }
+
+            if (isset($seenStaffNo[$staffno])) {
+                $entry['messages'][] = 'Duplicate of line ' . $seenStaffNo[$staffno] . ' in this file.';
+                $rows[] = $entry;
+                $counts['error']++;
+                continue;
+            }
+            $seenStaffNo[$staffno] = $rowIndex;
+
+            $existing = isset($staffLookup[$staffno]) ? $staffLookup[$staffno] : null;
+            if ($existing !== null && $existing['designation'] !== 'CONTRACT') {
+                $entry['staffname'] = $existing['staffname'];
+                $entry['messages'][] = "Staff No {$staffno} already exists as a {$existing['designation']} staff; this page only manages contract staff.";
+                $rows[] = $entry;
+                $counts['error']++;
+                continue;
+            }
+            $isNew = $existing === null;
+            $entry['staffname'] = $isNew ? '' : $existing['staffname'];
+
+            $values = [];
+            $failed = false;
+
+            // ===== Staff Name (column B) =====
+            $staffnameRaw = $cell('B');
+            if ($staffnameRaw !== '') {
+                $values['staffname'] = strtoupper($staffnameRaw);
+                $entry['staffname'] = $values['staffname'];
+            } elseif ($isNew) {
+                $entry['messages'][] = 'Staff Name is required for a new staff record.';
+                $failed = true;
+            }
+
+            // ===== Gender (column C) =====
+            $genderRaw = $cell('C');
+            if ($genderRaw !== '') {
+                $gender = matchOption($genderRaw, $validGenders);
+                if ($gender === null) {
+                    $entry['messages'][] = "'{$genderRaw}' is not a valid gender (MALE / FEMALE).";
+                    $failed = true;
+                } else {
+                    $values['gender'] = $gender;
+                }
+            } elseif ($isNew) {
+                $entry['messages'][] = 'Gender is required for a new staff record.';
+                $failed = true;
+            }
+
+            // ===== Division / Department / Section (columns D, E, F) =====
+            $divisionRaw = $cell('D');
+            $departmentRaw = $cell('E');
+            $sectionRaw = $cell('F');
+            $orgTouched = ($divisionRaw !== '' || $departmentRaw !== '' || $sectionRaw !== '');
+
+            if ($isNew && !$orgTouched) {
+                $entry['messages'][] = 'Division / Department is required for a new staff record.';
+                $failed = true;
+            } elseif ($orgTouched) {
+                $effectiveDivision = $divisionRaw !== '' ? $divisionRaw : ($isNew ? '' : $existing['division']);
+                $effectiveDepartment = $departmentRaw !== '' ? $departmentRaw : ($isNew ? '' : $existing['department']);
+                $effectiveSection = $sectionRaw !== '' ? $sectionRaw : ($isNew ? '' : $existing['section']);
+
+                $divisionMatch = matchOption($effectiveDivision, array_keys($orgStructure));
+                if ($divisionMatch === null) {
+                    $entry['messages'][] = "Division '{$effectiveDivision}' not found.";
+                    $failed = true;
+                } else {
+                    $departmentMatch = matchOption($effectiveDepartment, array_keys($orgStructure[$divisionMatch]));
+                    if ($departmentMatch === null) {
+                        $entry['messages'][] = "Department '{$effectiveDepartment}' not found under division '{$divisionMatch}'.";
+                        $failed = true;
+                    } else {
+                        $sectionOptions = $orgStructure[$divisionMatch][$departmentMatch];
+                        $sectionMatch = $effectiveSection === '' ? '' : matchOption($effectiveSection, $sectionOptions);
+                        if ($sectionMatch === null) {
+                            $entry['messages'][] = "Section '{$effectiveSection}' not found under department '{$departmentMatch}'.";
+                            $failed = true;
+                        } else {
+                            $divisionId = getDivisionIdByName($divisionMatch);
+                            $departmentId = getDepartmentIdByName($divisionId, $departmentMatch);
+                            $sectionId = $sectionMatch === '' ? null : getSectionIdByName($departmentId, $sectionMatch);
+
+                            $values['division'] = $divisionMatch;
+                            $values['department'] = $departmentMatch;
+                            $values['section'] = $sectionMatch;
+                            $values['division_id'] = $divisionId;
+                            $values['department_id'] = $departmentId;
+                            $values['section_id'] = $sectionId;
+
+                            // hodid follows the department's assigned HOD
+                            // (org.php > Assign HOD), the single source of
+                            // truth - see getDepartmentHodId(). Guarded so a
+                            // department's own HOD is never recorded as
+                            // reporting to themselves.
+                            if ($isNew || $departmentMatch !== $existing['department']) {
+                                $hodValue = getDepartmentHodId($departmentId) ?: 0;
+                                if (!$isNew && $hodValue === (int) $existing['id']) {
+                                    $hodValue = 0;
+                                }
+                                $values['hodid'] = $hodValue;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ===== Status (column G) =====
+            $statusRaw = $cell('G');
+            if ($statusRaw !== '') {
+                $statusKey = strtoupper($statusRaw);
+                if (!isset($validStatuses[$statusKey])) {
+                    $entry['messages'][] = "'{$statusRaw}' is not a valid status (ACTIVE / RESIGN).";
+                    $failed = true;
+                } else {
+                    $values['status'] = $validStatuses[$statusKey];
+                }
+            } elseif ($isNew) {
+                $values['status'] = 'ACTIVE';
+            }
+
+            if ($failed) {
+                $entry['action'] = 'error';
+                $rows[] = $entry;
+                $counts['error']++;
+                continue;
+            }
+
+            if ($isNew) {
+                $values['staffno'] = $staffno;
+                $values['password'] = md5('P@ss1234');
+                $values['designation'] = 'CONTRACT';
+                $entry['action'] = 'insert';
+                $entry['changes'] = $values;
+                $counts['insert']++;
+            } else {
+                $changed = [];
+                foreach ($values as $column => $value) {
+                    $current = array_key_exists($column, $existing) ? $existing[$column] : null;
+                    if (($value === null && ($current === null || (string) $current === ''))
+                        || ($value !== null && (string) $value === (string) $current)) {
+                        continue;
+                    }
+                    $changed[$column] = $value;
+                }
+                if (empty($changed)) {
+                    $entry['action'] = 'unchanged';
+                    $counts['unchanged']++;
+                } else {
+                    $entry['action'] = 'update';
+                    $entry['changes'] = $changed;
+                    $entry['id'] = (int) $existing['id'];
+                    $counts['update']++;
+                }
+            }
+
+            $rows[] = $entry;
+        }
+
+        return [
+            'rows' => $rows,
+            'counts' => $counts,
+            'exampleSkipped' => $exampleSkipped,
+        ];
+    }
+
+    function describeChanges(array $changes, array $labels)
+    {
+        $parts = [];
+        foreach ($changes as $column => $value) {
+            if (!isset($labels[$column])) continue; // internal columns (ids, password, staffno, designation)
+            $parts[] = $labels[$column] . ' = ' . ($value === '' ? '(blank)' : $value);
+        }
+        return implode('; ', $parts);
+    }
+
+    /**
+     * Write the analysed rows. A row marked "error" is simply skipped (it
+     * was already reported at preview time); only a genuine database
+     * failure aborts and rolls back the whole batch, so one bad statement
+     * cannot leave a half-written file behind.
+     */
+    function applyStaffImport(array $rows)
+    {
+        global $conn;
+
+        $summary = ['inserted' => 0, 'updated' => 0, 'unchanged' => 0, 'skipped' => 0, 'errors' => []];
+        $aborted = false;
+        $intColumns = ['division_id', 'department_id', 'section_id', 'hodid'];
+
+        $conn->begin_transaction();
+
+        foreach ($rows as $row) {
+            if ($row['action'] === 'error') {
+                $summary['skipped']++;
+                $summary['errors'][] = "Line {$row['line']} ({$row['staffno']}): " . implode(' ', $row['messages']);
+                continue;
+            }
+            if ($row['action'] === 'unchanged') {
+                $summary['unchanged']++;
+                continue;
+            }
+
+            $changes = $row['changes'];
+            $columns = array_keys($changes);
+            $types = '';
+            $params = [];
+            foreach ($columns as $column) {
+                $types .= in_array($column, $intColumns, true) ? 'i' : 's';
+                $params[] = $changes[$column];
+            }
+
+            if ($row['action'] === 'insert') {
+                $placeholders = implode(', ', array_fill(0, count($columns), '?'));
+                $sql = "INSERT INTO `user` (`" . implode('`, `', $columns) . "`) VALUES ({$placeholders})";
+            } else {
+                $setClauses = [];
+                foreach ($columns as $column) {
+                    $setClauses[] = "`{$column}` = ?";
+                }
+                $sql = "UPDATE `user` SET " . implode(', ', $setClauses) . " WHERE id = ?";
+                $types .= 'i';
+                $params[] = $row['id'];
+            }
+
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                $summary['errors'][] = "Line {$row['line']} ({$row['staffno']}): could not prepare statement ({$conn->error}).";
+                $aborted = true;
+                break;
+            }
+            $refs = [$types];
+            foreach ($params as $key => $value) {
+                $refs[] = &$params[$key];
+            }
+            call_user_func_array([$stmt, 'bind_param'], $refs);
+
+            if (!$stmt->execute()) {
+                $summary['errors'][] = "Line {$row['line']} ({$row['staffno']}): " . $row['action'] . " failed ({$stmt->error}).";
+                $aborted = true;
+                break;
+            }
+            $summary[$row['action'] === 'insert' ? 'inserted' : 'updated']++;
+        }
+
+        $summary['aborted'] = $aborted;
+        return $summary;
+    }
+
+    $action = isset($_POST['action']) ? $_POST['action'] : '';
+
+    if ($action === 'preview') {
+        if (empty($_FILES['import_file']['name'])) {
+            respond(['message' => 'error', 'detail' => 'No file uploaded.']);
+        }
+
+        $fileName = $_FILES['import_file']['name'];
+        $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+        if (!in_array($fileExt, ['xls', 'xlsx'], true)) {
+            respond(['message' => 'error', 'detail' => 'Please upload an .xls or .xlsx file generated from one of the templates.']);
+        }
+        if (!is_uploaded_file($_FILES['import_file']['tmp_name'])) {
+            respond(['message' => 'error', 'detail' => 'Upload failed.']);
+        }
+
+        // Park the file so Confirm imports exactly what was previewed.
+        $token = bin2hex(random_bytes(16));
+        $storedPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'ldms_clerk_staff_import_' . $token . '.' . $fileExt;
+        if (!move_uploaded_file($_FILES['import_file']['tmp_name'], $storedPath)) {
+            respond(['message' => 'error', 'detail' => 'Could not store the uploaded file for review.']);
+        }
+
+        $result = analyseStaffImport($storedPath);
+        if (isset($result['error'])) {
+            @unlink($storedPath);
+            respond(['message' => 'error', 'detail' => $result['error']]);
+        }
+
+        if (isset($_SESSION['clerk_staff_import']['path'])) {
+            @unlink($_SESSION['clerk_staff_import']['path']);   // drop an abandoned preview
+        }
+        $_SESSION['clerk_staff_import'] = [
+            'token' => $token,
+            'path' => $storedPath,
+            'name' => $fileName,
+            'created' => time(),
+        ];
+
+        $preview = [];
+        foreach ($result['rows'] as $row) {
+            $preview[] = [
+                'line' => $row['line'],
+                'staffno' => $row['staffno'],
+                'staffname' => $row['staffname'],
+                'action' => $row['action'],
+                'detail' => $row['action'] === 'error'
+                    ? implode(' ', $row['messages'])
+                    : describeChanges($row['changes'], $FIELD_LABELS),
+            ];
+        }
+
+        respond([
+            'message' => 'done',
+            'token' => $token,
+            'filename' => $fileName,
+            'counts' => $result['counts'],
+            'exampleSkipped' => $result['exampleSkipped'],
+            'rows' => $preview,
+        ]);
+    }
+
+    if ($action === 'commit') {
+        $token = isset($_POST['token']) ? $_POST['token'] : '';
+        if (!isset($_SESSION['clerk_staff_import']) || $_SESSION['clerk_staff_import']['token'] !== $token) {
+            respond(['message' => 'error', 'detail' => 'This preview has expired. Please upload the file again.']);
+        }
+
+        $storedPath = $_SESSION['clerk_staff_import']['path'];
+        if (!is_file($storedPath)) {
+            unset($_SESSION['clerk_staff_import']);
+            respond(['message' => 'error', 'detail' => 'The previewed file is no longer available. Please upload it again.']);
+        }
+
+        $result = analyseStaffImport($storedPath);
+        if (isset($result['error'])) {
+            respond(['message' => 'error', 'detail' => $result['error']]);
+        }
+
+        $summary = applyStaffImport($result['rows']);
+
+        if ($summary['aborted']) {
+            $conn->rollback();
+            respond([
+                'message' => 'error',
+                'detail' => "Import aborted and nothing was saved.\n" . implode("\n", $summary['errors']),
+            ]);
+        }
+
+        $conn->commit();
+        unset($summary['aborted']);
+
+        @unlink($storedPath);
+        unset($_SESSION['clerk_staff_import']);
+
+        $summary['message'] = 'done';
+        respond($summary);
+    }
+
+    if ($action === 'cancel') {
+        if (isset($_SESSION['clerk_staff_import']['path'])) {
+            @unlink($_SESSION['clerk_staff_import']['path']);
+        }
+        unset($_SESSION['clerk_staff_import']);
+        respond(['message' => 'done']);
+    }
+
+    respond(['message' => 'error', 'detail' => 'Unknown action.']);
 ?>

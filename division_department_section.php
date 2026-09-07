@@ -349,6 +349,32 @@ function getDepartmentIdByName($divisionId, $name)
     return $row ? $row['id'] : null;
 }
 
+/**
+ * The single source of truth for "who is this department's boss": the
+ * hod_user_id set via the Assign HOD button on admin/organization/org.php.
+ * Every place that assigns a new hodid to a staff member should read it
+ * from here instead of re-deriving it from usertype='HOD' text matching,
+ * which breaks silently when a department has zero, two, or a
+ * differently-recorded HOD.
+ *
+ * Returns null if the department has no HOD assigned (never 0 - callers
+ * that need a "no HOD" sentinel for a NOT NULL column should coalesce it).
+ */
+function getDepartmentHodId($departmentId)
+{
+    global $conn;
+    if (!isset($conn) || empty($departmentId)) {
+        return null;
+    }
+    $stmt = mysqli_prepare($conn, "SELECT hod_user_id FROM departments WHERE id = ?");
+    mysqli_stmt_bind_param($stmt, 'i', $departmentId);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
+    $row = mysqli_fetch_assoc($res);
+    mysqli_stmt_close($stmt);
+    return ($row && $row['hod_user_id'] !== null) ? (int) $row['hod_user_id'] : null;
+}
+
 function getSectionIdByName($departmentId, $name)
 {
     global $conn;

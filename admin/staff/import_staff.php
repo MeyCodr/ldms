@@ -278,7 +278,7 @@
         static $index = null;
         if ($index !== null) return $index;
 
-        $index = ['byStaffNo' => [], 'byId' => [], 'byName' => [], 'hodByDepartment' => []];
+        $index = ['byStaffNo' => [], 'byId' => [], 'byName' => []];
 
         $res = $conn->query("SELECT id, staffno, staffname, email, gender, designation, division,
                                     department, section, division_id, department_id, section_id,
@@ -298,11 +298,6 @@
             $name = strtoupper(trim((string) $row['staffname']));
             if ($name !== '') {
                 $index['byName'][$name][] = $row;
-            }
-
-            $department = (string) $row['department'];
-            if ($row['usertype'] === 'HOD' && $department !== '' && !isset($index['hodByDepartment'][$department])) {
-                $index['hodByDepartment'][$department] = (int) $row['id'];
             }
         }
 
@@ -400,36 +395,6 @@
             $cache[$key] = getSectionIdByName($departmentId, $name);
         }
         return $cache[$key];
-    }
-
-    /**
-     * The HOD account sitting in a department, by department name.
-     */
-    function cachedDepartmentHodId($departmentName)
-    {
-        $index = staffIndex();
-        return isset($index['hodByDepartment'][$departmentName])
-            ? $index['hodByDepartment'][$departmentName]
-            : 0;
-    }
-
-    /**
-     * The HOD a department declares, used to flag rows that disagree with it.
-     */
-    function departmentAssignedHod($departmentId)
-    {
-        global $conn;
-        static $cache = [];
-
-        $departmentId = (int) $departmentId;
-        if ($departmentId <= 0) return null;
-        if (array_key_exists($departmentId, $cache)) return $cache[$departmentId];
-
-        $stmt = $conn->prepare("SELECT hod_user_id FROM departments WHERE id = ? LIMIT 1");
-        $stmt->bind_param('i', $departmentId);
-        $stmt->execute();
-        $row = $stmt->get_result()->fetch_assoc();
-        return $cache[$departmentId] = ($row && $row['hod_user_id'] !== null) ? (int) $row['hod_user_id'] : null;
     }
 
     function matchOption($value, array $options)
@@ -660,12 +625,16 @@
                             $values['section_id'] = $sectionId;
 
                             // Same rule as the single-staff form: the HOD link
-                            // follows the department, it is never imported.
+                            // follows the department by default (an explicit
+                            // HOD column below overrides it). Guarded so a
+                            // department's own HOD is never recorded as
+                            // reporting to themselves.
                             if ($isNew || $departmentMatch !== $existing['department']) {
-                                $hodid = cachedDepartmentHodId($departmentMatch);
-                                if ($isNew || (int) $existing['hodid'] !== 0) {
-                                    $values['hodid'] = $hodid;
+                                $hodid = getDepartmentHodId($departmentId) ?: 0;
+                                if (!$isNew && $hodid === (int) $existing['id']) {
+                                    $hodid = 0;
                                 }
+                                $values['hodid'] = $hodid;
                             }
                         }
                     }
@@ -740,7 +709,7 @@
                     $effectiveDepartmentId = array_key_exists('department_id', $values)
                         ? $values['department_id']
                         : ($isNew ? null : $existing['department_id']);
-                    $departmentHod = departmentAssignedHod($effectiveDepartmentId);
+                    $departmentHod = getDepartmentHodId($effectiveDepartmentId);
                     if ($departmentHod !== null && $departmentHod !== $hod['id']) {
                         $departmentHodLabel = resolveHodId((string) $departmentHod);
                         $entry['messages'][] = "Note: this department's assigned HOD is "
