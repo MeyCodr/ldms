@@ -85,9 +85,15 @@
 								<div class="col-md-6" align="left" style="margin-top:10px;"><span id="datarecord"></span></div>
 								<div class="col-md-6">
 									<div class="col-md-4">
+										<select class="form-control" id="mode" name="mode">
+											<option value="manhour">TOTAL MAN HOUR</option>
+											<option value="totalhour">AVERAGE TOTAL HOUR</option>
+										</select>
+									</div>
+									<div class="col-md-2">
 										<input type="text" name="startdate" id="startdate" class="form-control" placeholder="Insert Start Date" autocomplete="off" />
 									</div>
-									<div class="col-md-4">
+									<div class="col-md-2">
 										<input type="text" name="enddate" id="enddate" class="form-control" placeholder="Insert End Date" autocomplete="off" />
 									</div>
 									<div class="col-md-2" align="right">
@@ -228,7 +234,7 @@
 				<div class="col-md-12">
 					<div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>All Department List (Total Man Hour Vs Avg Hour)</strong>
+                            <strong>All Department List (<span id="modeLabelTop10">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
 							<div class="row">
@@ -244,7 +250,7 @@
                 <div class="col-md-4">
 					<div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>Business Development Division (Total Man Hour Vs Avg Hour)</strong>
+                            <strong>Business Development Division (<span id="modeLabelBusiness">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
 							<div class="row">
@@ -258,7 +264,7 @@
 				<div class="col-md-4">
 					<div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>DHMSB/Subang Division (Total Man Hour Vs Avg Hour)</strong>
+                            <strong>DHMSB/Subang Division (<span id="modeLabelDhmsb">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
 							<div class="row">
@@ -272,7 +278,7 @@
 				<div class="col-md-4">
 					<div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>Quality Management Division (Total Man Hour Vs Avg Hour)</strong>
+                            <strong>Quality Management Division (<span id="modeLabelQuality">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
 							<div class="row">
@@ -288,7 +294,7 @@
                 <div class="col-md-4">
 					<div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>Finance Division (Total Man Hour Vs Avg Hour)</strong>
+                            <strong>Finance Division (<span id="modeLabelFinance">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
 							<div class="row">
@@ -302,7 +308,7 @@
 				<div class="col-md-4">
 					<div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>Human Capital (Total Man Hour Vs Avg Hour)</strong>
+                            <strong>Human Capital (<span id="modeLabelHuman">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
 							<div class="row">
@@ -316,7 +322,7 @@
 				<div class="col-md-4">
 					<div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>R&D And Engineering Division (Total Man Hour Vs Avg Hour)</strong>
+                            <strong>R&D And Engineering Division (<span id="modeLabelRnd">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
 							<div class="row">
@@ -330,7 +336,7 @@
 				<div class="col-md-12">
 					<div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>Operation Division (Total Man Hour Vs Avg Hour)</strong>
+                            <strong>Operation Division (<span id="modeLabelOperation">Total Man Hour</span>)</strong>
                         </div>
                         <div class="panel-body" align="center">
 							<div class="row">
@@ -538,14 +544,15 @@
 				success:function(data)
 				{
                     var ctxTop10 = canvasTop10.getContext('2d');
+                    var mode = $('#mode').val();
                     var category = [];
-					var totalsend = [];
-					var colorplant = [];
+					var values = [];
+					var colors = [];
 
 					for(var count = 0; count < data.length; count++) {
 						category.push(data[count].category);
-						totalsend.push(data[count].totalsend);
-						colorplant.push(data[count].colorplant);
+						values.push(mode === 'totalhour' ? data[count].totalsend1 : data[count].totalsend);
+						colors.push(mode === 'totalhour' ? data[count].colorplant1 : data[count].colorplant);
 					}
 
                     top10Chart = new Chart(ctxTop10, {
@@ -554,9 +561,9 @@
                             labels: category,
                             datasets: [
                                 {
-                                    label: "Total Hours",
-                                    backgroundColor: colorplant,
-                                    data: totalsend
+                                    label: mode === 'totalhour' ? "Avg Hours" : "Total Hours",
+                                    backgroundColor: colors,
+                                    data: values
                                 }
                             ]
                         },
@@ -610,18 +617,15 @@
 				success:function(data)
 				{
                     var ctxBusiness = canvasBusiness.getContext('2d');
+                    var mode = $('#mode').val();
                     var category = [];
-					var totalsend = [];
-					var totalsend1 = [];
-					var colorplant = [];
-					var colorplant1 = [];
+					var values = [];
+					var colors = [];
 
 					for(var count = 0; count < data.length; count++) {
 						category.push(data[count].category);
-						totalsend.push(data[count].totalsend);
-						totalsend1.push(data[count].totalsend1);
-						colorplant.push(data[count].colorplant);
-						colorplant1.push(data[count].colorplant1);
+						values.push(mode === 'totalhour' ? data[count].totalsend1 : data[count].totalsend);
+						colors.push(mode === 'totalhour' ? data[count].colorplant1 : data[count].colorplant);
 					}
 
                     businessChart = new Chart(ctxBusiness, {
@@ -630,16 +634,9 @@
                             labels: category,
                             datasets: [
                                 {
-                                    label: "Total Hours",
-                                    backgroundColor: colorplant,
-                                    data: totalsend,
-									stack: 'Stack 0'
-                                },
-								{
-                                    label: "Avg Hours",
-                                    backgroundColor: colorplant1,
-                                    data: totalsend1,
-									stack: 'Stack 1'
+                                    label: mode === 'totalhour' ? "Avg Hours" : "Total Hours",
+                                    backgroundColor: colors,
+                                    data: values
                                 }
                             ]
                         },
@@ -647,12 +644,9 @@
                             responsive: true,
                             maintainAspectRatio: false,
                             legend: {
-                                display: true
+                                display: false
                             },
                             scales: {
-								xAxes: [{
-                                    stacked: true,
-                                }],
                                 yAxes:[{
 									min:0,
 									ticks:{
@@ -696,18 +690,15 @@
 				success:function(data)
 				{
                     var ctxDhmsb = canvasDhmsb.getContext('2d');
+                    var mode = $('#mode').val();
                     var category = [];
-					var totalsend = [];
-					var totalsend1 = [];
-					var colorplant = [];
-					var colorplant1 = [];
+					var values = [];
+					var colors = [];
 
 					for(var count = 0; count < data.length; count++) {
 						category.push(data[count].category);
-						totalsend.push(data[count].totalsend);
-						totalsend1.push(data[count].totalsend1);
-						colorplant.push(data[count].colorplant);
-						colorplant1.push(data[count].colorplant1);
+						values.push(mode === 'totalhour' ? data[count].totalsend1 : data[count].totalsend);
+						colors.push(mode === 'totalhour' ? data[count].colorplant1 : data[count].colorplant);
 					}
 
                     dhmsbChart = new Chart(ctxDhmsb, {
@@ -716,16 +707,9 @@
                             labels: category,
                             datasets: [
                                 {
-                                    label: "Total Hours",
-                                    backgroundColor: colorplant,
-                                    data: totalsend,
-									stack: 'Stack 0'
-                                },
-								{
-                                    label: "Avg Hours",
-                                    backgroundColor: colorplant1,
-                                    data: totalsend1,
-									stack: 'Stack 1'
+                                    label: mode === 'totalhour' ? "Avg Hours" : "Total Hours",
+                                    backgroundColor: colors,
+                                    data: values
                                 }
                             ]
                         },
@@ -733,12 +717,9 @@
                             responsive: true,
                             maintainAspectRatio: false,
                             legend: {
-                                display: true
+                                display: false
                             },
                             scales: {
-								xAxes: [{
-                                    stacked: true,
-                                }],
                                 yAxes:[{
 									min:0,
 									ticks:{
@@ -782,18 +763,15 @@
 				success:function(data)
 				{
                     var ctxFinance = canvasFinance.getContext('2d');
+                    var mode = $('#mode').val();
                     var category = [];
-					var totalsend = [];
-					var totalsend1 = [];
-					var colorplant = [];
-					var colorplant1 = [];
+					var values = [];
+					var colors = [];
 
 					for(var count = 0; count < data.length; count++) {
 						category.push(data[count].category);
-						totalsend.push(data[count].totalsend);
-						totalsend1.push(data[count].totalsend1);
-						colorplant.push(data[count].colorplant);
-						colorplant1.push(data[count].colorplant1);
+						values.push(mode === 'totalhour' ? data[count].totalsend1 : data[count].totalsend);
+						colors.push(mode === 'totalhour' ? data[count].colorplant1 : data[count].colorplant);
 					}
 
                     financeChart = new Chart(ctxFinance, {
@@ -802,16 +780,9 @@
                             labels: category,
                             datasets: [
                                 {
-                                    label: "Total Hours",
-                                    backgroundColor: colorplant,
-                                    data: totalsend,
-									stack: 'Stack 0'
-                                },
-								{
-                                    label: "Avg Hours",
-                                    backgroundColor: colorplant1,
-                                    data: totalsend1,
-									stack: 'Stack 1'
+                                    label: mode === 'totalhour' ? "Avg Hours" : "Total Hours",
+                                    backgroundColor: colors,
+                                    data: values
                                 }
                             ]
                         },
@@ -819,12 +790,9 @@
                             responsive: true,
                             maintainAspectRatio: false,
                             legend: {
-                                display: true
+                                display: false
                             },
                             scales: {
-								xAxes: [{
-                                    stacked: true,
-                                }],
                                 yAxes:[{
 									min:0,
 									ticks:{
@@ -868,18 +836,15 @@
 				success:function(data)
 				{
                     var ctxHuman = canvasHuman.getContext('2d');
+                    var mode = $('#mode').val();
                     var category = [];
-					var totalsend = [];
-					var totalsend1 = [];
-					var colorplant = [];
-					var colorplant1 = [];
+					var values = [];
+					var colors = [];
 
 					for(var count = 0; count < data.length; count++) {
 						category.push(data[count].category);
-						totalsend.push(data[count].totalsend);
-						totalsend1.push(data[count].totalsend1);
-						colorplant.push(data[count].colorplant);
-						colorplant1.push(data[count].colorplant1);
+						values.push(mode === 'totalhour' ? data[count].totalsend1 : data[count].totalsend);
+						colors.push(mode === 'totalhour' ? data[count].colorplant1 : data[count].colorplant);
 					}
 
                     humanChart = new Chart(ctxHuman, {
@@ -888,16 +853,9 @@
                             labels: category,
                             datasets: [
                                 {
-                                    label: "Total Hours",
-                                    backgroundColor: colorplant,
-                                    data: totalsend,
-									stack: 'Stack 0'
-                                },
-								{
-                                    label: "Avg Hours",
-                                    backgroundColor: colorplant1,
-                                    data: totalsend1,
-									stack: 'Stack 1'
+                                    label: mode === 'totalhour' ? "Avg Hours" : "Total Hours",
+                                    backgroundColor: colors,
+                                    data: values
                                 }
                             ]
                         },
@@ -905,12 +863,9 @@
                             responsive: true,
                             maintainAspectRatio: false,
                             legend: {
-                                display: true
+                                display: false
                             },
                             scales: {
-								xAxes: [{
-                                    stacked: true,
-                                }],
                                 yAxes:[{
 									min:0,
 									ticks:{
@@ -954,18 +909,15 @@
 				success:function(data)
 				{
                     var ctxOperation = canvasOperation.getContext('2d');
+                    var mode = $('#mode').val();
                     var category = [];
-					var totalsend = [];
-					var totalsend1 = [];
-					var colorplant = [];
-					var colorplant1 = [];
+					var values = [];
+					var colors = [];
 
 					for(var count = 0; count < data.length; count++) {
 						category.push(data[count].category);
-						totalsend.push(data[count].totalsend);
-						totalsend1.push(data[count].totalsend1);
-						colorplant.push(data[count].colorplant);
-						colorplant1.push(data[count].colorplant1);
+						values.push(mode === 'totalhour' ? data[count].totalsend1 : data[count].totalsend);
+						colors.push(mode === 'totalhour' ? data[count].colorplant1 : data[count].colorplant);
 					}
 
                     operationChart = new Chart(ctxOperation, {
@@ -974,16 +926,9 @@
                             labels: category,
                             datasets: [
                                 {
-                                    label: "Total Hours",
-                                    backgroundColor: colorplant,
-                                    data: totalsend,
-									stack: 'Stack 0'
-                                },
-								{
-                                    label: "Avg Hours",
-                                    backgroundColor: colorplant1,
-                                    data: totalsend1,
-									stack: 'Stack 1'
+                                    label: mode === 'totalhour' ? "Avg Hours" : "Total Hours",
+                                    backgroundColor: colors,
+                                    data: values
                                 }
                             ]
                         },
@@ -991,12 +936,9 @@
                             responsive: true,
                             maintainAspectRatio: false,
                             legend: {
-                                display: true
+                                display: false
                             },
                             scales: {
-								xAxes: [{
-                                    stacked: true,
-                                }],
                                 yAxes:[{
 									min:0,
 									ticks:{
@@ -1040,18 +982,15 @@
 				success:function(data)
 				{
                     var ctxQuality = canvasQuality.getContext('2d');
+                    var mode = $('#mode').val();
                     var category = [];
-					var totalsend = [];
-					var totalsend1 = [];
-					var colorplant = [];
-					var colorplant1 = [];
+					var values = [];
+					var colors = [];
 
 					for(var count = 0; count < data.length; count++) {
 						category.push(data[count].category);
-						totalsend.push(data[count].totalsend);
-						totalsend1.push(data[count].totalsend1);
-						colorplant.push(data[count].colorplant);
-						colorplant1.push(data[count].colorplant1);
+						values.push(mode === 'totalhour' ? data[count].totalsend1 : data[count].totalsend);
+						colors.push(mode === 'totalhour' ? data[count].colorplant1 : data[count].colorplant);
 					}
 
                     qualityChart = new Chart(ctxQuality, {
@@ -1060,16 +999,9 @@
                             labels: category,
                             datasets: [
                                 {
-                                    label: "Total Hours",
-                                    backgroundColor: colorplant,
-                                    data: totalsend,
-									stack: 'Stack 0'
-                                },
-								{
-                                    label: "Avg Hours",
-                                    backgroundColor: colorplant1,
-                                    data: totalsend1,
-									stack: 'Stack 1'
+                                    label: mode === 'totalhour' ? "Avg Hours" : "Total Hours",
+                                    backgroundColor: colors,
+                                    data: values
                                 }
                             ]
                         },
@@ -1077,12 +1009,9 @@
                             responsive: true,
                             maintainAspectRatio: false,
                             legend: {
-                                display: true
+                                display: false
                             },
                             scales: {
-								xAxes: [{
-                                    stacked: true,
-                                }],
                                 yAxes:[{
 									min:0,
 									ticks:{
@@ -1126,18 +1055,15 @@
 				success:function(data)
 				{
                     var ctxRnd = canvasRnd.getContext('2d');
+                    var mode = $('#mode').val();
                     var category = [];
-					var totalsend = [];
-					var totalsend1 = [];
-					var colorplant = [];
-					var colorplant1 = [];
+					var values = [];
+					var colors = [];
 
 					for(var count = 0; count < data.length; count++) {
 						category.push(data[count].category);
-						totalsend.push(data[count].totalsend);
-						totalsend1.push(data[count].totalsend1);
-						colorplant.push(data[count].colorplant);
-						colorplant1.push(data[count].colorplant1);
+						values.push(mode === 'totalhour' ? data[count].totalsend1 : data[count].totalsend);
+						colors.push(mode === 'totalhour' ? data[count].colorplant1 : data[count].colorplant);
 					}
 
                     rndChart = new Chart(ctxRnd, {
@@ -1146,16 +1072,9 @@
                             labels: category,
                             datasets: [
                                 {
-                                    label: "Total Hours",
-                                    backgroundColor: colorplant,
-                                    data: totalsend,
-									stack: 'Stack 0'
-                                },
-								{
-                                    label: "Avg Hours",
-                                    backgroundColor: colorplant1,
-                                    data: totalsend1,
-									stack: 'Stack 1'
+                                    label: mode === 'totalhour' ? "Avg Hours" : "Total Hours",
+                                    backgroundColor: colors,
+                                    data: values
                                 }
                             ]
                         },
@@ -1163,12 +1082,9 @@
                             responsive: true,
                             maintainAspectRatio: false,
                             legend: {
-                                display: true
+                                display: false
                             },
                             scales: {
-								xAxes: [{
-                                    stacked: true,
-                                }],
                                 yAxes:[{
 									min:0,
 									ticks:{
@@ -1200,6 +1116,36 @@
 
 		makerndchart(fd,ld);
 
+		function updateModeLabels(mode) {
+            var label = mode === 'totalhour' ? 'Average Total Hour' : 'Total Man Hour';
+            $('#modeLabelTop10, #modeLabelBusiness, #modeLabelDhmsb, #modeLabelQuality, #modeLabelFinance, #modeLabelHuman, #modeLabelOperation, #modeLabelRnd').text(label);
+        }
+
+		$('#mode').change(function(){
+            var startdate = $('#startdate').val() || fd;
+            var enddate = $('#enddate').val() || ld;
+            var mode = $('#mode').val();
+
+            updateModeLabels(mode);
+
+            destroyChartTop10();
+			maketop10chart(startdate,enddate);
+			destroyChartbusiness();
+			makebusinesschart(startdate,enddate);
+			destroyChartdhmsb();
+			makedhmsbchart(startdate,enddate);
+			destroyChartfinance();
+			makefinancechart(startdate,enddate);
+			destroyCharthuman();
+			makehumanchart(startdate,enddate);
+			destroyChartoperation();
+			makeoperationchart(startdate,enddate);
+			destroyChartquality();
+			makequalitychart(startdate,enddate);
+			destroyChartrnd();
+			makerndchart(startdate,enddate);
+        });
+
 		$('#filter_date').click(function(){
             var startdate = $('#startdate').val();
             var enddate = $('#enddate').val();
@@ -1229,6 +1175,8 @@
         });
 
         $('#clear_filter').click(function(){
+            $('#mode').val('manhour');
+            updateModeLabels('manhour');
 			$('#datarecord').fadeIn().html('<label>Data summary : '+fd+' - '+ld+'</label');
             getOverview(clerkid,fd,ld);
 			destroyChartpublicojt();

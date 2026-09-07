@@ -43,14 +43,14 @@ if($_POST["action"] == 'fetch_overview'){
         $startdate = $_POST["startdate"];
         $enddate = $_POST["enddate"];
 
-        $sql = "select ifnull(count(*),0) as totaltraining from ojt_all ojt where id in (select distinct(ojtid) as id from participateojt_all participateojt where clerkid = '$clerkid') and startdate between '$startdate' and '$enddate';";
+        $sql = "select ifnull(count(*),0) as totaltraining from ojt where id in (select distinct(ojtid) as id from participateojt where clerkid = '$clerkid') and startdate between '$startdate' and '$enddate';";
         $query = mysqli_query($conn,$sql);
         while($row = mysqli_fetch_assoc($query))
         {
             $totaltraining = $row['totaltraining'];
         }
 
-        $sql = "select ifnull(sum(totaldays),0) as totalday,ifnull(sum(totaldays*totalhours*totalman),0) as sumtotalhours, sum(totalman) as totalmans from (select (datediff(enddate, startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,tablea.totalman from ojt_all ojt join (select ojtid,sum(totalman) as totalman from participateojt_all participateojt where clerkid = '$clerkid' group by ojtid)tablea on ojt.id = ojtid where startdate between '$startdate' and '$enddate')tableb;";
+        $sql = "select ifnull(sum(o.totalday),0) as totalday,ifnull(sum(o.totalhour),0) as sumtotalhours,ifnull(sum(p.totalman),0) as totalmans from ojt o join (select ojtid,sum(totalman) as totalman from participateojt where clerkid = '$clerkid' group by ojtid)p on o.id = p.ojtid where o.startdate between '$startdate' and '$enddate';";
 		$query = mysqli_query($conn,$sql);
         while($row = mysqli_fetch_assoc($query))
         {
@@ -138,13 +138,15 @@ if($_POST["action"] == 'fetch_overview'){
     $startdate = $_POST["startdate"];
     $enddate = $_POST["enddate"];
     if ($_POST["startdate"] != '') {
-        $sql = "select tablea.department,ifnull(sumtotalhour,0) as sumtotalhours from (select distinct(department) from user)tablea left join (select department,sum(totaldays*totalhours*totalman) as sumtotalhour from (select training.id as trainingid,participation.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,department,1 as totalman from training_all training join participation_all participation on training.id = trainingid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance = 'COMPLETED' union select ojt.id as trainingid,participateojt.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,user.department,participateojt.totalman from ojt_all ojt join participateojt_all participateojt on ojt.id = ojtid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance in ('COMPLETEDOJT'))tablea group by department)tableb on tablea.department = tableb.department where sumtotalhour != '0.00' order by sumtotalhour desc;";
+        $sql = "select tablea.department,ifnull(sumtotalhour,0) as sumtotalhours, ifnull(round(sumtotalhour/totalstaff,2),0) as avghours from (select department,count(*) as totalstaff from user where (dateresign is null or cast(dateresign as char) = '' or cast(dateresign as char) = '0000-00-00' or dateresign >= '$enddate') group by department)tablea left join (select department,sum(totaldays*totalhours*totalman) as sumtotalhour from (select training.id as trainingid,participation.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,department,1 as totalman from training_all training join participation_all participation on training.id = trainingid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance = 'COMPLETED' union select ojt.id as trainingid,participateojt.id as partid, (datediff(enddate,startdate)) + 1 as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,user.department,participateojt.totalman from ojt_all ojt join participateojt_all participateojt on ojt.id = ojtid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance in ('COMPLETEDOJT'))tablea group by department)tableb on tablea.department = tableb.department where sumtotalhour != '0.00' order by sumtotalhours desc;";
         $query = mysqli_query($conn,$sql);
         while($row = mysqli_fetch_assoc($query)){
             $data1[] = array(
-                'category'	  =>	getDepartmentChartLabel($row["department"]),
-                'totalsend' =>	$row["sumtotalhours"],
-                'colorplant' =>	'#' . rand(100000, 999999) . ''
+                'category'	    =>	getDepartmentChartLabel($row["department"]),
+                'totalsend'     =>	$row["sumtotalhours"],
+                'totalsend1'    =>	$row["avghours"],
+                'colorplant'    =>	'#' . rand(100000, 999999) . '',
+                'colorplant1'   =>	'#FF0000'
             );
         }
     }

@@ -115,7 +115,7 @@
 
         if ($startdate !== '' && $startdate !== 'null' && $startdate !== 'undefined'
             && $enddate !== '' && $enddate !== 'null' && $enddate !== 'undefined') {
-            $sql = "select sum(totalman) as totalmans from ojt join (select ojtid,clerkid from participateojt group by ojtid)tablea on ojt.id = tablea.ojtid where clerkid = '$clerkid' and startdate between '$startdate' and '$enddate';";
+            $sql = "select ifnull(sum(p.totalman),0) as totalmans from ojt o join (select ojtid,sum(totalman) as totalman from participateojt where clerkid = '$clerkid' group by ojtid)p on o.id = p.ojtid where o.startdate between '$startdate' and '$enddate';";
             $query = mysqli_query($conn,$sql);
 			while($row = mysqli_fetch_assoc($query))
 			{

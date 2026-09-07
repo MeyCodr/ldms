@@ -42,8 +42,39 @@
 			padding: 5px 10px;
 			font-size: 12px;
 		}
-		.bg-success { background-color: #28a745 !important; } 
-		.bg-warning { background-color: orangered !important; } 
+		.bg-success { background-color: #28a745 !important; }
+		.bg-warning { background-color: orangered !important; }
+		#trainerdata {
+			width: 100% !important;
+		}
+		.row-eq-height {
+			display: flex;
+			flex-wrap: wrap;
+		}
+		.row-eq-height > [class*="col-"] {
+			display: flex;
+		}
+		.row-eq-height .panel {
+			display: flex;
+			flex-direction: column;
+			width: 100%;
+		}
+		.row-eq-height .panel-body {
+			flex: 1 1 auto;
+			display: flex;
+			flex-direction: column;
+		}
+		.row-eq-height .panel-body > .row {
+			flex: 1 1 auto;
+		}
+		.row-eq-height .panel-body > .row > [class*="col-"] {
+			display: flex;
+			flex-direction: column;
+		}
+		#publicojtChart {
+			flex: 1 1 auto;
+			min-height: 0;
+		}
 	</style>
 
     <body onload="startTime()" style="background-image:url('../../asset/image/bg-try.png');zoom: 75%;">
@@ -180,7 +211,7 @@
 				</div>
 			</div>
 				
-			<div class="row">
+			<div class="row row-eq-height">
                 <div class="col-md-6">
 					<div class="panel panel-default">
                         <div class="panel-heading">
@@ -522,7 +553,12 @@
                 ],
                 "columnDefs": [
                     { className: 'text-center', targets: [0,1,3] }
-                ]
+                ],
+                "drawCallback": function() {
+                    if (publicojtPieChart) {
+                        publicojtPieChart.resize();
+                    }
+                }
             });
         }
 
