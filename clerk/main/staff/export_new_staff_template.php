@@ -48,6 +48,7 @@
         'E' => 'Department',
         'F' => 'Section',
         'G' => 'Status (ACTIVE / RESIGN)',
+        'H' => 'HOD (Staff No / User ID / Name - optional)',
     ];
 
     $spreadsheet = new Spreadsheet();
@@ -55,16 +56,18 @@
     $sheet->setTitle('New Staff');
     $sheet->fromArray(array_values($columns), null, 'A1');
 
-    // Single example row. Its Staff No is prefixed "(EXAMPLE)" - import_new_staff.php
+    // Single example row. Its Staff No is prefixed "(EXAMPLE)" - import_staff.php
     // recognises that prefix and skips the row automatically, so leaving it in
-    // the uploaded file is harmless.
-    $exampleRow = ['(EXAMPLE) A9999', 'AHMAD BIN ALI', 'MALE', $exampleDivision, $exampleDepartment, $exampleSection, 'ACTIVE'];
+    // the uploaded file is harmless. HOD (H) is left blank in the example -
+    // leaving it blank is the normal case, it just means "use the department's
+    // assigned HOD".
+    $exampleRow = ['(EXAMPLE) A9999', 'AHMAD BIN ALI', 'MALE', $exampleDivision, $exampleDepartment, $exampleSection, 'ACTIVE', ''];
     $col = 'A';
     foreach ($exampleRow as $value) {
         $sheet->setCellValueExplicit("{$col}2", $value, DataType::TYPE_STRING);
         $col++;
     }
-    $sheet->getStyle('A2:G2')->getFont()->setItalic(true)->getColor()->setRGB('808080');
+    $sheet->getStyle('A2:H2')->getFont()->setItalic(true)->getColor()->setRGB('808080');
 
     // Enough rows below the example for real data plus headroom for the dropdown validation.
     $lastRow = 501;
@@ -72,8 +75,8 @@
     foreach (array_keys($columns) as $c) {
         $sheet->getColumnDimension($c)->setAutoSize(true);
     }
-    $sheet->getStyle('A1:G1')->getFont()->setBold(true);
-    $sheet->getStyle('A1:G1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D9E8FF');
+    $sheet->getStyle('A1:H1')->getFont()->setBold(true);
+    $sheet->getStyle('A1:H1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D9E8FF');
     $sheet->freezePane('A2');
 
     // ===== OPTIONS SHEET (dropdown validation sources) =====
@@ -124,10 +127,24 @@
     }
     $orgSheet->getStyle('A1:C1')->getFont()->setBold(true);
 
-    // ===== CASCADING LOOKUP HELPER SHEETS (Division -> Department -> Section) =====
+    // Department -> current HOD staff no, so the HOD dropdown (column H) can
+    // suggest each department's own head without a clerk needing to know
+    // their staff number by memory.
+    $deptHodStaffNo = [];
+    $hodRes = $conn->query(
+        "SELECT d.name, hod.staffno
+         FROM departments d
+         LEFT JOIN user hod ON hod.id = d.hod_user_id"
+    );
+    while ($hr = $hodRes->fetch_assoc()) {
+        $deptHodStaffNo[$hr['name']] = $hr['staffno'] ?: '';
+    }
+
+    // ===== CASCADING LOOKUP HELPER SHEETS (Division -> Department -> Section -> HOD) =====
     $departmentsByDivisionIndex = [];
     $deptFlatList = [];
     $sectionsByDeptFlatIndex = [];
+    $hodByDeptFlatIndex = [];
 
     foreach ($divisionOptions as $divIdx0 => $divisionName) {
         $divIdx = $divIdx0 + 1;
@@ -139,6 +156,7 @@
             $flatIdx = count($deptFlatList);
             $sections = $orgStructure[$divisionName][$departmentName];
             $sectionsByDeptFlatIndex[$flatIdx] = !empty($sections) ? $sections : ['-'];
+            $hodByDeptFlatIndex[$flatIdx] = isset($deptHodStaffNo[$departmentName]) ? $deptHodStaffNo[$departmentName] : '';
         }
     }
 
@@ -177,6 +195,21 @@
         $spreadsheet->addNamedRange(new NamedRange("SEC_{$flatIdx}", $secListsSheet, "\${$c}\$2:\${$c}\$" . ($r - 1)));
     }
     $secListsSheet->setSheetState(Worksheet::SHEETSTATE_HIDDEN);
+
+    // One named range per department, holding just that department's current
+    // HOD staff no (blank if the department has none assigned yet). The HOD
+    // dropdown on column H is a suggestion only, not enforced - a clerk can
+    // still type any other real staff no, user id, or name for a deliberate
+    // exception, and the import validates it the same way either way.
+    $hodListsSheet = $spreadsheet->createSheet();
+    $hodListsSheet->setTitle('HOD Lists');
+    foreach ($hodByDeptFlatIndex as $flatIdx => $hodStaffNo) {
+        $c = Coordinate::stringFromColumnIndex($flatIdx);
+        $hodListsSheet->setCellValue("{$c}1", $deptFlatList[$flatIdx - 1]);
+        $hodListsSheet->setCellValueExplicit("{$c}2", $hodStaffNo, DataType::TYPE_STRING);
+        $spreadsheet->addNamedRange(new NamedRange("HOD_{$flatIdx}", $hodListsSheet, "\${$c}\$2:\${$c}\$2"));
+    }
+    $hodListsSheet->setSheetState(Worksheet::SHEETSTATE_HIDDEN);
 
     $spreadsheet->addNamedRange(new NamedRange('DIVLIST', $optionsSheet, '$B$2:$B$' . (count($divisionOptions) + 1)));
 
@@ -223,6 +256,17 @@
         $secValidation->setErrorTitle('Invalid Value');
         $secValidation->setError('Please select a Department first, then pick a Section from its dropdown.');
         $secValidation->setFormula1("INDIRECT(\"SEC_\"&MATCH(\$E{$r},DEPTFLAT,0))");
+
+        // HOD (H) suggests the row's own department head but does not enforce
+        // it - setShowErrorMessage(false) means typing any other staff no,
+        // user id, or name is still accepted by Excel (the import is what
+        // actually validates it).
+        $hodValidation = $sheet->getCell("H{$r}")->getDataValidation();
+        $hodValidation->setType(DataValidation::TYPE_LIST);
+        $hodValidation->setAllowBlank(true);
+        $hodValidation->setShowDropDown(true);
+        $hodValidation->setShowErrorMessage(false);
+        $hodValidation->setFormula1("INDIRECT(\"HOD_\"&MATCH(\$E{$r},DEPTFLAT,0))");
     }
 
     // ===== INSTRUCTIONS SHEET =====
@@ -250,8 +294,14 @@
         ['6. The grey example row on the "New Staff" sheet is recognised automatically (its Staff'],
         ['   No starts with "(EXAMPLE)") and is skipped on import - you may delete it or leave it.'],
         [''],
-        ['7. Nothing is saved unless every row in the file is valid. Fix every reported row and'],
-        ['   re-upload the whole file.'],
+        ['7. HOD (column H) is optional. Leave it blank and the staff member automatically reports'],
+        ['   to their department\'s assigned HOD. The dropdown suggests that department\'s current'],
+        ['   head once Division and Department are picked - accept it, or type any other Staff No,'],
+        ['   user ID, or exact staff name for a deliberate exception. Anything that cannot be'],
+        ['   matched to a real staff member is rejected, not guessed.'],
+        [''],
+        ['8. Every row is checked before anything is saved. A row with a problem is skipped and'],
+        ['   listed in the preview - the other, valid rows in the same file are still imported.'],
     ];
     $instructionsSheet->fromArray($instructions, null, 'A1');
     $instructionsSheet->getStyle('A1')->getFont()->setBold(true)->setSize(13);

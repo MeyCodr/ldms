@@ -27,7 +27,7 @@
         'department'=> 'Department',
         'section'   => 'Section',
         'status'    => 'Status',
-        'hodid'     => 'HOD (auto, from department)',
+        'hodid'     => 'HOD',
     ];
 
     function matchOption($value, array $options)
@@ -41,8 +41,8 @@
     }
 
     /**
-     * Every existing user keyed by Staff No, fetched once so a large file
-     * does not run one lookup query per row.
+     * Every existing user, indexed three ways (Staff No, id, name), fetched
+     * once so a large file does not run one lookup query per row.
      */
     function staffIndex()
     {
@@ -50,15 +50,65 @@
         static $index = null;
         if ($index !== null) return $index;
 
-        $index = [];
+        $index = ['byStaffNo' => [], 'byId' => [], 'byName' => []];
         $res = $conn->query("SELECT id, staffno, staffname, gender, designation, division, department, section, division_id, department_id, section_id, status, hodid FROM user");
         while ($row = $res->fetch_assoc()) {
+            $index['byId'][(int) $row['id']] = $row;
+
             $staffno = strtoupper(trim((string) $row['staffno']));
-            if ($staffno !== '' && !isset($index[$staffno])) {
-                $index[$staffno] = $row;
+            if ($staffno !== '' && !isset($index['byStaffNo'][$staffno])) {
+                $index['byStaffNo'][$staffno] = $row;
+            }
+
+            $name = strtoupper(trim((string) $row['staffname']));
+            if ($name !== '') {
+                $index['byName'][$name][] = $row;
             }
         }
         return $index;
+    }
+
+    /**
+     * Resolve the optional HOD column into a real user id. Accepts a staff
+     * number (M0361), a numeric user id (150), or an exact unique staff
+     * name - same rule as admin/staff/import_staff.php. Anything that does
+     * not resolve is an error rather than a silently stored value.
+     *
+     * Returns ['id' => int|null, 'error' => string|null].
+     */
+    function resolveHodId($raw)
+    {
+        static $cache = [];
+
+        $key = strtoupper(trim((string) $raw));
+        if ($key === '') {
+            return ['id' => null, 'error' => null];
+        }
+        if (isset($cache[$key])) {
+            return $cache[$key];
+        }
+
+        $index = staffIndex();
+        $found = null;
+
+        if (isset($index['byStaffNo'][$key])) {
+            $found = $index['byStaffNo'][$key];
+        }
+        if ($found === null && ctype_digit($key) && isset($index['byId'][(int) $key])) {
+            $found = $index['byId'][(int) $key];
+        }
+        if ($found === null && isset($index['byName'][$key])) {
+            if (count($index['byName'][$key]) > 1) {
+                return $cache[$key] = ['id' => null, 'error' => "HOD '{$raw}': more than one staff has that name, use their staff number instead."];
+            }
+            $found = $index['byName'][$key][0];
+        }
+
+        if ($found === null) {
+            return $cache[$key] = ['id' => null, 'error' => "HOD '{$raw}' not found - use a staff number, user id or exact staff name."];
+        }
+
+        return $cache[$key] = ['id' => (int) $found['id'], 'error' => null];
     }
 
     /**
@@ -82,7 +132,7 @@
         $orgStructure = getDbOrgStructure();
         $sheet = $spreadsheet->getActiveSheet();
         $highestRow = $sheet->getHighestDataRow();
-        $staffLookup = staffIndex();
+        $staffLookup = staffIndex()['byStaffNo'];
 
         $rows = [];
         $counts = ['insert' => 0, 'update' => 0, 'unchanged' => 0, 'error' => 0];
@@ -101,7 +151,7 @@
             }
 
             $isBlank = true;
-            foreach (['A', 'B', 'C', 'D', 'E', 'F', 'G'] as $col) {
+            foreach (['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as $col) {
                 if ($cell($col) !== '') { $isBlank = false; break; }
             }
             if ($isBlank) continue;
@@ -239,6 +289,23 @@
                 }
             } elseif ($isNew) {
                 $values['status'] = 'ACTIVE';
+            }
+
+            // ===== HOD override (column H) =====
+            // Optional. Comes last on purpose: an explicit HOD in the file
+            // overrides the one derived from the department above. Accepts
+            // a Staff No, user id, or exact staff name - anything that
+            // cannot be resolved to a real person is an error, never a
+            // silent guess.
+            $hodRaw = $cell('H');
+            if ($hodRaw !== '') {
+                $hod = resolveHodId($hodRaw);
+                if ($hod['error'] !== null) {
+                    $entry['messages'][] = $hod['error'];
+                    $failed = true;
+                } else {
+                    $values['hodid'] = $hod['id'];
+                }
             }
 
             if ($failed) {

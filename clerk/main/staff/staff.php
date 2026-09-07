@@ -78,7 +78,7 @@
                                 </button>
                             </span>
                             <div class="text-muted" style="font-size:11px;margin-top:6px;">
-                                One file handles both adding and updating: a Staff No that does not exist yet is <strong>created</strong> as contract staff (default password <code>P@ss1234</code>); a Staff No already on the contract staff list is <strong>updated</strong>, and blank cells are left unchanged. Use the dropdowns provided in each cell &mdash; picking a Division narrows the Department dropdown to that division, and picking a Department narrows the Section dropdown to that department. Nothing is saved until you confirm the preview.
+                                One file handles both adding and updating: a Staff No that does not exist yet is <strong>created</strong> as contract staff (default password <code>P@ss1234</code>); a Staff No already on the contract staff list is <strong>updated</strong>, and blank cells are left unchanged. Use the dropdowns provided in each cell &mdash; picking a Division narrows the Department dropdown to that division, and picking a Department narrows the Section dropdown to that department. HOD (column H) is optional &mdash; leave it blank to use the staff member's department default, or fill in a Staff No/user ID/exact name to assign a specific exception. Nothing is saved until you confirm the preview.
                             </div>
                         </div>
                     </div>

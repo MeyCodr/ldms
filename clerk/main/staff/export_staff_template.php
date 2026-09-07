@@ -31,6 +31,8 @@
         'E' => 'Department',
         'F' => 'Section',
         'G' => 'Status (ACTIVE / RESIGN)',
+        'H' => 'HOD Staff No (optional override)',
+        'I' => 'Current HOD Name (reference only)',
     ];
 
     $spreadsheet = new Spreadsheet();
@@ -39,7 +41,16 @@
     $sheet->fromArray(array_values($columns), null, 'A1');
 
     $row = 2;
-    $res = $conn->query("SELECT staffno, staffname, gender, division, department, section, status FROM user WHERE designation = 'CONTRACT' AND staffno IS NOT NULL AND staffno <> '' ORDER BY staffno");
+    // hod.* is joined so the sheet round-trips: the HOD Staff No column (H)
+    // is what the importer reads back, the name beside it (I) is only
+    // there so a clerk can see who is currently assigned before deciding
+    // whether to change it - re-uploading it unchanged is a no-op.
+    $res = $conn->query("SELECT u.staffno, u.staffname, u.gender, u.division, u.department, u.section, u.status,
+                                hod.staffno AS hod_staffno, hod.staffname AS hod_staffname
+                         FROM user u
+                         LEFT JOIN user hod ON hod.id = u.hodid
+                         WHERE u.designation = 'CONTRACT' AND u.staffno IS NOT NULL AND u.staffno <> ''
+                         ORDER BY u.staffno");
     while ($r = $res->fetch_assoc()) {
         $sheet->setCellValueExplicit("A{$row}", $r['staffno'], DataType::TYPE_STRING);
         $sheet->setCellValue("B{$row}", $r['staffname']);
@@ -48,6 +59,8 @@
         $sheet->setCellValueExplicit("E{$row}", $r['department'] ?: '', DataType::TYPE_STRING);
         $sheet->setCellValueExplicit("F{$row}", $r['section'] ?: '', DataType::TYPE_STRING);
         $sheet->setCellValueExplicit("G{$row}", $r['status'] ?: '', DataType::TYPE_STRING);
+        $sheet->setCellValueExplicit("H{$row}", $r['hod_staffno'] ?: '', DataType::TYPE_STRING);
+        $sheet->setCellValueExplicit("I{$row}", $r['hod_staffname'] ?: '', DataType::TYPE_STRING);
         $row++;
     }
     $lastRow = $row - 1;
@@ -55,8 +68,8 @@
     foreach (array_keys($columns) as $col) {
         $sheet->getColumnDimension($col)->setAutoSize(true);
     }
-    $sheet->getStyle('A1:G1')->getFont()->setBold(true);
-    $sheet->getStyle('A1:G1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D9E8FF');
+    $sheet->getStyle('A1:I1')->getFont()->setBold(true);
+    $sheet->getStyle('A1:I1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D9E8FF');
     $sheet->freezePane('A2');
 
     // ===== OPTIONS SHEET (dropdown validation sources) =====
@@ -107,10 +120,24 @@
     }
     $orgSheet->getStyle('A1:C1')->getFont()->setBold(true);
 
-    // ===== CASCADING LOOKUP HELPER SHEETS (Division -> Department -> Section) =====
+    // Department -> current HOD staff no, so the HOD dropdown (column H) can
+    // suggest each department's own head without a clerk needing to know
+    // their staff number by memory.
+    $deptHodStaffNo = [];
+    $hodRes = $conn->query(
+        "SELECT d.name, hod.staffno
+         FROM departments d
+         LEFT JOIN user hod ON hod.id = d.hod_user_id"
+    );
+    while ($hr = $hodRes->fetch_assoc()) {
+        $deptHodStaffNo[$hr['name']] = $hr['staffno'] ?: '';
+    }
+
+    // ===== CASCADING LOOKUP HELPER SHEETS (Division -> Department -> Section -> HOD) =====
     $departmentsByDivisionIndex = [];
     $deptFlatList = [];
     $sectionsByDeptFlatIndex = [];
+    $hodByDeptFlatIndex = [];
 
     foreach ($divisionOptions as $divIdx0 => $divisionName) {
         $divIdx = $divIdx0 + 1;
@@ -122,6 +149,7 @@
             $flatIdx = count($deptFlatList);
             $sections = $orgStructure[$divisionName][$departmentName];
             $sectionsByDeptFlatIndex[$flatIdx] = !empty($sections) ? $sections : ['-'];
+            $hodByDeptFlatIndex[$flatIdx] = isset($deptHodStaffNo[$departmentName]) ? $deptHodStaffNo[$departmentName] : '';
         }
     }
 
@@ -160,6 +188,21 @@
         $spreadsheet->addNamedRange(new NamedRange("SEC_{$flatIdx}", $secListsSheet, "\${$col}\$2:\${$col}\$" . ($r - 1)));
     }
     $secListsSheet->setSheetState(Worksheet::SHEETSTATE_HIDDEN);
+
+    // One named range per department, holding just that department's current
+    // HOD staff no (blank if the department has none assigned yet). The HOD
+    // dropdown on column H is a suggestion only, not enforced - a clerk can
+    // still type any other real staff no, user id, or name for a deliberate
+    // exception, and the import validates it the same way either way.
+    $hodListsSheet = $spreadsheet->createSheet();
+    $hodListsSheet->setTitle('HOD Lists');
+    foreach ($hodByDeptFlatIndex as $flatIdx => $hodStaffNo) {
+        $col = Coordinate::stringFromColumnIndex($flatIdx);
+        $hodListsSheet->setCellValue("{$col}1", $deptFlatList[$flatIdx - 1]);
+        $hodListsSheet->setCellValueExplicit("{$col}2", $hodStaffNo, DataType::TYPE_STRING);
+        $spreadsheet->addNamedRange(new NamedRange("HOD_{$flatIdx}", $hodListsSheet, "\${$col}\$2:\${$col}\$2"));
+    }
+    $hodListsSheet->setSheetState(Worksheet::SHEETSTATE_HIDDEN);
 
     $spreadsheet->addNamedRange(new NamedRange('DIVLIST', $optionsSheet, '$B$2:$B$' . (count($divisionOptions) + 1)));
 
@@ -206,6 +249,17 @@
         $secValidation->setErrorTitle('Invalid Value');
         $secValidation->setError('Please select a Department first, then pick a Section from its dropdown.');
         $secValidation->setFormula1("INDIRECT(\"SEC_\"&MATCH(\$E{$r},DEPTFLAT,0))");
+
+        // HOD (H) suggests the row's own department head but does not enforce
+        // it - setShowErrorMessage(false) means typing any other staff no,
+        // user id, or name is still accepted by Excel (the import is what
+        // actually validates it).
+        $hodValidation = $sheet->getCell("H{$r}")->getDataValidation();
+        $hodValidation->setType(DataValidation::TYPE_LIST);
+        $hodValidation->setAllowBlank(true);
+        $hodValidation->setShowDropDown(true);
+        $hodValidation->setShowErrorMessage(false);
+        $hodValidation->setFormula1("INDIRECT(\"HOD_\"&MATCH(\$E{$r},DEPTFLAT,0))");
     }
 
     $spreadsheet->setActiveSheetIndex(0);
