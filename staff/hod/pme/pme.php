@@ -25,9 +25,14 @@
                     FROM pme p
                     JOIN user u ON p.userid = u.id
                     WHERE p.hodid = ?
+                    AND u.status != 'RESIGN'
                     AND (
                         p.designation = 'Executive'
-                        OR (p.designation = 'MANAGER (AM/HOS & ABOVE)' AND u.usertype != 'HOD')
+                        OR (
+                            p.designation = 'MANAGER (AM/HOS & ABOVE)'
+                            AND u.usertype != 'HOD'
+                            AND NOT EXISTS (SELECT 1 FROM divisions dv WHERE dv.head_user_id = u.id)
+                        )
                     )
                     AND YEAR(p.from_date) = YEAR(CURDATE())
                     ORDER BY

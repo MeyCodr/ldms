@@ -34,6 +34,7 @@ if (!isset($_SESSION['fullname']) || $_SESSION['role'] != 'ADMIN') {
         .org-item-name { font-weight: 600; font-size: 13px; color: #333; }
         .org-item-meta { font-size: 11px; color: #888; margin-top: 2px; }
         .org-item-hod { font-size: 11px; color: #5a7; margin-top: 1px; }
+        .org-item-head { font-size: 11px; color: #337ab7; margin-top: 1px; }
         .org-item-actions { float: right; display: flex; gap: 4px; }
         .panel-heading-actions { float: right; margin-top: -2px; }
         .panel-title-text { display: inline-block; margin-top: 2px; font-weight: 700; }
@@ -289,6 +290,38 @@ if (!isset($_SESSION['fullname']) || $_SESSION['role'] != 'ADMIN') {
     </div>
 </div>
 
+<!-- ASSIGN DIVISION HEAD MODAL -->
+<div class="modal fade" id="modalAssignDivisionHead" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Assign Head of Division</h4>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="division-head-div-id">
+                <p>Division: <strong id="division-head-div-name-label"></strong></p>
+                <div class="form-group">
+                    <label>Select Head of Division</label>
+                    <select id="division-head-user-select" class="form-control">
+                        <option value="">— No Head of Division —</option>
+                    </select>
+                </div>
+                <div id="division-head-no-managers-msg" class="text-warning" style="display:none;font-size:12px;">
+                    <i class="fa fa-exclamation-triangle"></i> No managers found in this division. Add a staff member with designation "MANAGER (AM/HOS & ABOVE)" first.
+                </div>
+                <p class="text-muted" style="font-size:11px;margin-top:6px;">
+                    The Head of Division sits above department HODs in this division - use this to identify who a department HOD reports to.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary" onclick="saveDivisionHead()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ===== DEPARTMENT MODALS ===== -->
 <div class="modal fade" id="modalDepartment" tabindex="-1">
     <div class="modal-dialog modal-sm">
@@ -520,9 +553,12 @@ if (!isset($_SESSION['fullname']) || $_SESSION['role'] != 'ADMIN') {
                     html += '<div class="org-list-item' + activeClass + '" onclick="selectDivision(' + row.id + ', \'' + escJs(row.name) + '\')">';
                     html += '<div class="org-item-actions">';
                     html += '<button class="btn btn-xs btn-default" title="Edit" onclick="event.stopPropagation();openEditDivision(' + row.id + ',\'' + escJs(row.name) + '\',\'' + escJs(row.shortname || '') + '\')"><i class="fa fa-pencil-alt"></i></button>';
+                    html += '<button class="btn btn-xs btn-info" title="Assign Head of Division" onclick="event.stopPropagation();openAssignDivisionHead(' + row.id + ',\'' + escJs(row.name) + '\',' + (row.head_user_id || 'null') + ')"><i class="fa fa-user-tie"></i></button>';
                     html += '<button class="btn btn-xs btn-danger" title="Delete" onclick="event.stopPropagation();deleteDivision(' + row.id + ',\'' + escJs(row.name) + '\')"><i class="fa fa-trash"></i></button>';
                     html += '</div>';
                     html += '<div class="org-item-name">' + escHtml(row.name) + (row.shortname ? ' <small class="text-muted">(' + escHtml(row.shortname) + ')</small>' : '') + '</div>';
+                    var headLabel = row.head_name ? '<i class="fa fa-user-tie"></i> ' + escHtml(row.head_name) + (row.head_staffno ? ' (' + escHtml(row.head_staffno) + ')' : '') : '<span class="text-muted">No Head of Division assigned</span>';
+                    html += '<div class="org-item-head">' + headLabel + '</div>';
                     html += '<div class="org-item-meta">' + row.dept_count + ' dept(s) &middot; ' + row.user_count + ' active staff</div>';
                     html += '</div>';
                 });
@@ -605,6 +641,43 @@ if (!isset($_SESSION['fullname']) || $_SESSION['role'] != 'ADMIN') {
                     }
                 }, 'json');
             });
+    }
+
+    function openAssignDivisionHead(divId, divName, currentHeadId) {
+        $('#division-head-div-id').val(divId);
+        $('#division-head-div-name-label').text(divName);
+        var sel = $('#division-head-user-select');
+        sel.html('<option value="">Loading managers...</option>');
+        $('#division-head-no-managers-msg').hide();
+        $.post('fetch_org.php', { action: 'load_division_head_candidates', division_id: divId }, function (data) {
+            var opts = '<option value="">— No Head of Division —</option>';
+            if (!data || data.length === 0) {
+                $('#division-head-no-managers-msg').show();
+            } else {
+                $.each(data, function (i, row) {
+                    var selected = (row.id == currentHeadId) ? ' selected' : '';
+                    opts += '<option value="' + row.id + '"' + selected + '>' + escHtml(row.staffname) + ' (' + escHtml(row.staffno) + ')</option>';
+                });
+            }
+            sel.html(opts);
+        }, 'json');
+        $('#modalAssignDivisionHead').modal('show');
+    }
+
+    function saveDivisionHead() {
+        var divId = $('#division-head-div-id').val();
+        var headUserId = $('#division-head-user-select').val();
+        showSpinner();
+        $.post('org_action.php', { btn_action: 'assign_division_head', division_id: divId, head_user_id: headUserId }, function (res) {
+            hideSpinner();
+            if (res.message === 'update') {
+                $('#modalAssignDivisionHead').modal('hide');
+                loadDivisions();
+                swal('Head of Division Updated', 'Head of Division has been assigned.', 'success');
+            } else {
+                alertError(res.detail || 'Failed to assign Head of Division.');
+            }
+        }, 'json');
     }
 
     // ===== DEPARTMENTS =====

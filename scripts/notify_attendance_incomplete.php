@@ -42,7 +42,7 @@ date_default_timezone_set('Asia/Kuala_Lumpur');
 // 1. TEST MODE: when non-empty, every email is redirected here instead of the
 //    real participant, with the subject tagged with who it was actually meant
 //    for. Set to '' (empty string) to go live and send to real participants.
-define('ATT_REMINDER_TEST_EMAIL', '');
+define('ATT_REMINDER_TEST_EMAIL', 'amir.anwar@phn.com.my');
 
 // 2. CUTOFF: only trainings that ended on or after this date are chased.
 //    Deliberately conservative so the first live run does not blast the whole
@@ -159,7 +159,7 @@ foreach ($participants as $userid => $trainings) {
 
     $message  = "<p style='font-size: 1.17em; font-style: italic;'>Assalamualaikum Warahmatullahi Wabarakatuh & Salam Sejahtera,</p>";
     $message .= "<h4 style='font-style: italic;'>Greetings From Learning & Development, PHN Industry Sdn Bhd.</h4>";
-    $message .= "<p>Dear <strong>" . htmlspecialchars($staffname) . "</strong>,<br><br>Our records show that you have <strong>not yet completed the attendance form</strong> for the following training(s):</p>";
+    $message .= "<p>Dear <strong>" . htmlspecialchars($staffname) . "</strong>,<br><br>Please complete the following training(s): </p>";
     $message .= "<table border='1' cellpadding='5' cellspacing='0'>
                     <tr>
                         <th>Training Code</th>
@@ -186,6 +186,7 @@ foreach ($participants as $userid => $trainings) {
 
     $message .= "<p>You will continue to receive this reminder daily until the attendance form for each training above is completed.</p>";
     $message .= "<p>Should you require any further clarification, please do not hesitate to contact us. We appreciate your cooperation in ensuring the effectiveness of our training programs.</p>";
+    $message .= "<p>If you have any questions or login issues, please contact Learning & Development to reset your password.</p>";
 
     $message .= "<p><strong>Thank You.</strong></p>";
     $message .= "<p>--This is an auto-generated email, no reply is needed--</p>";

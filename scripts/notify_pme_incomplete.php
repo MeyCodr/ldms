@@ -34,7 +34,7 @@ define('PME_REMINDER_TOKEN', 'c23c26f50df52e734e73c1e4e43c598b476594355ff6e8bc')
 // TEST MODE: when non-empty, every email is redirected here instead of the
 // real boss, with the subject tagged with who it was actually meant for.
 // Empty string = live - sends to the real boss addresses.
-define('PME_REMINDER_TEST_EMAIL', '');
+define('PME_REMINDER_TEST_EMAIL', 'amir.anwar@phn.com.my');
 
 if (PHP_SAPI !== 'cli') {
     if (!isset($_GET['key']) || !hash_equals(PME_REMINDER_TOKEN, (string) $_GET['key'])) {
@@ -88,12 +88,31 @@ if ($checkStmt->get_result()->num_rows > 0) {
 // run instead, which is a much smaller problem than duplicate reminders.
 $conn->query("INSERT IGNORE INTO pme_reminder_log (run_date) VALUES ('" . $conn->real_escape_string($today) . "')");
 
+// Excludes rows where the staff being evaluated is themselves usertype='HOD',
+// or is a Head of Division (divisions.head_user_id) - a HOD does not evaluate
+// another HOD, and definitely not their own Head of Division (see
+// staff/hod/pme/pme.php, which applies the same exclusion when building that
+// dashboard). Without this, a HOD-evaluator would get a daily reminder for a
+// row they can never open, since it's filtered out of their own PME list.
+// Division heads are checked separately from usertype='HOD' because
+// assigning someone as Head of Division (admin/organization/org.php) only
+// sets divisions.head_user_id - it does not touch user.usertype, so a head
+// of division whose usertype was never 'HOD' would otherwise slip through.
 $sql = "SELECT pme.hodid, pme.staffname, pme.staffno, pme.training_title,
                DATE_FORMAT(pme.from_date, '%e/%c/%Y') AS formatted_from_date,
                DATE_FORMAT(pme.to_date, '%e/%c/%Y') AS formatted_to_date
         FROM pme
+        JOIN user ON user.id = pme.userid
         WHERE pme.to_date < ?
-          AND pme.designation IN ('Executive', 'MANAGER (AM/HOS & ABOVE)')
+          AND user.status != 'RESIGN'
+          AND (
+              pme.designation = 'Executive'
+              OR (
+                  pme.designation = 'MANAGER (AM/HOS & ABOVE)'
+                  AND user.usertype != 'HOD'
+                  AND NOT EXISTS (SELECT 1 FROM divisions dv WHERE dv.head_user_id = user.id)
+              )
+          )
           AND pme.status = 'pending'
         ORDER BY pme.training_title, pme.staffname";
 $stmt = $conn->prepare($sql);

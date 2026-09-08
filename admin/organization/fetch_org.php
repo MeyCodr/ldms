@@ -18,10 +18,12 @@ if (!isset($_SESSION['fullname']) || $_SESSION['role'] != 'ADMIN') {
 $action = isset($_POST['action']) ? $_POST['action'] : '';
 
 if ($action == 'load_divisions') {
-    $sql = "SELECT d.id, d.name, d.shortname,
+    $sql = "SELECT d.id, d.name, d.shortname, d.head_user_id,
+                   head.staffname AS head_name, head.staffno AS head_staffno,
                    COUNT(DISTINCT dp.id) AS dept_count,
                    COUNT(DISTINCT u.id) AS user_count
             FROM divisions d
+            LEFT JOIN user head ON head.id = d.head_user_id
             LEFT JOIN departments dp ON dp.division_id = d.id
             LEFT JOIN user u ON u.division_id = d.id AND u.status != 'RESIGN'
             GROUP BY d.id
@@ -92,6 +94,25 @@ if ($action == 'load_managers') {
             ORDER BY staffname";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param('i', $department_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $rows = [];
+    while ($row = $result->fetch_assoc()) {
+        $rows[] = $row;
+    }
+    respond($rows);
+}
+
+if ($action == 'load_division_head_candidates') {
+    $division_id = isset($_POST['division_id']) ? (int) $_POST['division_id'] : 0;
+    if (!$division_id) respond([]);
+
+    $sql = "SELECT id, staffno, staffname
+            FROM user
+            WHERE division_id = ? AND designation = 'MANAGER (AM/HOS & ABOVE)' AND status != 'RESIGN'
+            ORDER BY staffname";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('i', $division_id);
     $stmt->execute();
     $result = $stmt->get_result();
     $rows = [];

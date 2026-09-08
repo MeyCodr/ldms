@@ -130,6 +130,15 @@ if ($action == 'assign_hod') {
     respond($stmt->execute() ? ['message' => 'update'] : ['message' => 'error', 'detail' => $conn->error]);
 }
 
+if ($action == 'assign_division_head') {
+    $division_id = (int) ($_POST['division_id'] ?? 0);
+    $head_user_id = (isset($_POST['head_user_id']) && $_POST['head_user_id'] !== '') ? (int) $_POST['head_user_id'] : null;
+    if (!$division_id) respond(['message' => 'error', 'detail' => 'Invalid input.']);
+    $stmt = $conn->prepare("UPDATE divisions SET head_user_id = ? WHERE id = ?");
+    $stmt->bind_param('ii', $head_user_id, $division_id);
+    respond($stmt->execute() ? ['message' => 'update'] : ['message' => 'error', 'detail' => $conn->error]);
+}
+
 // ===== SECTIONS =====
 
 if ($action == 'add_section') {

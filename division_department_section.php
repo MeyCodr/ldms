@@ -375,6 +375,49 @@ function getDepartmentHodId($departmentId)
     return ($row && $row['hod_user_id'] !== null) ? (int) $row['hod_user_id'] : null;
 }
 
+/**
+ * The single source of truth for "who is above this division's HODs": the
+ * head_user_id set via the Assign Head of Division button on
+ * admin/organization/org.php. Use this (not usertype='HOD' text matching -
+ * see getDepartmentHodId() above for why that breaks) to check whether a
+ * given user sits above HOD level.
+ *
+ * Returns null if the division has no head assigned.
+ */
+function getDivisionHeadId($divisionId)
+{
+    global $conn;
+    if (!isset($conn) || empty($divisionId)) {
+        return null;
+    }
+    $stmt = mysqli_prepare($conn, "SELECT head_user_id FROM divisions WHERE id = ?");
+    mysqli_stmt_bind_param($stmt, 'i', $divisionId);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
+    $row = mysqli_fetch_assoc($res);
+    mysqli_stmt_close($stmt);
+    return ($row && $row['head_user_id'] !== null) ? (int) $row['head_user_id'] : null;
+}
+
+/**
+ * True if $userId is assigned as the Head of Division for any division -
+ * i.e. sits above HOD level org-wide, regardless of which division.
+ */
+function isDivisionHead($userId)
+{
+    global $conn;
+    if (!isset($conn) || empty($userId)) {
+        return false;
+    }
+    $stmt = mysqli_prepare($conn, "SELECT 1 FROM divisions WHERE head_user_id = ? LIMIT 1");
+    mysqli_stmt_bind_param($stmt, 'i', $userId);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_store_result($stmt);
+    $found = mysqli_stmt_num_rows($stmt) > 0;
+    mysqli_stmt_close($stmt);
+    return $found;
+}
+
 function getSectionIdByName($departmentId, $name)
 {
     global $conn;
