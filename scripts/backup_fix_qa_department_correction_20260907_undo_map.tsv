@@ -1,0 +1,4 @@
+id	staffno	staffname	step	department_id	department_value
+159	M0399	AMIRULHAKIM BIN MALIK	0_original_before_any_fix	34	QUALITY ASSURANCE & CONTROL 1 SA1
+159	M0399	AMIRULHAKIM BIN MALIK	1_my_incorrect_first_fix	34	QUALITY ASSURANCE & CONTROL SA1
+159	M0399	AMIRULHAKIM BIN MALIK	2_correct_final_value	34	QUALITY ASSURANCE & CONTROL 2 (BB/RASA, TM 1 & TM 2)
