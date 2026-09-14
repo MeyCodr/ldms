@@ -223,7 +223,7 @@ if($_POST["action"] == 'fetch_overview'){
     if ($_POST["startdate"] != '') {
         $startdate = $_POST["startdate"];
         $enddate = $_POST["enddate"];
-        $sql = "select 'PUBLIC' as type, ifnull(sum(totaldays*totalhours),0) as sumtotalhours from (select (datediff(enddate,startdate) + 1) as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,id from training_all training where startdate between '$startdate' and '$enddate')tablea union select 'OJT' as type, ifnull(sum(totaldays*totalhours),0) as sumtotalhours from (select (datediff(enddate,startdate) + 1) as totaldays,round(TIME_TO_SEC(timediff(endtime,starttime))/3600,2) as totalhours,id from ojt_all ojt where startdate between '$startdate' and '$enddate')tableb;";
+        $sql = "select 'PUBLIC' as type, ifnull(sum((datediff(t.enddate,t.startdate)+1) * round(TIME_TO_SEC(timediff(t.endtime,t.starttime))/3600,2)),0) as sumtotalhours from training t join participation p on t.id = p.trainingid join user u on p.userid = u.id where t.startdate between '$startdate' and '$enddate' and p.attendance = 'COMPLETED' union select 'OJT' as type, ifnull(sum((datediff(o.enddate,o.startdate)+1) * round(TIME_TO_SEC(timediff(o.endtime,o.starttime))/3600,2) * po.totalman),0) as sumtotalhours from ojt o join participateojt po on o.id = po.ojtid join user u on po.userid = u.id where o.startdate between '$startdate' and '$enddate' and po.attendance = 'COMPLETEDOJT';";
         $query = mysqli_query($conn,$sql);
         $data = array();
         while($row = mysqli_fetch_assoc($query)){
