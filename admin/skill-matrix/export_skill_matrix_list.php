@@ -78,6 +78,11 @@ if (skillMatrixUserCanUse()) {
     }
 }
 
+// sme is the latest skill_matrix_evaluations row for this staff in the
+// current quarter (mirrors evaluation-matrix.php's own lookup).
+// verified_by is the CREATOR's hodid, not the evaluated staff's - see
+// evaluation-matrix.php's sign-off query and the "Skill matrix HOD routing"
+// note: the verifier is whoever manages the person who filled the form in.
 $sql = "SELECT
             u.staffno,
             u.staffname,
@@ -87,25 +92,26 @@ $sql = "SELECT
             u.plant,
             COALESCE(dp.name, u.department) AS department,
             COALESCE(s.name, u.section) AS section,
-            EXISTS (
-                SELECT 1
-                FROM skill_matrix_evaluations sme
-                WHERE sme.staffid = u.id
-                AND YEAR(sme.evaluation_date) = ?
-                AND QUARTER(sme.evaluation_date) = ?
-            ) AS has_current_quarter_evaluation,
-            (
-                SELECT sme.approval_status
-                FROM skill_matrix_evaluations sme
-                WHERE sme.staffid = u.id
-                AND YEAR(sme.evaluation_date) = ?
-                AND QUARTER(sme.evaluation_date) = ?
-                ORDER BY sme.evaluation_date DESC, sme.id DESC
-                LIMIT 1
-            ) AS approval_status
+            sme.id IS NOT NULL AS has_current_quarter_evaluation,
+            sme.approval_status AS approval_status,
+            creator.staffname AS evaluated_by,
+            verifier.staffname AS verified_by,
+            approver.staffname AS approved_by
         FROM user u
         LEFT JOIN departments dp ON u.department_id = dp.id
         LEFT JOIN sections s ON u.section_id = s.id
+        LEFT JOIN skill_matrix_evaluations sme ON sme.id = (
+            SELECT sme2.id
+            FROM skill_matrix_evaluations sme2
+            WHERE sme2.staffid = u.id
+            AND YEAR(sme2.evaluation_date) = ?
+            AND QUARTER(sme2.evaluation_date) = ?
+            ORDER BY sme2.evaluation_date DESC, sme2.id DESC
+            LIMIT 1
+        )
+        LEFT JOIN user creator ON creator.id = sme.created_by
+        LEFT JOIN user verifier ON verifier.id = creator.hodid
+        LEFT JOIN user approver ON approver.id = sme.approved_by
         WHERE u.designation IN (?, ?)
         AND u.status != ?";
 
@@ -113,8 +119,8 @@ $designation1 = "NON EXECUTIVE";
 $designation2 = "CONTRACT";
 $inactiveStatus = "RESIGN";
 
-$types = "iiiisss";
-$params = [$currentYear, $currentQuarter, $currentYear, $currentQuarter, $designation1, $designation2, $inactiveStatus];
+$types = "iisss";
+$params = [$currentYear, $currentQuarter, $designation1, $designation2, $inactiveStatus];
 
 if ($department != "" && $department != "ALL") {
     $sql .= " AND (dp.name = ? OR u.department = ?)";
@@ -166,6 +172,9 @@ while ($row = $result->fetch_assoc()) {
         'grade' => $row['grade'],
         'status' => $status,
         'approval_status' => $approvalStatus,
+        'evaluated_by' => $row['evaluated_by'] ? $row['evaluated_by'] : '',
+        'verified_by' => $row['verified_by'] ? $row['verified_by'] : '',
+        'approved_by' => $row['approved_by'] ? $row['approved_by'] : '',
     ];
 }
 
@@ -173,11 +182,11 @@ $spreadsheet = new Spreadsheet();
 $sheet = $spreadsheet->getActiveSheet();
 $sheet->setTitle('Skill Matrix Staff List');
 
-$headers = ['No.', 'Staff No.', 'Employee Name', 'Department', 'Section', 'Plant', 'Grade', 'Status', 'Approval Status'];
+$headers = ['No.', 'Staff No.', 'Employee Name', 'Department', 'Section', 'Plant', 'Grade', 'Status', 'Approval Status', 'Evaluated By', 'Verified By', 'Approved By'];
 $sheet->fromArray($headers, null, 'A1');
-$sheet->getStyle('A1:I1')->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFFFF'));
-$sheet->getStyle('A1:I1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF337AB7');
-$sheet->getStyle('A1:I1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+$sheet->getStyle('A1:L1')->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFFFFFFF'));
+$sheet->getStyle('A1:L1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF337AB7');
+$sheet->getStyle('A1:L1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
 $rowNum = 2;
 foreach ($rows as $i => $r) {
@@ -190,10 +199,13 @@ foreach ($rows as $i => $r) {
     $sheet->setCellValue('G' . $rowNum, $r['grade']);
     $sheet->setCellValue('H' . $rowNum, $r['status']);
     $sheet->setCellValue('I' . $rowNum, $r['approval_status']);
+    $sheet->setCellValue('J' . $rowNum, $r['evaluated_by']);
+    $sheet->setCellValue('K' . $rowNum, $r['verified_by']);
+    $sheet->setCellValue('L' . $rowNum, $r['approved_by']);
     $rowNum++;
 }
 
-foreach (['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'] as $col) {
+foreach (['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'] as $col) {
     $sheet->getColumnDimension($col)->setAutoSize(true);
 }
 

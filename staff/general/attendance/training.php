@@ -23,6 +23,9 @@
     </head>
 
     <style>
+        #traininglist {
+            width: 100% !important;
+        }
         #spinner-div {
             position: fixed;
             display: none;
@@ -82,25 +85,20 @@
                         </div>
                         <div class="panel-body" align="center">
                             <div class="row">
-                                <div class="col-sm-2"></div>
-                                <div class="col-sm-8">
-                                    <div class="col-md-5">
-                                        <input type="text" name="startdate" id="startdate" class="form-control" placeholder="Insert Start Date" autocomplete="off" />
-                                    </div>
-                                    <div class="col-md-5">
-                                        <input type="text" name="enddate" id="enddate" class="form-control" placeholder="Insert End Date" autocomplete="off" />
-                                    </div>
-                                    <div class="col-md-2" align="left">
-                                        <button type="button" name="filter_date" id="filter_date" class="btn btn-info btn-md">Filter <i class="fa fa-search"></i> </button>
-                                        <button type="button" name="clear_filter" id="clear_filter" class="btn btn-info btn-md">Clear <i class="fa fa-times"></i> </button>
-                                    </div>
+                                <div class="col-sm-3">
+                                    <input type="text" name="startdate" id="startdate" class="form-control" placeholder="Insert Start Date" autocomplete="off" />
                                 </div>
-                                <div class="col-sm-2"></div>
+                                <div class="col-sm-3">
+                                    <input type="text" name="enddate" id="enddate" class="form-control" placeholder="Insert End Date" autocomplete="off" />
+                                </div>
+                                <div class="col-sm-3" style="white-space:nowrap;" align="left">
+                                    <button type="button" name="filter_date" id="filter_date" class="btn btn-info btn-md">Filter <i class="fa fa-search"></i> </button>
+                                    <button type="button" name="clear_filter" id="clear_filter" class="btn btn-info btn-md">Clear <i class="fa fa-times"></i> </button>
+                                </div>
                             </div>
                             <br>
                             <div class="row">
-                                <div class="col-sm-2"></div>
-                                <div class="col-sm-8 table-responsive">
+                                <div class="col-sm-12 table-responsive">
                                     <table id="traininglist" class="table table-bordered table-striped">
                                     <thead>
                                             <tr>
@@ -108,6 +106,7 @@
                                                 <th>Title</th>
                                                 <th>Type</th>
                                                 <th>Start Date</th>
+                                                <th>End Date</th>
                                                 <th>Venue</th>
                                                 <th>Status</th>
                                                 <th>Training Hour</th>
@@ -118,13 +117,12 @@
 
                                         </tbody>
                                         <tfoot>
-                                            <th colspan="6">Total Training Hour</th>
+                                            <th colspan="7">Total Training Hour</th>
                                             <th><span id="totalhourall"></span></th>
                                             <th></th>
                                         </tfoot>
                                     </table>
                                 </div>
-                                <div class="col-sm-2"></div>
                             </div>
                         </div>
 					</div>
@@ -199,6 +197,7 @@
                 "searching": true,
                 "ordering": true,
                 "responsive": true,
+                "autoWidth": false,
                 "pageLength": 10,
                 "info": true,
                 "ajax":{
@@ -224,6 +223,9 @@
                         "data": "startdate"
                     },
                     {
+                        "data": "enddate"
+                    },
+                    {
                         "data": "venue"
                     },
                     {
@@ -237,9 +239,9 @@
                     },
                 ],
                 "columnDefs": [
-                    { className: 'text-center', targets: [0,3,5,6,7] }
+                    { className: 'text-center', targets: [0,3,4,6,7,8] }
                 ],
-                "order": [[ 5, "desc" ]],
+                "order": [[ 6, "desc" ]],
                 fnFooterCallback: function(nRow, aaData, iStart, iEnd, aiDisplay) {
                     var api = this.api(), data;
  
@@ -248,13 +250,13 @@
                         return typeof i === 'string' ? i.replace(/[\$,]/g, '')*1 : typeof i === 'number' ? i : 0;
                     };
  
-                    // computing column Total of the complete result 
-                    var totalhourall = api.column(6).data().reduce(function (a, b) {
+                    // computing column Total of the complete result
+                    var totalhourall = api.column(7).data().reduce(function (a, b) {
                         return intVal(a) + intVal(b);
                     }, 0);
-                    
-                    // Update footer by showing the total with the reference of the column index 
-	                $( api.column(6).footer() ).html(totalhourall);
+
+                    // Update footer by showing the total with the reference of the column index
+	                $( api.column(7).footer() ).html(totalhourall);
                 }
             });
         }

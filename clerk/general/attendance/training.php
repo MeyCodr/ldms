@@ -110,6 +110,7 @@
                                                 <th>Title</th>
                                                 <th>Type</th>
                                                 <th>Start Date</th>
+                                                <th>End Date</th>
                                                 <th>Venue</th>
                                                 <th>Status</th>
                                                 <th>Training Hour</th>
@@ -121,7 +122,7 @@
 
                                         </tbody>
                                         <tfoot>
-                                            <th colspan="8">Total Training Hour</th>
+                                            <th colspan="9">Total Training Hour</th>
                                             <th><span id="totalhourall"></span></th>
                                             <th></th>
                                         </tfoot>
@@ -221,6 +222,9 @@
                         "data": "startdate"
                     },
                     {
+                        "data": "enddate"
+                    },
+                    {
                         "data": "venue"
                     },
                     {
@@ -229,23 +233,23 @@
                     {
                         "data": "totalhour"
                     },
-                    { 
-                        "data": "pme", "orderable": false 
+                    {
+                        "data": "pme", "orderable": false
                     },
                     {
                         "data": "btnedit"
                     },
                     {
-                        "data": "status_sort", "visible": false 
+                        "data": "status_sort", "visible": false
                     },
                     {
-                        "data": "custom_sort", "visible": false 
+                        "data": "custom_sort", "visible": false
                     }
                 ],
                 "columnDefs": [
-                    { className: 'text-center', targets: [0, 3, 5, 6, 7, 8] }
+                    { className: 'text-center', targets: [0, 3, 4, 6, 7, 8, 9] }
                 ],
-                "order": [[5, 'desc'], [9, 'asc']], // Sort by the status_sort column
+                "order": [[6, 'desc'], [10, 'asc']], // Sort by the status_sort column
                 fnFooterCallback: function (nRow, aaData, iStart, iEnd, aiDisplay) {
                     var api = this.api(), data;
 
@@ -254,13 +258,13 @@
                         return typeof i === 'string' ? i.replace(/[\$,]/g, '') * 1 : typeof i === 'number' ? i : 0;
                     };
 
-                    // computing column Total of the complete result 
-                    var totalhourall = api.column(6).data().reduce(function (a, b) {
+                    // computing column Total of the complete result
+                    var totalhourall = api.column(7).data().reduce(function (a, b) {
                         return intVal(a) + intVal(b);
                     }, 0);
 
-                    // Update footer by showing the total with the reference of the column index 
-                    $(api.column(6).footer()).html(totalhourall);
+                    // Update footer by showing the total with the reference of the column index
+                    $(api.column(7).footer()).html(totalhourall);
                 }
             });
         }

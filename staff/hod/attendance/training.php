@@ -116,6 +116,7 @@
                                                 <th>Title</th>
                                                 <th>Type</th>
                                                 <th>Start Date</th>
+                                                <th>End Date</th>
                                                 <th>Venue</th>
                                                 <th>Status</th>
                                                 <th>Training Hour</th>
@@ -126,7 +127,7 @@
 
                                         </tbody>
                                         <tfoot>
-                                            <th colspan="6">Total Training Hour</th>
+                                            <th colspan="7">Total Training Hour</th>
                                             <th><span id="totalhourall"></span></th>
                                             <th></th>
                                         </tfoot>
@@ -209,7 +210,7 @@
                 "autoWidth": false,
                 "pageLength": 10,
                 "info": true,
-                "order": [[ 5, "desc" ]],
+                "order": [[ 6, "desc" ]],
                 "ajax":{
                     url:"fetch_training.php",
                     type:"POST",
@@ -233,6 +234,9 @@
                         "data": "startdate"
                     },
                     {
+                        "data": "enddate"
+                    },
+                    {
                         "data": "venue"
                     },
                     {
@@ -246,7 +250,7 @@
                     },
                 ],
                 "columnDefs": [
-                    { className: 'text-center', targets: [0,3,5,6,7] }
+                    { className: 'text-center', targets: [0,3,4,6,7,8] }
                 ],
                 fnFooterCallback: function(nRow, aaData, iStart, iEnd, aiDisplay) {
                     var api = this.api(), data;
@@ -256,13 +260,13 @@
                         return typeof i === 'string' ? i.replace(/[\$,]/g, '')*1 : typeof i === 'number' ? i : 0;
                     };
  
-                    // computing column Total of the complete result 
-                    var totalhourall = api.column(6).data().reduce(function (a, b) {
+                    // computing column Total of the complete result
+                    var totalhourall = api.column(7).data().reduce(function (a, b) {
                         return intVal(a) + intVal(b);
                     }, 0);
-                    
-                    // Update footer by showing the total with the reference of the column index 
-	                $( api.column(6).footer() ).html(totalhourall);
+
+                    // Update footer by showing the total with the reference of the column index
+	                $( api.column(7).footer() ).html(totalhourall);
                 }
             });
         }

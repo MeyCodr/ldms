@@ -9,24 +9,27 @@
 			$userid = $_POST['userid'];
 			$btnedit = '';
 			$output = array();
-			$sql = "SELECT participation.id, 'PUBLIC/INHOUSE' as type, participation.attendance, training.title, training.startdate, 
-					'0' as clerkid, ((DATEDIFF(enddate, startdate)) + 1) as totalday, 
-					ROUND((TIME_TO_SEC(TIMEDIFF(endtime, starttime)) / 60) / 60, 2) as totalhour, 
+			$sql = "SELECT participation.id, 'PUBLIC/INHOUSE' as type, participation.attendance, training.title, training.startdate,
+					training.enddate,
+					'0' as clerkid, ((DATEDIFF(enddate, startdate)) + 1) as totalday,
+					ROUND((TIME_TO_SEC(TIMEDIFF(endtime, starttime)) / 60) / 60, 2) as totalhour,
 					training.venue, pme.status, pme.designation
-			FROM training 
-			JOIN participation ON training.id = participation.trainingid 
-			LEFT JOIN pme ON participation.userid = pme.userid AND participation.id = pme.participationid 
-			WHERE participation.userid = '$userid' 
-	
-			UNION 
-	
-			SELECT ojt.id, 'OJT' as type, participateojt.attendance, ojt.title, ojt.startdate, participateojt.clerkid, 
-					((DATEDIFF(ojt.enddate, ojt.startdate)) + 1) as totalday, 
-					ROUND((TIME_TO_SEC(TIMEDIFF(ojt.endtime, ojt.starttime)) / 60) / 60, 2) as totalhour, 
+			FROM training
+			JOIN participation ON training.id = participation.trainingid
+			LEFT JOIN pme ON participation.userid = pme.userid AND participation.id = pme.participationid
+			WHERE participation.userid = '$userid'
+
+			UNION
+
+			SELECT ojt.id, 'OJT' as type, participateojt.attendance, ojt.title, ojt.startdate,
+					ojt.enddate,
+					participateojt.clerkid,
+					((DATEDIFF(ojt.enddate, ojt.startdate)) + 1) as totalday,
+					ROUND((TIME_TO_SEC(TIMEDIFF(ojt.endtime, ojt.starttime)) / 60) / 60, 2) as totalhour,
 					ojt.venue, pme.status, pme.designation
-			FROM ojt 
-			JOIN participateojt ON ojt.id = participateojt.ojtid 
-			LEFT JOIN pme ON participateojt.userid = pme.userid AND participateojt.id = pme.participationid 
+			FROM ojt
+			JOIN participateojt ON ojt.id = participateojt.ojtid
+			LEFT JOIN pme ON participateojt.userid = pme.userid AND participateojt.id = pme.participationid
 			WHERE participateojt.userid = '$userid'";
 	
 			$query = mysqli_query($conn, $sql);
@@ -105,13 +108,14 @@
 					'title' => $row['title'],
 					'type' => $row['type'],
 					'startdate' => $row['startdate'],
+					'enddate' => $row['enddate'],
 					'venue' => $row['venue'],
 					'totalhour' => $totalhour,
 					'status' => $status,
 					'btnedit' => $btnedit,
 					'pme' => $pme,
-					'status_sort' => $row['status'] == 'approved' ? 1 : ($row['status'] == 'pending' ? 2 : 3), 
-					'custom_sort' => $custom_sort 
+					'status_sort' => $row['status'] == 'approved' ? 1 : ($row['status'] == 'pending' ? 2 : 3),
+					'custom_sort' => $custom_sort
 				);
 			}
 			echo json_encode($output);
@@ -121,7 +125,7 @@
 			$enddate = $_POST['enddate'];
 			$btnedit = '';
 			$output = array();
-			$sql = "select participation.id,'PUBLIC/INHOUSE' as type,participation.attendance,training.title,training.startdate,'0' as clerkid,((DATEDIFF(enddate, startdate)) + 1) as totalday,ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,training.venue from training join participation on training.id = trainingid where userid = '$userid' and startdate between '$startdate' and '$enddate' union select ojt.id,'OJT' as type,attendance,title,startdate,clerkid,((DATEDIFF(enddate, startdate)) + 1) as totalday,ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,venue from ojt join participateojt on ojt.id = participateojt.ojtid where userid = '$userid' and startdate between '$startdate' and '$enddate';";
+			$sql = "select participation.id,'PUBLIC/INHOUSE' as type,participation.attendance,training.title,training.startdate,training.enddate,'0' as clerkid,((DATEDIFF(enddate, startdate)) + 1) as totalday,ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,training.venue from training join participation on training.id = trainingid where userid = '$userid' and startdate between '$startdate' and '$enddate' union select ojt.id,'OJT' as type,attendance,title,startdate,enddate,clerkid,((DATEDIFF(enddate, startdate)) + 1) as totalday,ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,venue from ojt join participateojt on ojt.id = participateojt.ojtid where userid = '$userid' and startdate between '$startdate' and '$enddate';";
 			$query = mysqli_query($conn,$sql);
 			while($row = mysqli_fetch_assoc($query))
 			{
@@ -199,14 +203,15 @@
 					'title' => $row['title'],
 					'type' => $row['type'],
 					'startdate' => $row['startdate'],
+					'enddate' => $row['enddate'],
 					'venue' => $row['venue'],
 					'totalhour' => $totalhour,
 					'status' => $status,
 					'btnedit' => $btnedit,
 					'pme' => $pme,
-					'status_sort' => $row['status'] == 'approved' ? 1 : ($row['status'] == 'pending' ? 2 : 3), 
-					'custom_sort' => $custom_sort 
-				);   
+					'status_sort' => $row['status'] == 'approved' ? 1 : ($row['status'] == 'pending' ? 2 : 3),
+					'custom_sort' => $custom_sort
+				);
 			}
 			echo json_encode($output);
 		}else if($_POST["action"] == "viewojtattendance"){
