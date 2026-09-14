@@ -4,6 +4,9 @@
 
     if (isset($_SESSION['fullname']) && ($_SESSION['role'] == '')) {
 
+        include_once __DIR__ . "/../includes/skill_matrix_access.php";
+        $showSkillMatrixNav = canApproveSkillMatrix();
+
         $hodid = $_SESSION['id'];
 
         // Get the current page number
@@ -92,6 +95,9 @@
 						<li><a href="../attendance/training.php">MY TRAINING</a></li>
 						<li><a href="pme.php">PME</a></li>
 						<li><a href="../tna/staff_list.php">TNA</a></li>
+						<?php if ($showSkillMatrixNav) { ?>
+                        <li><a href="../skill-matrix/skill-matrix.php">SKILL MATRIX</a></li>
+                        <?php } ?>
 						<li><a href="../password/password.php">CHANGE PASSWORD</a></li>
     				</ul>
     				<ul class="nav navbar-nav navbar-right">

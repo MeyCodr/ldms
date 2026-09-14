@@ -3,6 +3,10 @@
 
     if (isset($_SESSION['fullname']) && ($_SESSION['role'] == '')) {
 
+        include_once "../../../dbconn.php";
+        include_once __DIR__ . "/../includes/skill_matrix_access.php";
+        $showSkillMatrixNav = canApproveSkillMatrix();
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -58,6 +62,9 @@
                         <li><a href="../pme/pme.php">PME</a></li>
                         <li><a href="../tna/staff_list.php">TNA</a></li>
 						<!-- <li><a href="../tni/tni.php">TNI</a></li> -->
+						<?php if ($showSkillMatrixNav) { ?>
+                        <li><a href="../skill-matrix/skill-matrix.php">SKILL MATRIX</a></li>
+                        <?php } ?>
 						<li><a href="../password/password.php">CHANGE PASSWORD</a></li>
     				</ul>
     				<ul class="nav navbar-nav navbar-right">

@@ -22,10 +22,20 @@ function canApproveSkillMatrix()
         }
     }
 
-    return isset($_SESSION['fullname'], $_SESSION['role'], $_SESSION['designation'], $_SESSION['usertype'], $_SESSION['hodid'])
+    // A department head's own hodid is intentionally left at 0 by
+    // trg_departments_hod_update (self-loop guard) - it is not a signal
+    // of whether they head a department. Check departments.hod_user_id
+    // directly instead.
+    if (isset($_SESSION['id']) && !isset($_SESSION['is_department_hod'])) {
+        $sessionUserId = (int) $_SESSION['id'];
+        $deptHodQuery = mysqli_query($conn, "SELECT 1 FROM departments WHERE hod_user_id = '$sessionUserId' LIMIT 1");
+        $_SESSION['is_department_hod'] = ($deptHodQuery && mysqli_num_rows($deptHodQuery) > 0) ? 1 : 0;
+    }
+
+    return isset($_SESSION['fullname'], $_SESSION['role'], $_SESSION['designation'], $_SESSION['usertype'])
         && $_SESSION['role'] == ''
         && $_SESSION['designation'] == 'MANAGER (AM/HOS & ABOVE)'
-        && (int) $_SESSION['hodid'] != 0
+        && !empty($_SESSION['is_department_hod'])
         && $_SESSION['usertype'] == 'HOD';
 }
 

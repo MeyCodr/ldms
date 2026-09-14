@@ -1,21 +1,9 @@
 <?php
     session_start();
     include "../../dbconn.php";
+    include_once __DIR__ . "/includes/skill_matrix_access.php";
 
-    if (isset($_SESSION['id']) && (!isset($_SESSION['designation']) || !isset($_SESSION['hodid']))) {
-        $sessionUserId = (int) $_SESSION['id'];
-        $sessionUserQuery = mysqli_query($conn, "SELECT designation, hodid FROM user WHERE id = '$sessionUserId' LIMIT 1");
-        if ($sessionUserQuery && $sessionUserRow = mysqli_fetch_assoc($sessionUserQuery)) {
-            $_SESSION['designation'] = $sessionUserRow['designation'];
-            $_SESSION['hodid'] = $sessionUserRow['hodid'];
-        }
-    }
-
-    $canApproveSkillMatrix = isset($_SESSION['designation'], $_SESSION['hodid'], $_SESSION['role'], $_SESSION['usertype'])
-        && $_SESSION['role'] == ''
-        && $_SESSION['designation'] == 'MANAGER (AM/HOS & ABOVE)'
-        && (int) $_SESSION['hodid'] != 0
-        && $_SESSION['usertype'] == 'HOD';
+    $canApproveSkillMatrix = isset($_SESSION['fullname']) && canApproveSkillMatrix();
 
     if (isset($_SESSION['fullname']) && ($_SESSION['role'] == '')) {
 
@@ -46,6 +34,29 @@
 		.bg-warning { background-color: orangered !important; }
 		#trainerdata {
 			width: 100% !important;
+		}
+		.dash-card-col {
+			margin-bottom: 15px;
+		}
+		@media (min-width: 992px) {
+			.dash-card-col {
+				width: 20%;
+				float: left;
+			}
+		}
+		.dash-card-box {
+			height: 120px;
+			box-sizing: border-box;
+			overflow: hidden;
+			display: flex;
+			align-items: center;
+		}
+		.dash-card-box > .panel-body {
+			width: 100%;
+		}
+		.dash-card-label {
+			min-height: 38px;
+			margin-bottom: 0;
 		}
 		.row-eq-height {
 			display: flex;
@@ -151,8 +162,8 @@
                         </div>
                         <div class="panel-body" align="center">
 							<div class="row">
-								<div class="col-md-4">
-									<div style="background-color: #0000FF;border-radius: 5px;">
+								<div class="col-xs-12 col-sm-6 dash-card-col" id="cardColTotalTraining">
+									<div class="dash-card-box" style="background-color: #0000FF;border-radius: 5px;">
 										<div class="panel-body" align="center">
 											<div class="col-sm-4">
 												<p></p>
@@ -165,14 +176,46 @@
 												</svg>
 											</div>
 											<div class="col-sm-8" align="left">
-												<p style="color:white;margin-top:7px;" align="right">Total Trainings</p>
+												<p class="dash-card-label" style="color:white;margin-top:7px;" align="right"><span id="totalTrainingLabel">Total Trainings</span></p>
 												<h3 id="totaltraining" style="color:white;" align="right"></h3>
 											</div>
 										</div>
 									</div>
 								</div>
-								<div class="col-md-4">
-									<div style="background-color: #008000;border-radius: 5px;">
+								<div class="col-xs-12 col-sm-6 dash-card-col" id="cardColTotalUser">
+									<div class="dash-card-box" style="background-color: #FF0000;border-radius: 5px;">
+										<div class="panel-body" align="center">
+											<div class="col-sm-4">
+												<p></p>
+												<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" fill="currentColor" class="bi bi-people-fill" viewBox="0 0 16 16" style="color:white;">
+													<path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7Zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-5.784 6A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216ZM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/>
+												</svg>
+											</div>
+											<div class="col-sm-8" align="left">
+												<p class="dash-card-label" style="color:white;margin-top:7px;" align="right"><span id="totalUserLabel">Total Participant Attend Training</span></p>
+												<h3 id="totaluser" style="color:white;" align="right"></h3>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="col-xs-12 col-sm-6 dash-card-col" id="cardColTotalManpower">
+									<div class="dash-card-box" style="background-color: #8E44AD;border-radius: 5px;">
+										<div class="panel-body" align="center">
+											<div class="col-sm-4">
+												<p></p>
+												<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" fill="currentColor" class="bi bi-people-fill" viewBox="0 0 16 16" style="color:white;">
+													<path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7Zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-5.784 6A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216ZM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/>
+												</svg>
+											</div>
+											<div class="col-sm-8" align="left">
+												<p class="dash-card-label" style="color:white;margin-top:7px;" align="right">Total Manpower</p>
+												<h3 id="totalmanpower" style="color:white;" align="right"></h3>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="col-xs-12 col-sm-6 dash-card-col" id="cardColTotalDay">
+									<div class="dash-card-box" style="background-color: #008000;border-radius: 5px;">
 										<div class="panel-body" align="center">
 											<div class="col-sm-4">
 												<p></p>
@@ -182,14 +225,14 @@
 												</svg>
 											</div>
 											<div class="col-sm-8" align="left">
-												<p style="color:white;margin-top:7px;" align="right">Total Days</p>
+												<p class="dash-card-label" style="color:white;margin-top:7px;" align="right"><span id="totalDayLabel">Total Training Days</span></p>
 												<h3 id="totalday" style="color:white;" align="right"></h3>
 											</div>
 										</div>
 									</div>
 								</div>
-								<div class="col-md-4">
-									<div style="background-color: #E0115F;border-radius: 5px;">
+								<div class="col-xs-12 col-sm-6 dash-card-col">
+									<div class="dash-card-box" style="background-color: #E0115F;border-radius: 5px;">
 										<div class="panel-body" align="center">
 											<div class="col-sm-4">
 												<p></p>
@@ -199,8 +242,42 @@
 												</svg>
 											</div>
 											<div class="col-sm-8" align="left">
-												<p style="color:white;margin-top:7px;" align="right">Total Hours</p>
+												<p class="dash-card-label" style="color:white;margin-top:7px;" align="right"><span id="totalHourLabel">Total Hours</span></p>
 												<h3 id="totalhour" style="color:white;" align="right"></h3>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="col-xs-12 col-sm-6 dash-card-col">
+									<div class="dash-card-box" style="background-color: #FF8C00;border-radius: 5px;">
+										<div class="panel-body" align="center">
+											<div class="col-sm-4">
+												<p></p>
+												<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" fill="currentColor" class="bi bi-mortarboard" viewBox="0 0 16 16" style="color:white;">
+													<path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917l-7.5-3.5Z"/>
+													<path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466 4.176 9.032Z"/>
+												</svg>
+											</div>
+											<div class="col-sm-8" align="left">
+												<p class="dash-card-label" style="color:white;margin-top:7px;" align="right"><span id="totalPublicHourLabel">Total Public Training Hours</span></p>
+												<h3 id="totalpublichour" style="color:white;" align="right"></h3>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="col-xs-12 col-sm-6 dash-card-col">
+									<div class="dash-card-box" style="background-color: #16A085;border-radius: 5px;">
+										<div class="panel-body" align="center">
+											<div class="col-sm-4">
+												<p></p>
+												<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" fill="currentColor" class="bi bi-person-workspace" viewBox="0 0 16 16" style="color:white;">
+													<path d="M4 16s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H4Zm4.5-9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/>
+													<path d="M13 1a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H6.71c.907.451 1.63 1.226 2.02 2H13a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v3.5a1 1 0 0 0 1 0V2a1 1 0 0 1 1-1h10Z"/>
+												</svg>
+											</div>
+											<div class="col-sm-8" align="left">
+												<p class="dash-card-label" style="color:white;margin-top:7px;" align="right"><span id="totalOjtHourLabel">Total OJT Hours</span></p>
+												<h3 id="totalojthour" style="color:white;" align="right"></h3>
 											</div>
 										</div>
 									</div>
@@ -423,7 +500,7 @@
 
 		$('#datarecord').fadeIn().html('<label>Data summary : '+fd+' - '+ld+'</label');
 
-		getOverview('fetch_overview',userid,fd,ld);
+		getOverview(fd,ld,$('#mode').val());
 
 		function getCanvasContext(canvasElement) {
             if (!canvasElement || typeof canvasElement.getContext !== 'function') {
@@ -445,17 +522,31 @@
             }
         }
 
-		function getOverview(action,userid,startdate,enddate){
+		function getOverview(startdate,enddate,mode){
 			$.ajax({
 				url:"fetch_dash.php",
 				type:"POST",
-				data:{action:action,userid:userid,startdate:startdate,enddate:enddate},
+				data:{action:'fetch_overview',userid:userid,startdate:startdate,enddate:enddate,mode:mode},
 				dataType:"JSON",
 				success:function(data)
 				{
 					$('#totaltraining').text(data[0].totaltraining);
+					$('#totaluser').text(data[0].totaluser);
+					$('#totalmanpower').text(data[0].totalmanpower);
 					$('#totalday').text(data[0].totalday);
 					$('#totalhour').text(data[0].totalhour);
+					$('#totalpublichour').text(data[0].totalpublichour);
+					$('#totalojthour').text(data[0].totalojthour);
+
+					var isAverage = mode === 'totalhour';
+					$('#totalTrainingLabel').text(isAverage ? 'Average Trainings' : 'Total Trainings');
+					$('#totalUserLabel').text(isAverage ? 'Average Participant Attend Training' : 'Total Participant Attend Training');
+					$('#totalDayLabel').text(isAverage ? 'Average Training Days' : 'Total Training Days');
+					$('#totalHourLabel').text(isAverage ? 'Average Total Hour' : 'Total Hours');
+					$('#totalPublicHourLabel').text(isAverage ? 'Average Public Training Hours' : 'Total Public Training Hours');
+					$('#totalOjtHourLabel').text(isAverage ? 'Average OJT Hours' : 'Total OJT Hours');
+
+					$('#cardColTotalTraining, #cardColTotalUser, #cardColTotalManpower, #cardColTotalDay').toggle(!isAverage);
 				}
 			})
 		}
@@ -1177,7 +1268,7 @@
             updateModeLabels(mode);
 
 			$('#datarecord').fadeIn().html('<label>Data summary : '+startdate+' - '+enddate+'</label');
-            getOverview('fetch_overview',userid,startdate,enddate);
+            getOverview(startdate,enddate,mode);
 			destroyChartpublicojt();
 			makechartpublicojt(startdate,enddate);
 			destroyTrainerDataTable();
@@ -1208,6 +1299,7 @@
             var mode = $('#mode').val();
 
             updateModeLabels(mode);
+            getOverview(startdate,enddate,mode);
 
             destroyChartTop10();
 			maketop10chart(mode,startdate,enddate);
@@ -1230,7 +1322,7 @@
         $('#clear_filter').click(function(){
             updateModeLabels('manhour');
 			$('#datarecord').fadeIn().html('<label>Data summary : '+fd+' - '+ld+'</label');
-            getOverview('fetch_overview',userid,fd,ld);
+            getOverview(fd,ld,'manhour');
 			destroyChartpublicojt();
 			makechartpublicojt(fd,ld);
 			destroyTrainerDataTable();
