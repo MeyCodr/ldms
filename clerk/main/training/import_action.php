@@ -75,6 +75,37 @@ foreach ($data_rows as $row_day) {
     if ($trainername === '') $rowErrors[] = 'Trainer Name is blank';
     if ($staffno === '') $rowErrors[] = 'Participant Staff No is blank';
 
+    // Feedback columns (J-L) are optional per row - a row with none of them
+    // filled stays pending, same as before this feature existed, so the
+    // participant fills in their own attendance form later. Once any one of
+    // them is filled, all three are required so we never mark a row
+    // COMPLETEDOJT with a half-answered questionnaire.
+    $fbLearn = trim((string) ($row_day[9] ?? ''));
+    $fbBeforeRaw = trim((string) ($row_day[10] ?? ''));
+    $fbAfterRaw = trim((string) ($row_day[11] ?? ''));
+    $fbFilledCount = ($fbLearn !== '' ? 1 : 0) + ($fbBeforeRaw !== '' ? 1 : 0) + ($fbAfterRaw !== '' ? 1 : 0);
+    $feedbackComplete = false;
+    $fbBefore = null;
+    $fbAfter = null;
+
+    if ($fbFilledCount > 0 && $fbFilledCount < 3) {
+        $rowErrors[] = 'What Did You Learn / Skill Before Training / Skill After Training must be all filled in or all left blank';
+    } elseif ($fbFilledCount === 3) {
+        if (!ctype_digit($fbBeforeRaw) || (int) $fbBeforeRaw < 1 || (int) $fbBeforeRaw > 5) {
+            $rowErrors[] = 'Skill Before Training must be a whole number from 1 to 5';
+        } else {
+            $fbBefore = (int) $fbBeforeRaw;
+        }
+        if (!ctype_digit($fbAfterRaw) || (int) $fbAfterRaw < 1 || (int) $fbAfterRaw > 5) {
+            $rowErrors[] = 'Skill After Training must be a whole number from 1 to 5';
+        } else {
+            $fbAfter = (int) $fbAfterRaw;
+        }
+        if ($fbBefore !== null && $fbAfter !== null) {
+            $feedbackComplete = true;
+        }
+    }
+
     if ($rowErrors) {
         $errors[] = "Row {$lineNo}: " . implode('; ', $rowErrors);
         continue;
@@ -91,6 +122,10 @@ foreach ($data_rows as $row_day) {
         'trainertype' => $trainertype,
         'trainername' => $trainername,
         'staffno' => $staffno,
+        'feedback_complete' => $feedbackComplete,
+        'fb_learn' => $fbLearn,
+        'fb_before' => $fbBefore,
+        'fb_after' => $fbAfter,
     ];
     $staffnos[$staffno] = true;
 }
@@ -132,18 +167,19 @@ if ($errors) {
 $groups = [];
 foreach ($parsed as $p) {
     if (!isset($groups[$p['title']])) {
-        $groups[$p['title']] = ['meta' => $p, 'staffnos' => []];
+        $groups[$p['title']] = ['meta' => $p, 'participants' => []];
     }
-    $groups[$p['title']]['staffnos'][] = $p['staffno'];
+    $groups[$p['title']]['participants'][] = $p;
 }
 
 $suffix = ' - (' . date('Ymd/His') . ')';
 $trainingsCreated = 0;
 $participantsAdded = 0;
+$completedWithFeedback = 0;
 
 $insertOjt = mysqli_prepare($conn, "insert into ojt (title, startdate, enddate, starttime, endtime, venue, trainername, totalday, totalhour, trainertype) values (?,?,?,?,?,?,?,?,?,?)");
 $updateOjt = mysqli_prepare($conn, "update ojt set totalman = ?, trainingcode = ? where id = ?");
-$insertParticipant = mysqli_prepare($conn, "insert into participateojt (ojtid, userid, totalman, department, clerkid) values (?,?,1,?,?)");
+$insertParticipant = mysqli_prepare($conn, "insert into participateojt (ojtid, userid, totalman, department, clerkid, q1, q2, q3, attendance) values (?,?,1,?,?,?,?,?,?)");
 
 mysqli_begin_transaction($conn);
 try {
@@ -173,14 +209,31 @@ try {
         $ojtid = mysqli_insert_id($conn);
         $trainingsCreated++;
 
-        foreach ($group['staffnos'] as $staffno) {
-            $staff = $staffLookup[$staffno];
-            $insertParticipant->bind_param('iisi', $ojtid, $staff['id'], $staff['department'], $clerkid);
+        foreach ($group['participants'] as $participant) {
+            $staff = $staffLookup[$participant['staffno']];
+            $q1 = $participant['feedback_complete'] ? $participant['fb_learn'] : null;
+            $q2 = $participant['feedback_complete'] ? (string) $participant['fb_before'] : null;
+            $q3 = $participant['feedback_complete'] ? (string) $participant['fb_after'] : null;
+            $attendance = $participant['feedback_complete'] ? 'COMPLETEDOJT' : '';
+            $insertParticipant->bind_param(
+                'iisissss',
+                $ojtid,
+                $staff['id'],
+                $staff['department'],
+                $clerkid,
+                $q1,
+                $q2,
+                $q3,
+                $attendance
+            );
             $insertParticipant->execute();
             $participantsAdded++;
+            if ($participant['feedback_complete']) {
+                $completedWithFeedback++;
+            }
         }
 
-        $totalman = count($group['staffnos']);
+        $totalman = count($group['participants']);
         $trainingcode = 'OJ' . date('dmy') . sprintf('%05d', $ojtid);
         $updateOjt->bind_param('isi', $totalman, $trainingcode, $ojtid);
         $updateOjt->execute();
@@ -196,5 +249,6 @@ echo json_encode([
     'message' => 'ok',
     'trainings_created' => $trainingsCreated,
     'participants_added' => $participantsAdded,
+    'completed_with_feedback' => $completedWithFeedback,
 ]);
 ?>

@@ -66,14 +66,14 @@ if (isset($_POST['action'])) {
                 }
             }
 
-           // PME Status label & Button 
-            if ($row['type'] == 'OJT'  || $row['designation'] != 'EXECUTIVE' && $row['designation'] != 'MANAGER (AM/HOS & ABOVE)') {
+           // PME Status label & Button
+            if ($row['type'] == 'OJT'  || $row['designation'] != 'EXECUTIVE' && $row['designation'] != 'MANAGER (AM/HOS & ABOVE)' || $row['status'] == 'not_applicable') {
                 $pme = '<div class="text-center">
                             <span class="label label-pill label-success" style="width: 100px; font-size: 11px; border-radius: 5px;">
                                 COMPLETED
                             </span>
                         </div>';
-            } 
+            }
             else if ($row['status'] == 'pending') {
                 $pme = '<div class="text-center">
                             <span class="label label-pill label-warning" style="width: 100px; font-size: 11px; border-radius: 5px;">
@@ -151,6 +151,9 @@ if (isset($_POST['action'])) {
             } else if ($row['status'] == 'completed' || $row['status'] == 'verified') {
                 $status = '<span class="label label-pill label-success">COMPLETED</span>';
                 $action = '<a href="edit_pme.php?userid=' . $userid . '&participationid=' . $row['id'] . '" class="btn btn-info btn-sm"><i class="fa fa-eye"></i> View PME</a>';
+            } else if ($row['status'] == 'not_applicable') {
+                $status = '<span class="label label-pill label-default">N/A</span><br><small class="text-muted d-block">No HOD evaluation required</small>';
+                $action = '';
             } else {
                 $status = '<span class="label label-pill label-default">' . strtoupper($row['status']) . '</span>';
                 $action = '';
@@ -208,14 +211,14 @@ if (isset($_POST['action'])) {
                 }
             }
 
-            // PME Status label & Button 
-            if ($row['type'] == 'OJT') {
+            // PME Status label & Button
+            if ($row['type'] == 'OJT' || $row['status'] == 'not_applicable') {
                 $pme = '<div class="text-center">
                             <span class="label label-pill label-success" style="width: 100px; font-size: 11px; border-radius: 5px;">
                                 COMPLETED
                             </span>
                         </div>';
-            } 
+            }
             else if ($row['status'] == 'pending') {
                 $pme = '<div class="text-center">
                             <span class="label label-pill label-warning" style="width: 100px; font-size: 11px; border-radius: 5px;">

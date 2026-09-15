@@ -24,9 +24,11 @@
         $total_records = $row_count['total'];
         $total_pages = ceil($total_records / $limit); // Calculate total pages
 
-        $sql = "SELECT p.*, u.usertype
+        $sql = "SELECT p.*, u.usertype,
+                    ((DATEDIFF(t.enddate, t.startdate) + 1) * ROUND(TIME_TO_SEC(TIMEDIFF(t.endtime, t.starttime)) / 3600, 2)) AS training_hours
                     FROM pme p
                     JOIN user u ON p.userid = u.id
+                    LEFT JOIN training t ON p.trainingid = t.id
                     WHERE p.hodid = ?
                     AND u.status != 'RESIGN'
                     AND (
@@ -132,6 +134,7 @@
 													<th>Name</th>
 													<th>Staff No</th>
 													<th>Training Title</th>
+													<th>Training Hour</th>
 													<th>Evaluation Period Start</th>
 													<th>Evaluation Period End</th>
 													<th>Evaluation Status</th>
@@ -152,6 +155,7 @@
 														<td><?= $row['staffname'] ?></td>
 														<td><?= $row['staffno'] ?></td>
 														<td><?= $row['training_title'] ?></td>
+														<td><?= $row['training_hours'] !== null ? $row['training_hours'] : '-' ?></td>
 														<td><?= $row['from_date']?></td>
 														<td><?= $row['to_date']?></td>
 														<td>

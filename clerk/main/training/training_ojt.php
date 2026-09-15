@@ -498,9 +498,13 @@
                         success:function(data)
                         {
                             if (data.message === 'ok') {
+                                var summary = data.trainings_created + ' training(s) added with ' + data.participants_added + ' participant(s) in total.';
+                                if (data.completed_with_feedback > 0) {
+                                    summary += ' ' + data.completed_with_feedback + ' participant(s) imported as already completed with feedback.';
+                                }
                                 swal(
                                     'Imported!',
-                                    data.trainings_created + ' training(s) added with ' + data.participants_added + ' participant(s) in total.',
+                                    summary,
                                     'success'
                                 ).then(function() {
                                     location.reload();

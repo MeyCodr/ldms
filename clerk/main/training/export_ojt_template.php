@@ -26,6 +26,9 @@
         'G' => 'Trainer Type',
         'H' => 'Trainer Name',
         'I' => 'Participant Staff No',
+        'J' => 'What Did You Learn (optional)',
+        'K' => 'Skill Before Training 1-5 (optional)',
+        'L' => 'Skill After Training 1-5 (optional)',
     ];
 
     $spreadsheet = new Spreadsheet();
@@ -35,9 +38,13 @@
 
     // Two example rows showing one training with two participants: every
     // column repeats except Participant Staff No, which is what varies.
+    // A0001 shows the feedback columns filled in (imports as already
+    // completed); A0002 leaves them blank (imports as pending, same as
+    // before this feature existed - that participant fills in their own
+    // attendance form later).
     $exampleRows = [
-        ['(EXAMPLE) SAFETY BRIEFING - LINE 1', 'ASSEMBLY LINE 1', '2026-01-05', '2026-01-05', '08:00', '09:00', 'INTERNAL', 'AHMAD BIN ALI', 'A0001'],
-        ['(EXAMPLE) SAFETY BRIEFING - LINE 1', 'ASSEMBLY LINE 1', '2026-01-05', '2026-01-05', '08:00', '09:00', 'INTERNAL', 'AHMAD BIN ALI', 'A0002'],
+        ['(EXAMPLE) SAFETY BRIEFING - LINE 1', 'ASSEMBLY LINE 1', '2026-01-05', '2026-01-05', '08:00', '09:00', 'INTERNAL', 'AHMAD BIN ALI', 'A0001', 'Lockout-tagout procedure for Line 1', '2', '4'],
+        ['(EXAMPLE) SAFETY BRIEFING - LINE 1', 'ASSEMBLY LINE 1', '2026-01-05', '2026-01-05', '08:00', '09:00', 'INTERNAL', 'AHMAD BIN ALI', 'A0002', '', '', ''],
     ];
     $row = 2;
     foreach ($exampleRows as $exampleRow) {
@@ -49,7 +56,7 @@
         $row++;
     }
     $lastExampleRow = $row - 1;
-    $sheet->getStyle("A2:I{$lastExampleRow}")->getFont()->setItalic(true)->getColor()->setRGB('808080');
+    $sheet->getStyle("A2:L{$lastExampleRow}")->getFont()->setItalic(true)->getColor()->setRGB('808080');
 
     // Enough rows below the examples for real data plus headroom for the dropdown validation.
     $lastRow = $lastExampleRow + 500;
@@ -57,8 +64,8 @@
     foreach (array_keys($columns) as $col) {
         $sheet->getColumnDimension($col)->setAutoSize(true);
     }
-    $sheet->getStyle('A1:I1')->getFont()->setBold(true);
-    $sheet->getStyle('A1:I1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D9E8FF');
+    $sheet->getStyle('A1:L1')->getFont()->setBold(true);
+    $sheet->getStyle('A1:L1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D9E8FF');
     $sheet->getStyle("C2:C{$lastRow}")->getNumberFormat()->setFormatCode('yyyy-mm-dd');
     $sheet->getStyle("D2:D{$lastRow}")->getNumberFormat()->setFormatCode('yyyy-mm-dd');
     $sheet->getStyle("E2:E{$lastRow}")->getNumberFormat()->setFormatCode('hh:mm');
@@ -90,6 +97,25 @@
         $sheet->getCell("G{$vr}")->setDataValidation(clone $validation);
     }
 
+    // K/L (Skill Before/After) are optional, but if a value is entered it
+    // must be a whole number 1-5, matching the rating scale on the staff's
+    // own attendance form (attend_ojt.php).
+    $skillValidation = new DataValidation();
+    $skillValidation->setType(DataValidation::TYPE_WHOLE);
+    $skillValidation->setErrorStyle(DataValidation::STYLE_STOP);
+    $skillValidation->setAllowBlank(true);
+    $skillValidation->setShowErrorMessage(true);
+    $skillValidation->setErrorTitle('Invalid Value');
+    $skillValidation->setError('Enter a whole number from 1 to 5, or leave blank.');
+    $skillValidation->setOperator(DataValidation::OPERATOR_BETWEEN);
+    $skillValidation->setFormula1('1');
+    $skillValidation->setFormula2('5');
+    foreach (['K', 'L'] as $skillCol) {
+        for ($vr = 2; $vr <= $lastRow; $vr++) {
+            $sheet->getCell("{$skillCol}{$vr}")->setDataValidation(clone $skillValidation);
+        }
+    }
+
     // ===== INSTRUCTIONS SHEET =====
     $instructionsSheet = $spreadsheet->createSheet();
     $instructionsSheet->setTitle('Instructions');
@@ -117,7 +143,15 @@
         ['   Rows with a Staff No that cannot be found will be rejected and nothing in the file will be'],
         ['   imported until every row is fixed - fix the reported rows and re-upload the whole file.'],
         [''],
-        ['8. Delete the two grey example rows (or leave them - rows whose Title starts with "(EXAMPLE)"'],
+        ['8. What Did You Learn / Skill Before Training / Skill After Training (columns J-L) are OPTIONAL.'],
+        ['   Leave all three blank if the participant has not done the OJT feedback yet - they will show up'],
+        ['   with "Fill In Attendance" in their own My Training list, same as before.'],
+        ['   Fill in all three to import that participant as already COMPLETED, with their feedback recorded -'],
+        ['   this is meant for OJT that already happened and was recorded on paper/elsewhere beforehand.'],
+        ['   Skill Before/After must each be a whole number 1-5 (1 = Poor, 5 = Excellent). You must fill in'],
+        ['   all three columns together or leave all three blank - filling only one or two is rejected.'],
+        [''],
+        ['9. Delete the two grey example rows (or leave them - rows whose Title starts with "(EXAMPLE)"'],
         ['   will still be imported as a real training, so it is best to delete them before uploading).'],
     ];
     $instructionsSheet->fromArray($instructions, null, 'A1');

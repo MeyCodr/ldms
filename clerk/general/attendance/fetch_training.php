@@ -68,7 +68,7 @@
 				}
 	
 			   // PME Status label & Button 
-				if ($row['type'] == 'OJT' || $row['designation'] != 'EXECUTIVE' && $row['designation'] != 'MANAGER (AM/HOS & ABOVE)') {
+				if ($row['type'] == 'OJT' || $row['designation'] != 'EXECUTIVE' && $row['designation'] != 'MANAGER (AM/HOS & ABOVE)' || $row['status'] == 'not_applicable') {
 					$pme = '<div class="text-center">
 								<span class="label label-pill label-success" style="width: 100px; font-size: 11px; border-radius: 5px;">
 									COMPLETED
@@ -161,8 +161,8 @@
 					}
 				}
 	
-				// PME Status label & Button 
-				if ($row['type'] == 'OJT') {
+				// PME Status label & Button
+				if ($row['type'] == 'OJT' || $row['status'] == 'not_applicable') {
 					$pme = '<div class="text-center">
 								<span class="label label-pill label-success" style="width: 100px; font-size: 11px; border-radius: 5px;">
 									COMPLETED

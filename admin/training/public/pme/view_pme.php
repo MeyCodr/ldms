@@ -226,6 +226,8 @@
                                                         $status_label = '<label class="label label-success">COMPLETED</span>';
                                                     } elseif ($row['status'] == 'completed' || $row['status'] == 'approved' || $row['status'] == 'pending') {
                                                         $status_label = '<span class="label label-warning">PENDING</span>';
+                                                    } elseif ($row['status'] == 'not_applicable') {
+                                                        $status_label = '<span class="label label-default">N/A</span>';
                                                     } else {
                                                         $status_label = '<span class="label label-default">' . htmlspecialchars($row['status']) . '</span>';
                                                     }
@@ -253,6 +255,11 @@
                                                             <!-- Approved Status: Participant Action Required -->
                                                             <button class="btn btn-warning btn-sm" data-toggle="tooltip" title="Waiting for participant to agree">
                                                                 <i class="fa fa-exclamation-circle"></i> Action Required
+                                                            </button>
+                                                        <?php elseif ($row['status'] == 'not_applicable'): ?>
+                                                            <!-- Not Applicable: no HOD evaluation required -->
+                                                            <button class="btn btn-default btn-sm" disabled data-toggle="tooltip" title="No HOD evaluation required">
+                                                                <i class="fa fa-minus-circle"></i> N/A
                                                             </button>
                                                         <?php else: ?>
                                                             <!-- Default Status (if status is unknown) -->
