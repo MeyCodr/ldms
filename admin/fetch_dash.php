@@ -1621,36 +1621,22 @@ echo json_encode($data1);
         $sql = "select month(startdate) as month,sum(cost) as totalcost from training_all training where startdate between '$startdate' and '$enddate' group by month(startdate) order by month(startdate);";
     }
     $query = mysqli_query($conn,$sql);
-    while($row = mysqli_fetch_assoc($query)){
-        if($row["month"] == '1') {
-            $month = 'JAN';
-        }else if($row["month"] == '2') {
-            $month = 'FEB';
-        }else if($row["month"] == '3') {
-            $month = 'MAC';
-        }else if($row["month"] == '4') {
-            $month = 'APR';
-        }else if($row["month"] == '5') {
-            $month = 'MAY';
-        }else if($row["month"] == '6') {
-            $month = 'JUNE';
-        }else if($row["month"] == '7') {
-            $month = 'JULY';
-        }else if($row["month"] == '8') {
-            $month = 'AUG';
-        }else if($row["month"] == '9') {
-            $month = 'SEP';
-        }else if($row["month"] == '10') {
-            $month = 'OCT';
-        }else if($row["month"] == '11') {
-            $month = 'NOV';
-        }else if($row["month"] == '12') {
-            $month = 'DEC';
-        }
 
+    // Fixed Jan-Dec labels, pre-seeded to 0, so a month with no training at
+    // all still appears on the chart (previously an empty month was simply
+    // absent from the GROUP BY result, which made the x-axis skip straight
+    // from e.g. DEC of one gap to the next month with data, misleadingly
+    // looking like the year started partway through).
+    $monthNames = [1=>'JAN',2=>'FEB',3=>'MAC',4=>'APR',5=>'MAY',6=>'JUNE',7=>'JULY',8=>'AUG',9=>'SEP',10=>'OCT',11=>'NOV',12=>'DEC'];
+    $monthlyCost = array_fill(1, 12, 0);
+    while($row = mysqli_fetch_assoc($query)){
+        $monthlyCost[(int) $row['month']] = $row['totalcost'];
+    }
+
+    foreach ($monthNames as $num => $month) {
         $data1[] = array(
             'category'	    =>  $month,
-            'totalsend'     =>	$row["totalcost"],
+            'totalsend'     =>	$monthlyCost[$num],
             'colorplant'    =>	'#' . rand(100000, 999999) . ''
         );
     }
@@ -1666,6 +1652,57 @@ echo json_encode($data1);
         }
     }
     echo json_encode($years);
+}else if($_POST["action"] == "fetch_dept_cost"){
+    // Per-department bar chart shown only in "Average Total Hour" mode -
+    // average MONTHLY training cost per department, i.e. that department's
+    // total training.cost over the selected date range divided by how many
+    // calendar months the range spans. Deliberately not per-headcount (the
+    // convention every other "Average" chart on this page uses) because the
+    // metric being asked for is monthly spend, matching how the existing
+    // company-wide "Monthly Total Cost" chart already frames cost - this is
+    // that same framing, just split out per department instead of company-wide.
+    $startdate = $_POST["startdate"];
+    $enddate = $_POST["enddate"];
+    $data1 = array();
+
+    if ($startdate != '' && $enddate != '') {
+        $d1 = new DateTime($startdate);
+        $d2 = new DateTime($enddate);
+        $monthCount = (((int) $d2->format('Y') - (int) $d1->format('Y')) * 12) + ((int) $d2->format('n') - (int) $d1->format('n')) + 1;
+        if ($monthCount < 1) {
+            $monthCount = 1;
+        }
+
+        // DISTINCT on training.id before summing - without it, a training
+        // with several of a department's staff attending would have its
+        // cost counted once per attendee instead of once per training.
+        $sql = "select department, sum(cost) as deptcost
+                from (
+                    select distinct training.id, training.cost, user.department
+                    from training_all training
+                    join participation_all participation on training.id = participation.trainingid
+                    join user on user.id = participation.userid
+                    where training.startdate between '$startdate' and '$enddate'
+                ) dept_trainings
+                group by department
+                having deptcost is not null and deptcost != 0
+                order by deptcost desc";
+        $query = mysqli_query($conn,$sql);
+        while($row = mysqli_fetch_assoc($query)){
+            if (!hasChartDepartment($row["department"])) {
+                continue;
+            }
+            $department = getDepartmentChartLabel($row["department"]);
+            $avgMonthlyCost = round($row["deptcost"] / $monthCount, 2);
+
+            $data1[] = array(
+                'category'	  =>	$department,
+                'totalsend' =>	$avgMonthlyCost,
+                'colorplant' =>	'#' . rand(100000, 999999) . ''
+            );
+        }
+    }
+    echo json_encode($data1);
 }
 
 ?>

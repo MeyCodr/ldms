@@ -312,7 +312,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
                 </div>
             </div>
 
-            <div class="row">
+            <div class="row" id="dashboard-chart-row">
                 <div class="col-md-12">
                     <div class="panel panel-default">
                         <div class="panel-heading">
@@ -571,17 +571,21 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
             var sectionGroups = buildGroups(rows, function (r) { return r.section; });
             var plantGroups = buildGroups(rows, function (r) { return r.plant; });
 
-            // ===== Main chart: Status by Department, or by Section once a department is picked =====
+            // ===== Main chart: Status by Department - hidden once a department is picked, =====
+            // since at that point it's showing exactly the same section
+            // breakdown as the "Status by Section" chart below, just re-titled.
             var departmentFilterActive = $('#department').val() && $('#department').val() != 'ALL';
-            var mainGroups = departmentFilterActive ? sectionGroups : deptGroups;
-            $('#dashboard-chart-title').text(departmentFilterActive ? 'Status by Section' : 'Status by Department');
-            updateStackedBarChart(
-                'status',
-                document.getElementById('dashboard-status-chart'),
-                '#dashboard-empty-state',
-                sortedGroupNames(mainGroups),
-                mainGroups
-            );
+            $('#dashboard-chart-row').toggle(!departmentFilterActive);
+            if (!departmentFilterActive) {
+                $('#dashboard-chart-title').text('Status by Department');
+                updateStackedBarChart(
+                    'status',
+                    document.getElementById('dashboard-status-chart'),
+                    '#dashboard-empty-state',
+                    sortedGroupNames(deptGroups),
+                    deptGroups
+                );
+            }
 
             // ===== Status by Section =====
             updateStackedBarChart(

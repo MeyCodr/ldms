@@ -702,6 +702,92 @@ if($_POST["action"] == 'fetch_overview'){
     }
 
 	echo json_encode($data1);
+}else if($_POST["action"] == "fetch_cost"){
+    // Mirrors admin/fetch_dash.php's fetch_cost (same "Monthly Total Cost"
+    // chart), scoped down to the logged-in HOD's own department. Training
+    // cost lives on `training`, not per participant, so a DISTINCT on the
+    // training id in the inner query is required before summing - without
+    // it, a training with 3 of the department's staff attending would have
+    // its cost counted 3 times instead of once.
+    $userid = (int) $_POST["userid"];
+    $year = isset($_POST["year"]) ? $_POST["year"] : '';
+
+    $department = '';
+    $deptQuery = mysqli_query($conn, "SELECT department FROM user WHERE id = '$userid' LIMIT 1");
+    if ($deptQuery && $deptRow = mysqli_fetch_assoc($deptQuery)) {
+        $department = (string) $deptRow['department'];
+    }
+    $departmentEsc = mysqli_real_escape_string($conn, $department);
+
+    $data1 = array();
+    if ($department !== '') {
+        if ($year !== '' && preg_match('/^\d{4}$/', $year)) {
+            $dateCondition = "YEAR(training.startdate) = '$year'";
+        } else {
+            $startdate = mysqli_real_escape_string($conn, $_POST["startdate"]);
+            $enddate = mysqli_real_escape_string($conn, $_POST["enddate"]);
+            $dateCondition = "training.startdate BETWEEN '$startdate' AND '$enddate'";
+        }
+
+        $sql = "SELECT month, SUM(cost) AS totalcost
+                FROM (
+                    SELECT DISTINCT training.id, training.cost, MONTH(training.startdate) AS month
+                    FROM training_all training
+                    JOIN participation_all participation ON training.id = participation.trainingid
+                    JOIN user ON user.id = participation.userid
+                    WHERE user.department = '$departmentEsc'
+                      AND $dateCondition
+                ) dept_trainings
+                GROUP BY month
+                ORDER BY month";
+        $query = mysqli_query($conn,$sql);
+
+        // Fixed Jan-Dec labels, pre-seeded to 0, so a month with no training
+        // at all still appears on the chart instead of being skipped (see
+        // admin/fetch_dash.php's fetch_cost for the same fix).
+        $monthNames = [1=>'JAN',2=>'FEB',3=>'MAC',4=>'APR',5=>'MAY',6=>'JUNE',7=>'JULY',8=>'AUG',9=>'SEP',10=>'OCT',11=>'NOV',12=>'DEC'];
+        $monthlyCost = array_fill(1, 12, 0);
+        while($row = mysqli_fetch_assoc($query)){
+            $monthlyCost[(int) $row['month']] = $row['totalcost'];
+        }
+
+        foreach ($monthNames as $num => $month) {
+            $data1[] = array(
+                'category'	    =>  $month,
+                'totalsend'     =>	$monthlyCost[$num],
+                'colorplant'    =>	'#' . rand(100000, 999999) . ''
+            );
+        }
+    }
+
+	echo json_encode($data1);
+}else if($_POST["action"] == "fetch_cost_years"){
+    $userid = (int) $_POST["userid"];
+
+    $department = '';
+    $deptQuery = mysqli_query($conn, "SELECT department FROM user WHERE id = '$userid' LIMIT 1");
+    if ($deptQuery && $deptRow = mysqli_fetch_assoc($deptQuery)) {
+        $department = (string) $deptRow['department'];
+    }
+    $departmentEsc = mysqli_real_escape_string($conn, $department);
+
+    $years = array();
+    if ($department !== '') {
+        $sql = "SELECT DISTINCT YEAR(training.startdate) AS yr
+                FROM training_all training
+                JOIN participation_all participation ON training.id = participation.trainingid
+                JOIN user ON user.id = participation.userid
+                WHERE user.department = '$departmentEsc'
+                  AND training.startdate IS NOT NULL
+                ORDER BY yr DESC";
+        $query = mysqli_query($conn,$sql);
+        while($row = mysqli_fetch_assoc($query)){
+            if ($row['yr'] !== null) {
+                $years[] = $row['yr'];
+            }
+        }
+    }
+    echo json_encode($years);
 }
 
 ?>

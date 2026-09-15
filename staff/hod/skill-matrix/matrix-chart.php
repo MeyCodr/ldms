@@ -56,6 +56,7 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
 
     $stmt = $conn->prepare("SELECT
                                 sme.id AS evaluation_id,
+                                sme.approval_status,
                                 u.id AS staff_id,
                                 u.staffno,
                                 u.staffname,
@@ -93,7 +94,11 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
     $stmt->execute();
     $result = $stmt->get_result();
 
+    $pendingEvaluationIds = array();
     while ($row = $result->fetch_assoc()) {
+        if ($row['approval_status'] == 'PENDING') {
+            $pendingEvaluationIds[] = (int) $row['evaluation_id'];
+        }
         $staffRows[$row['evaluation_id']] = array(
             'staffno' => $row['staffno'],
             'staffname' => $row['staffname'],
@@ -420,6 +425,28 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
             border-color: #204d74;
             color: #ffffff;
         }
+
+        #scroll_to_top_btn {
+            display: none;
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: #337ab7;
+            color: #ffffff;
+            border: none;
+            font-size: 18px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+        }
+
+        #scroll_to_top_btn:hover,
+        #scroll_to_top_btn:focus {
+            background-color: #286090;
+            color: #ffffff;
+        }
     </style>
 
     <body onload="startTime()" style="background-image:url('../../../asset/image/bg-try.png');zoom: 75%;">
@@ -458,17 +485,24 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                 <div class="col-md-12">
                     <div class="panel panel-default">
                         <div class="panel-heading">
+                            <div class="row" style="margin-bottom: 10px;">
+                                <div class="col-md-12">
+                                    <a href="skill-matrix.php" class="btn btn-success btn-md">
+                                        <i class="far fa-arrow-alt-circle-left"></i> BACK
+                                    </a>
+                                </div>
+                            </div>
                             <div class="row">
                                 <div class="col-md-8" style="margin-top: 10px;">
                                     <strong>Matrix Chart</strong>
                                 </div>
                                 <div class="col-md-4" align="right">
+                                    <button type="button" id="approve_all_btn" class="btn btn-warning btn-md" <?php echo count($pendingEvaluationIds) > 0 ? '' : 'disabled'; ?>>
+                                        <i class="fa fa-check-double"></i> Approve All Pending (<?php echo count($pendingEvaluationIds); ?>)
+                                    </button>
                                     <button type="button" class="btn download-report-btn btn-md" id="download_matrix_report">
                                         <i class="fa fa-download"></i> Download Report
                                     </button>
-                                    <a href="skill-matrix.php" class="btn btn-success btn-md">
-                                        <i class="far fa-arrow-alt-circle-left"></i> BACK TO SKILL MATRIX
-                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -614,6 +648,10 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                 </div>
             </div>
         </div>
+
+        <button type="button" id="scroll_to_top_btn" title="Back to top">
+            <i class="fa fa-arrow-up"></i>
+        </button>
     </body>
 
     <script>
@@ -634,6 +672,70 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
             }
             return i;
         }
+
+        // Show the "back to top" button only once the page has been
+        // scrolled a bit - the matrix report is a tall, wide table, so this
+        // stays out of the way until it's actually useful.
+        $(window).on('scroll', function () {
+            if ($(window).scrollTop() > 300) {
+                $('#scroll_to_top_btn').fadeIn();
+            } else {
+                $('#scroll_to_top_btn').fadeOut();
+            }
+        });
+
+        $('#scroll_to_top_btn').on('click', function () {
+            $('html, body').animate({ scrollTop: 0 }, 400);
+        });
+
+        var pendingEvaluationIds = <?php echo json_encode($pendingEvaluationIds); ?>;
+
+        $('#approve_all_btn').on('click', function () {
+            if (pendingEvaluationIds.length === 0) {
+                return;
+            }
+
+            swal({
+                title: "Approve all " + pendingEvaluationIds.length + " pending skill matrix evaluation(s)?",
+                text: "This cannot be undone from here - every one shown as pending on this chart will be marked APPROVED.",
+                icon: "warning",
+                buttons: ["Cancel", "Approve All"],
+                dangerMode: true
+            }).then(function (willApprove) {
+                if (!willApprove) {
+                    return;
+                }
+
+                $('#approve_all_btn').prop('disabled', true);
+
+                $.ajax({
+                    url: "bulk_approve_skill_matrix.php",
+                    method: "POST",
+                    data: { evaluation_ids: pendingEvaluationIds },
+                    dataType: "json",
+                    success: function (response) {
+                        if (response.message === 'ok') {
+                            swal({
+                                title: "Approved!",
+                                text: response.approved + " skill matrix evaluation(s) approved.",
+                                icon: "success",
+                                timer: 2500,
+                                buttons: false
+                            }).then(function () {
+                                window.location.reload();
+                            });
+                        } else {
+                            swal("Failed", response.error || "Unable to approve the pending records.", "error");
+                            $('#approve_all_btn').prop('disabled', false);
+                        }
+                    },
+                    error: function () {
+                        swal("Failed", "The server could not process the request. Please refer to IT.", "error");
+                        $('#approve_all_btn').prop('disabled', false);
+                    }
+                });
+            });
+        });
 
         $('#download_matrix_report').click(function () {
             var table = document.getElementById('matrix_report_table');

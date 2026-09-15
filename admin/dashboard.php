@@ -353,6 +353,22 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                     </div>
                 </div>
             </div>
+            <div class="row" id="deptAvgCostRow" style="display:none;">
+                <div class="col-md-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <strong>Average Monthly Total Cost by Department (RM)</strong>
+                        </div>
+                        <div class="panel-body" align="center">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <canvas id="deptAvgCostChart" style="width:100%;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="row">
                 <div class="col-md-4">
                     <div class="panel panel-default">
@@ -584,8 +600,100 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                     $('#totalOjtHourLabel').text(isAverage ? 'Average OJT Hours' : 'Total OJT Hours');
 
                     $('#cardColTotalTraining, #cardColTotalUser, #cardColTotalManpower, #cardColTotalDay').toggle(!isAverage);
+
+                    $('#deptAvgCostRow').toggle(isAverage);
+                    destroyChartDeptAvgCost();
+                    if (isAverage) {
+                        makeDeptAvgCostChart(startdate, enddate);
+                    }
                 }
             })
+        }
+
+        var canvasDeptAvgCost = document.getElementById("deptAvgCostChart");
+        var deptAvgCostChart;
+
+        function makeDeptAvgCostChart(startdate, enddate) {
+            $.ajax({
+                url: "fetch_dash.php",
+                method: "POST",
+                data: {
+                    action: 'fetch_dept_cost',
+                    startdate: startdate,
+                    enddate: enddate
+                },
+                dataType: "JSON",
+                success: function (data) {
+                    var ctxDeptAvgCost = canvasDeptAvgCost.getContext('2d');
+                    var category = [];
+                    var totalsend = [];
+                    var colorplant = [];
+
+                    for (var count = 0; count < data.length; count++) {
+                        category.push(data[count].category);
+                        totalsend.push(data[count].totalsend);
+                        colorplant.push(data[count].colorplant);
+                    }
+
+                    deptAvgCostChart = new Chart(ctxDeptAvgCost, {
+                        type: 'bar',
+                        data: {
+                            labels: category,
+                            datasets: [{
+                                label: "Average Monthly Cost",
+                                backgroundColor: colorplant,
+                                data: totalsend,
+                                barPercentage: 0.55,
+                                categoryPercentage: 0.7
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            legend: {
+                                display: false
+                            },
+                            scales: {
+                                xAxes: [{
+                                    ticks: {
+                                        autoSkip: false,
+                                        maxRotation: 60,
+                                        minRotation: 45
+                                    }
+                                }],
+                                yAxes: [{
+                                    min: 0,
+                                    ticks: {
+                                        min: 0,
+                                        callback: function (value) {
+                                            return 'RM ' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                                        }
+                                    }
+                                }]
+                            },
+                            plugins: {
+                                labels: {
+                                    render: function (args) {
+                                        return 'RM ' + args.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                                    },
+                                    fontColor: '#000',
+                                }
+                            },
+                            layout: {
+                                padding: {
+                                    top: 20
+                                }
+                            }
+                        }
+                    });
+                }
+            })
+        }
+
+        function destroyChartDeptAvgCost() {
+            if (deptAvgCostChart && typeof deptAvgCostChart.destroy === 'function') {
+                deptAvgCostChart.destroy();
+            }
         }
 
         var canvasPublicojt = document.getElementById("publicojtChart");

@@ -287,7 +287,7 @@
 					</div>
 				</div>
 			</div>
-				
+
 			<div class="row row-eq-height">
                 <div class="col-md-6">
 					<div class="panel panel-default">
@@ -303,24 +303,24 @@
 						</div>
 					</div>
 				</div>
-				<div class="col-md-6">
+				<div class="col-md-6" id="deptCostRow" style="display:none;">
 					<div class="panel panel-default">
-                        <div class="panel-heading">
-                            <strong>Top 5 Inhouse Trainer</strong>
-                        </div>
-                        <div class="panel-body" align="center">
+						<div class="panel-heading">
+							<div class="row">
+								<div class="col-xs-6" style="margin-top:5px;">
+									<strong>Average Monthly Total Cost (RM)</strong>
+								</div>
+								<div class="col-xs-6" align="right">
+									<select id="costYear" class="form-control" style="display:inline-block;width:auto;">
+										<option value="">-- Use Date Filter --</option>
+									</select>
+								</div>
+							</div>
+						</div>
+						<div class="panel-body" align="center">
 							<div class="row">
 								<div class="col-md-12">
-									<table id="trainerdata" class="table table-bordered table-striped">
-										<thead>
-											<tr>
-												<th>No.</th>
-												<th>Staff No.</th>
-												<th>Name</th>
-												<th>Total Hours</th>
-											</tr>
-										</thead>
-									</table>
+									<canvas id="deptCostChart" style="width:100%;max-width:700px"></canvas>
 								</div>
 							</div>
 						</div>
@@ -443,6 +443,31 @@
 					</div>
 				</div>
 			</div>
+			<div class="row">
+				<div class="col-md-12">
+					<div class="panel panel-default">
+                        <div class="panel-heading">
+                            <strong>Top 5 Inhouse Trainer</strong>
+                        </div>
+                        <div class="panel-body" align="center">
+							<div class="row">
+								<div class="col-md-12">
+									<table id="trainerdata" class="table table-bordered table-striped">
+										<thead>
+											<tr>
+												<th>No.</th>
+												<th>Staff No.</th>
+												<th>Name</th>
+												<th>Total Hours</th>
+											</tr>
+										</thead>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
         </div>
     </body>
 	<footer>
@@ -547,9 +572,123 @@
 					$('#totalOjtHourLabel').text(isAverage ? 'Average OJT Hours' : 'Total OJT Hours');
 
 					$('#cardColTotalTraining, #cardColTotalUser, #cardColTotalManpower, #cardColTotalDay').toggle(!isAverage);
+
+					$('#deptCostRow').toggle(isAverage);
+					destroyChartDeptCost();
+					if (isAverage) {
+						makeDeptCostChart(startdate, enddate, $('#costYear').val());
+					}
 				}
 			})
 		}
+
+		var canvasDeptCost = document.getElementById("deptCostChart");
+		var deptCostChart;
+
+		function makeDeptCostChart(startdate, enddate, year) {
+			$.ajax({
+				url: "fetch_dash.php",
+				method: "POST",
+				data: {
+					action: 'fetch_cost',
+					userid: userid,
+					startdate: startdate,
+					enddate: enddate,
+					year: year || ''
+				},
+				dataType: "JSON",
+				success: function (data) {
+					var ctxDeptCost = getCanvasContext(canvasDeptCost);
+					if (!ctxDeptCost) {
+						return;
+					}
+					var category = [];
+					var totalsend = [];
+					var colorplant = [];
+
+					for (var count = 0; count < data.length; count++) {
+						category.push(data[count].category);
+						totalsend.push(data[count].totalsend);
+						colorplant.push(data[count].colorplant);
+					}
+
+					deptCostChart = new Chart(ctxDeptCost, {
+						type: 'bar',
+						data: {
+							labels: category,
+							datasets: [{
+								label: "Total Cost",
+								backgroundColor: colorplant,
+								data: totalsend,
+								barPercentage: 0.55,
+								categoryPercentage: 0.7
+							}]
+						},
+						options: {
+							responsive: true,
+							maintainAspectRatio: false,
+							legend: {
+								display: false
+							},
+							scales: {
+								xAxes: [{
+									ticks: {
+										autoSkip: false,
+										maxRotation: 60,
+										minRotation: 45
+									}
+								}],
+								yAxes: [{
+									min: 0,
+									ticks: {
+										min: 0,
+										stepSize: 100,
+										callback: function (value) {
+											return 'RM ' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+										}
+									}
+								}]
+							},
+							plugins: {
+								labels: {
+									render: function (args) {
+										return 'RM ' + args.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+									},
+									fontColor: '#000',
+								}
+							},
+							layout: {
+								padding: {
+									top: 20
+								}
+							}
+						}
+					});
+				}
+			})
+		}
+
+		function destroyChartDeptCost() {
+            destroyChartInstance(deptCostChart);
+        }
+
+		$.post("fetch_dash.php", { action: 'fetch_cost_years', userid: userid }, function (years) {
+			var options = '<option value="">-- Use Date Filter --</option>';
+			$.each(years, function (i, yr) {
+				options += '<option value="' + yr + '">' + yr + '</option>';
+			});
+			$('#costYear').html(options);
+		}, 'json');
+
+		$('#costYear').change(function () {
+			var year = $(this).val();
+			destroyChartDeptCost();
+			if (year) {
+				makeDeptCostChart('', '', year);
+			} else {
+				makeDeptCostChart($('#startdate').val() || fd, $('#enddate').val() || ld);
+			}
+		});
 
 		var publicojtPieChart;
 
