@@ -303,15 +303,15 @@
 						</div>
 					</div>
 				</div>
-				<div class="col-md-6" id="deptCostRow" style="display:none;">
+				<div class="col-md-6" id="deptAvgHourRow" style="display:none;">
 					<div class="panel panel-default">
 						<div class="panel-heading">
 							<div class="row">
 								<div class="col-xs-6" style="margin-top:5px;">
-									<strong>Average Monthly Total Cost (RM)</strong>
+									<strong>Average Monthly Total Training Hour</strong>
 								</div>
 								<div class="col-xs-6" align="right">
-									<select id="costYear" class="form-control" style="display:inline-block;width:auto;">
+									<select id="avgHourYear" class="form-control" style="display:inline-block;width:auto;">
 										<option value="">-- Use Date Filter --</option>
 									</select>
 								</div>
@@ -320,7 +320,7 @@
 						<div class="panel-body" align="center">
 							<div class="row">
 								<div class="col-md-12">
-									<canvas id="deptCostChart" style="width:100%;max-width:700px"></canvas>
+									<canvas id="deptAvgHourChart" style="width:100%;max-width:700px"></canvas>
 								</div>
 							</div>
 						</div>
@@ -573,24 +573,24 @@
 
 					$('#cardColTotalTraining, #cardColTotalUser, #cardColTotalManpower, #cardColTotalDay').toggle(!isAverage);
 
-					$('#deptCostRow').toggle(isAverage);
-					destroyChartDeptCost();
+					$('#deptAvgHourRow').toggle(isAverage);
+					destroyChartAvgHour();
 					if (isAverage) {
-						makeDeptCostChart(startdate, enddate, $('#costYear').val());
+						makeAvgHourChart(startdate, enddate, $('#avgHourYear').val());
 					}
 				}
 			})
 		}
 
-		var canvasDeptCost = document.getElementById("deptCostChart");
-		var deptCostChart;
+		var canvasDeptAvgHour = document.getElementById("deptAvgHourChart");
+		var deptAvgHourChart;
 
-		function makeDeptCostChart(startdate, enddate, year) {
+		function makeAvgHourChart(startdate, enddate, year) {
 			$.ajax({
 				url: "fetch_dash.php",
 				method: "POST",
 				data: {
-					action: 'fetch_cost',
+					action: 'fetch_avg_hours',
 					userid: userid,
 					startdate: startdate,
 					enddate: enddate,
@@ -598,8 +598,8 @@
 				},
 				dataType: "JSON",
 				success: function (data) {
-					var ctxDeptCost = getCanvasContext(canvasDeptCost);
-					if (!ctxDeptCost) {
+					var ctxDeptAvgHour = getCanvasContext(canvasDeptAvgHour);
+					if (!ctxDeptAvgHour) {
 						return;
 					}
 					var category = [];
@@ -612,12 +612,12 @@
 						colorplant.push(data[count].colorplant);
 					}
 
-					deptCostChart = new Chart(ctxDeptCost, {
+					deptAvgHourChart = new Chart(ctxDeptAvgHour, {
 						type: 'bar',
 						data: {
 							labels: category,
 							datasets: [{
-								label: "Total Cost",
+								label: "Average Total Hour",
 								backgroundColor: colorplant,
 								data: totalsend,
 								barPercentage: 0.55,
@@ -641,19 +641,13 @@
 								yAxes: [{
 									min: 0,
 									ticks: {
-										min: 0,
-										stepSize: 100,
-										callback: function (value) {
-											return 'RM ' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-										}
+										min: 0
 									}
 								}]
 							},
 							plugins: {
 								labels: {
-									render: function (args) {
-										return 'RM ' + args.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-									},
+									render: 'value',
 									fontColor: '#000',
 								}
 							},
@@ -668,25 +662,25 @@
 			})
 		}
 
-		function destroyChartDeptCost() {
-            destroyChartInstance(deptCostChart);
+		function destroyChartAvgHour() {
+            destroyChartInstance(deptAvgHourChart);
         }
 
-		$.post("fetch_dash.php", { action: 'fetch_cost_years', userid: userid }, function (years) {
+		$.post("fetch_dash.php", { action: 'fetch_avg_hours_years', userid: userid }, function (years) {
 			var options = '<option value="">-- Use Date Filter --</option>';
 			$.each(years, function (i, yr) {
 				options += '<option value="' + yr + '">' + yr + '</option>';
 			});
-			$('#costYear').html(options);
+			$('#avgHourYear').html(options);
 		}, 'json');
 
-		$('#costYear').change(function () {
+		$('#avgHourYear').change(function () {
 			var year = $(this).val();
-			destroyChartDeptCost();
+			destroyChartAvgHour();
 			if (year) {
-				makeDeptCostChart('', '', year);
+				makeAvgHourChart('', '', year);
 			} else {
-				makeDeptCostChart($('#startdate').val() || fd, $('#enddate').val() || ld);
+				makeAvgHourChart($('#startdate').val() || fd, $('#enddate').val() || ld);
 			}
 		});
 
@@ -747,6 +741,7 @@
 
 		function destroyChartpublicojt() {
             destroyChartInstance(publicojtPieChart);
+            publicojtPieChart = null;
         }
 
 		function fetch_data(action,startdate,enddate){
@@ -1484,6 +1479,7 @@
 			makerndchart('manhour',fd,ld);
             $('#startdate').val('');
             $('#enddate').val('');
+            $('#avgHourYear').val('');
             $('#mode').val('manhour');
         });
 

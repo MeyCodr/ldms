@@ -353,16 +353,25 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                     </div>
                 </div>
             </div>
-            <div class="row" id="deptAvgCostRow" style="display:none;">
+            <div class="row" id="deptAvgHourRow" style="display:none;">
                 <div class="col-md-12">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <strong>Average Monthly Total Cost by Department (RM)</strong>
+                            <div class="row">
+                                <div class="col-xs-6" style="margin-top:5px;">
+                                    <strong>Average Monthly Total Training Hour</strong>
+                                </div>
+                                <div class="col-xs-6" align="right">
+                                    <select id="avgHourYear" class="form-control" style="display:inline-block;width:auto;">
+                                        <option value="">-- Use Date Filter --</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                         <div class="panel-body" align="center">
                             <div class="row">
                                 <div class="col-md-12">
-                                    <canvas id="deptAvgCostChart" style="width:100%;"></canvas>
+                                    <canvas id="deptAvgHourChart" style="width:100%;"></canvas>
                                 </div>
                             </div>
                         </div>
@@ -601,30 +610,31 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
 
                     $('#cardColTotalTraining, #cardColTotalUser, #cardColTotalManpower, #cardColTotalDay').toggle(!isAverage);
 
-                    $('#deptAvgCostRow').toggle(isAverage);
-                    destroyChartDeptAvgCost();
+                    $('#deptAvgHourRow').toggle(isAverage);
+                    destroyChartAvgHour();
                     if (isAverage) {
-                        makeDeptAvgCostChart(startdate, enddate);
+                        makeAvgHourChart(startdate, enddate, $('#avgHourYear').val());
                     }
                 }
             })
         }
 
-        var canvasDeptAvgCost = document.getElementById("deptAvgCostChart");
-        var deptAvgCostChart;
+        var canvasDeptAvgHour = document.getElementById("deptAvgHourChart");
+        var deptAvgHourChart;
 
-        function makeDeptAvgCostChart(startdate, enddate) {
+        function makeAvgHourChart(startdate, enddate, year) {
             $.ajax({
                 url: "fetch_dash.php",
                 method: "POST",
                 data: {
-                    action: 'fetch_dept_cost',
+                    action: 'fetch_avg_hours',
                     startdate: startdate,
-                    enddate: enddate
+                    enddate: enddate,
+                    year: year || ''
                 },
                 dataType: "JSON",
                 success: function (data) {
-                    var ctxDeptAvgCost = canvasDeptAvgCost.getContext('2d');
+                    var ctxDeptAvgHour = canvasDeptAvgHour.getContext('2d');
                     var category = [];
                     var totalsend = [];
                     var colorplant = [];
@@ -635,12 +645,12 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                         colorplant.push(data[count].colorplant);
                     }
 
-                    deptAvgCostChart = new Chart(ctxDeptAvgCost, {
+                    deptAvgHourChart = new Chart(ctxDeptAvgHour, {
                         type: 'bar',
                         data: {
                             labels: category,
                             datasets: [{
-                                label: "Average Monthly Cost",
+                                label: "Average Total Hour",
                                 backgroundColor: colorplant,
                                 data: totalsend,
                                 barPercentage: 0.55,
@@ -664,18 +674,13 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                                 yAxes: [{
                                     min: 0,
                                     ticks: {
-                                        min: 0,
-                                        callback: function (value) {
-                                            return 'RM ' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-                                        }
+                                        min: 0
                                     }
                                 }]
                             },
                             plugins: {
                                 labels: {
-                                    render: function (args) {
-                                        return 'RM ' + args.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-                                    },
+                                    render: 'value',
                                     fontColor: '#000',
                                 }
                             },
@@ -690,11 +695,29 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
             })
         }
 
-        function destroyChartDeptAvgCost() {
-            if (deptAvgCostChart && typeof deptAvgCostChart.destroy === 'function') {
-                deptAvgCostChart.destroy();
+        function destroyChartAvgHour() {
+            if (deptAvgHourChart && typeof deptAvgHourChart.destroy === 'function') {
+                deptAvgHourChart.destroy();
             }
         }
+
+        $.post("fetch_dash.php", { action: 'fetch_avg_hours_years' }, function (years) {
+            var options = '<option value="">-- Use Date Filter --</option>';
+            $.each(years, function (i, yr) {
+                options += '<option value="' + yr + '">' + yr + '</option>';
+            });
+            $('#avgHourYear').html(options);
+        }, 'json');
+
+        $('#avgHourYear').change(function () {
+            var year = $(this).val();
+            destroyChartAvgHour();
+            if (year) {
+                makeAvgHourChart('', '', year);
+            } else {
+                makeAvgHourChart($('#startdate').val() || fd, $('#enddate').val() || ld);
+            }
+        });
 
         var canvasPublicojt = document.getElementById("publicojtChart");
 
@@ -1957,6 +1980,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
             makerndchart('manhour', fd, ld);
             $('#startdate').val('');
             $('#enddate').val('');
+            $('#avgHourYear').val('');
             $('#mode').val('manhour');
 
             canvasBusiness.onclick = function (e) {
