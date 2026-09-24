@@ -186,12 +186,8 @@ if($_POST["action"] == 'fetch_overview'){
     }
 
     if ($department !== '') {
-        $enddateEsc = isset($_POST["enddate"]) && $_POST["enddate"] !== '' ? mysqli_real_escape_string($conn, $_POST["enddate"]) : null;
-        if ($enddateEsc !== null) {
-            $sql = "SELECT COUNT(*) AS totalmanpower FROM user WHERE department = '$departmentEsc' AND (dateresign IS NULL OR CAST(dateresign AS CHAR) IN ('', '0000-00-00') OR dateresign >= '$enddateEsc')";
-        } else {
-            $sql = "SELECT COUNT(*) AS totalmanpower FROM user WHERE department = '$departmentEsc' AND (dateresign IS NULL OR CAST(dateresign AS CHAR) IN ('', '0000-00-00'))";
-        }
+        // Active headcount only: blank/NULL status is treated as ACTIVE, same as the staff list.
+        $sql = "SELECT COUNT(*) AS totalmanpower FROM user WHERE department = '$departmentEsc' AND COALESCE(status, '') <> 'RESIGN' AND COALESCE(designation, '') <> 'TRAINEE'";
         $query = mysqli_query($conn,$sql);
         if ($query && $row = mysqli_fetch_assoc($query)) {
             $totalmanpower = (int) $row['totalmanpower'];
@@ -730,16 +726,14 @@ if($_POST["action"] == 'fetch_overview'){
         if ($year !== '' && preg_match('/^\d{4}$/', $year)) {
             $trainingDateCondition = "YEAR(training.startdate) = '$year'";
             $ojtDateCondition = "YEAR(ojt.startdate) = '$year'";
-            $headcountEnddateEsc = "$year-12-31";
         } else {
             $startdate = mysqli_real_escape_string($conn, $_POST["startdate"]);
             $enddate = mysqli_real_escape_string($conn, $_POST["enddate"]);
             $trainingDateCondition = "training.startdate BETWEEN '$startdate' AND '$enddate'";
             $ojtDateCondition = "ojt.startdate BETWEEN '$startdate' AND '$enddate'";
-            $headcountEnddateEsc = $enddate;
         }
 
-        $sql = "SELECT COUNT(*) AS totalmanpower FROM user WHERE department = '$departmentEsc' AND (dateresign IS NULL OR CAST(dateresign AS CHAR) IN ('', '0000-00-00') OR dateresign >= '$headcountEnddateEsc')";
+        $sql = "SELECT COUNT(*) AS totalmanpower FROM user WHERE department = '$departmentEsc' AND COALESCE(status, '') <> 'RESIGN' AND COALESCE(designation, '') <> 'TRAINEE'";
         $query = mysqli_query($conn,$sql);
         $totalmanpower = ($query && $row = mysqli_fetch_assoc($query)) ? (int) $row['totalmanpower'] : 0;
         $divisor = ($totalmanpower > 0) ? $totalmanpower : 1;

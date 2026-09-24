@@ -67,6 +67,12 @@ date_default_timezone_set('Asia/Kuala_Lumpur');
 
 $today = date('Y-m-d');
 
+// Close PME rows for trainings of 4 hours or less before anything else, so
+// HODs are never reminded about them. Runs before the once-a-day guard below
+// so a second call in the same day still picks up anything new.
+require_once __DIR__ . '/auto_complete_short_pme.php';
+autoCompleteShortPme($conn);
+
 // Guard against sending the same day's digest twice (e.g. a scheduler
 // retrying after a slow response, or someone hitting the URL manually after
 // Task Scheduler already ran it). Not needed for correctness of the "stop

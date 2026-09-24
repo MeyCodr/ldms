@@ -124,18 +124,22 @@ if (isset($_POST['action'])) {
         $enddate = isset($_POST['enddate']) ? $_POST['enddate'] : '';
         $output = array();
 
+        // Training hour = days x hours per day, same formula as My Training.
+        // training_all so trainings already moved to training_archive still resolve.
+        $select = "SELECT pme.participationid AS id, pme.training_title, pme.from_date, pme.to_date, pme.status,
+                          ROUND((DATEDIFF(t.enddate, t.startdate) + 1) * (TIME_TO_SEC(TIMEDIFF(t.endtime, t.starttime)) / 3600), 2) AS totalhour
+                   FROM pme
+                   LEFT JOIN training_all t ON t.id = pme.trainingid";
         if ($startdate !== '' && $enddate !== '') {
-            $sql = "SELECT participationid AS id, training_title, from_date, to_date, status
-                    FROM pme
-                    WHERE userid = ? AND from_date BETWEEN ? AND ?
-                    ORDER BY from_date DESC";
+            $sql = "$select
+                    WHERE pme.userid = ? AND pme.from_date BETWEEN ? AND ?
+                    ORDER BY pme.from_date DESC";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("iss", $userid, $startdate, $enddate);
         } else {
-            $sql = "SELECT participationid AS id, training_title, from_date, to_date, status
-                    FROM pme
-                    WHERE userid = ?
-                    ORDER BY from_date DESC";
+            $sql = "$select
+                    WHERE pme.userid = ?
+                    ORDER BY pme.from_date DESC";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("i", $userid);
         }
@@ -164,6 +168,7 @@ if (isset($_POST['action'])) {
                 'training_title' => $row['training_title'],
                 'from_date' => $row['from_date'],
                 'to_date' => $row['to_date'],
+                'totalhour' => $row['totalhour'] !== null ? (float) $row['totalhour'] : '-',
                 'status' => $status,
                 'action' => $action
             );

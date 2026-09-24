@@ -112,6 +112,7 @@
                                                 <th>Training Title</th>
                                                 <th>Evaluation Period Start</th>
                                                 <th>Evaluation Period End</th>
+                                                <th>Training Hour</th>
                                                 <th>Status</th>
                                                 <th width="130px">Action</th>
                                             </tr>
@@ -203,11 +204,12 @@
                     { "data": "training_title" },
                     { "data": "from_date" },
                     { "data": "to_date" },
+                    { "data": "totalhour" },
                     { "data": "status", "orderable": false },
                     { "data": "action", "orderable": false }
                 ],
                 "columnDefs": [
-                    { className: 'text-center', targets: [0, 2, 3, 4, 5] }
+                    { className: 'text-center', targets: [0, 2, 3, 4, 5, 6] }
                 ]
             });
         }
