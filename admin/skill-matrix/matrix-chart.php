@@ -214,6 +214,25 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
     $reportEvaluatedBy = implode(', ', array_keys($evaluatedByNames));
     $reportVerifiedBy = implode(', ', array_keys($verifiedByNames));
     $reportApprovedBy = implode(', ', array_keys($approvedByNames));
+
+    if (isset($_GET['export']) && $_GET['export'] == 'excel') {
+        require_once "../../skill_matrix_chart_excel.php";
+        $filterParts = array();
+        $filenameParts = array();
+        if ($department != '' && $department != 'ALL') {
+            $filterParts[] = 'Department: ' . $department;
+            $filenameParts[] = $department;
+        }
+        if ($section != '' && $section != 'ALL') {
+            $filterParts[] = 'Section: ' . $section;
+            $filenameParts[] = $section;
+        }
+        if ($plant != '' && $plant != 'ALL') {
+            $filterParts[] = 'Plant: ' . $plant;
+            $filenameParts[] = $plant;
+        }
+        outputMatrixChartExcel($staffRows, $topicColumns, $matrixFixedLevels, $currentQuarter, $currentYear, $filterParts, $filenameParts, $reportEvaluatedBy, $reportVerifiedBy, $reportApprovedBy);
+    }
     ?>
     <!DOCTYPE html>
     <html lang="en">
@@ -799,7 +818,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                 return;
             }
 
-            window.location = "export_matrix_report.php?department=" + encodeURIComponent("<?php echo addslashes($department); ?>") +
+            window.location = "matrix-chart.php?export=excel&department=" + encodeURIComponent("<?php echo addslashes($department); ?>") +
                 "&section=" + encodeURIComponent("<?php echo addslashes($section); ?>") +
                 "&plant=" + encodeURIComponent("<?php echo addslashes($plant); ?>");
         });

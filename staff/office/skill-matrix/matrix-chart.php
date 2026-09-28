@@ -143,6 +143,11 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
     $reportEvaluatedBy = implode(', ', array_keys($evaluatedByNames));
     $reportVerifiedBy = implode(', ', array_keys($verifiedByNames));
     $reportApprovedBy = implode(', ', array_keys($approvedByNames));
+
+    if (isset($_GET['export']) && $_GET['export'] == 'excel') {
+        require_once "../../../skill_matrix_chart_excel.php";
+        outputMatrixChartExcel($staffRows, $topicColumns, $matrixFixedLevels, $currentQuarter, $currentYear, array(), array($department), $reportEvaluatedBy, $reportVerifiedBy, $reportApprovedBy);
+    }
     ?>
     <!DOCTYPE html>
     <html lang="en">
@@ -623,41 +628,7 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                 return;
             }
 
-            var rows = [];
-            $(table).find('tr').each(function () {
-                var row = [];
-                $(this).find('th, td').each(function () {
-                    var colspan = parseInt($(this).attr('colspan') || 1, 10);
-                    var text = $(this).text().replace(/\s+/g, ' ').trim().replace(/"/g, '""');
-                    row.push('"' + text + '"');
-                    for (var i = 1; i < colspan; i++) {
-                        row.push('""');
-                    }
-                });
-                rows.push(row.join(','));
-            });
-
-            var signoffTable = document.getElementById('matrix_signoff_table');
-            if (signoffTable) {
-                rows.push('');
-                $(signoffTable).find('tr').each(function () {
-                    var row = [];
-                    $(this).find('th, td').each(function () {
-                        var text = $(this).text().replace(/\s+/g, ' ').trim().replace(/"/g, '""');
-                        row.push('"' + text + '"');
-                    });
-                    rows.push(row.join(','));
-                });
-            }
-
-            var csv = '\uFEFFSkill Matrix Report - Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?>\r\n' + rows.join('\r\n');
-            var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            var link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'skill_matrix_report_Q<?php echo $currentQuarter; ?>_<?php echo $currentYear; ?>.csv';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            window.location = "matrix-chart.php?export=excel";
         });
     </script>
 
