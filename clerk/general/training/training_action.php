@@ -36,6 +36,12 @@
 
             $hours =  ((strtotime($endtime) - strtotime($starttime)) / 60) / 60;
 
+            // Short OJT (total hours <= 4, same days x hours-per-day rule as the
+            // short-training PME auto-complete) needs no attendance form, so
+            // participants are saved as already completed.
+            $totalojthours = $woweekends * $hours;
+            $attendance = ($hours > 0 && $totalojthours <= 4) ? 'COMPLETEDOJT' : '';
+
             $sql = "insert into ojt (title, startdate, enddate, starttime, endtime, venue, trainername, totalday, totalhour, trainertype) values ('$title', '$startdate', '$enddate', '$starttime', '$endtime', '$venue', '$trainer', '$woweekends', '$hours', '$trainertype')";
 			mysqli_query($conn, $sql);
 
@@ -71,7 +77,7 @@
                     $department = mysqli_real_escape_string($conn, $row['department']);
                 }
 
-                $sql = "insert into participateojt (ojtid,userid,totalman,department,clerkid) values ('$ojtid','$userid','1','$department','$clerkid')";
+                $sql = "insert into participateojt (ojtid,userid,totalman,department,clerkid,attendance) values ('$ojtid','$userid','1','$department','$clerkid','$attendance')";
                 mysqli_query($conn, $sql);
             }
 
@@ -85,7 +91,7 @@
                     $department = mysqli_real_escape_string($conn, $row['department']);
                 }
 
-                $sql = "insert into participateojt (ojtid,userid,totalman,department,clerkid) values ('$ojtid','$userid','1','$department','$clerkid')";
+                $sql = "insert into participateojt (ojtid,userid,totalman,department,clerkid,attendance) values ('$ojtid','$userid','1','$department','$clerkid','$attendance')";
                 mysqli_query($conn, $sql);
             }
 
@@ -129,6 +135,11 @@
 
             $hours =  ((strtotime($endtime) - strtotime($starttime)) / 60) / 60;
 
+            // Participants newly added to a short OJT are completed straight
+            // away, same as on add. Existing participants are left as they are.
+            $totalojthours = $woweekends * $hours;
+            $attendance = ($hours > 0 && $totalojthours <= 4) ? 'COMPLETEDOJT' : '';
+
             $sql = "update ojt set title = '$title', startdate = '$startdate', enddate = '$enddate', starttime = '$starttime', endtime = '$endtime', venue = '$venue', trainername = '$trainer', totalday = '$woweekends', totalhour = '$hours', trainertype = '$trainertype' where id = '$id'";
             mysqli_query($conn, $sql);
 
@@ -166,7 +177,7 @@
                         $sql = "update participateojt set operation = '1' where ojtid = '$id' and userid = '$userid'";
                         mysqli_query($conn, $sql);
                     }else if ($record == '') {
-                        $sql = "insert into participateojt (ojtid,userid,totalman,department,clerkid,operation) values ('$id','$userid','1','$department','$clerkid','1')";
+                        $sql = "insert into participateojt (ojtid,userid,totalman,department,clerkid,operation,attendance) values ('$id','$userid','1','$department','$clerkid','1','$attendance')";
 						mysqli_query($conn, $sql);
                     }
                 }
@@ -194,7 +205,7 @@
                         $sql = "update participateojt set operation = '1' where ojtid = '$id' and userid = '$userid'";
                         mysqli_query($conn, $sql);
                     }else if ($record == ''){
-                        $sql = "insert into participateojt (ojtid,userid,totalman,department,clerkid,operation) values ('$id','$userid','1','$department','$clerkid','1')";
+                        $sql = "insert into participateojt (ojtid,userid,totalman,department,clerkid,operation,attendance) values ('$id','$userid','1','$department','$clerkid','1','$attendance')";
                         mysqli_query($conn, $sql);
                     }
                 }

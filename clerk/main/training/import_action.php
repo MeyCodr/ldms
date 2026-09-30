@@ -176,6 +176,7 @@ $suffix = ' - (' . date('Ymd/His') . ')';
 $trainingsCreated = 0;
 $participantsAdded = 0;
 $completedWithFeedback = 0;
+$completedShortOjt = 0;
 
 $insertOjt = mysqli_prepare($conn, "insert into ojt (title, startdate, enddate, starttime, endtime, venue, trainername, totalday, totalhour, trainertype) values (?,?,?,?,?,?,?,?,?,?)");
 $updateOjt = mysqli_prepare($conn, "update ojt set totalman = ?, trainingcode = ? where id = ?");
@@ -191,6 +192,9 @@ try {
         $endDt = new DateTime($meta['enddate']);
         $totalday = (int) $startDt->diff($endDt)->format('%a') + 1;
         $totalhour = round((strtotime($meta['endtime']) - strtotime($meta['starttime'])) / 3600, 2);
+        // Short OJT (total hours <= 4, same rule as manual add) completes every
+        // participant, with or without the feedback columns filled in.
+        $isShortOjt = $totalhour > 0 && $totalday * $totalhour <= 4;
 
         $insertOjt->bind_param(
             'sssssssids',
@@ -214,7 +218,7 @@ try {
             $q1 = $participant['feedback_complete'] ? $participant['fb_learn'] : null;
             $q2 = $participant['feedback_complete'] ? (string) $participant['fb_before'] : null;
             $q3 = $participant['feedback_complete'] ? (string) $participant['fb_after'] : null;
-            $attendance = $participant['feedback_complete'] ? 'COMPLETEDOJT' : '';
+            $attendance = ($participant['feedback_complete'] || $isShortOjt) ? 'COMPLETEDOJT' : '';
             $insertParticipant->bind_param(
                 'iisissss',
                 $ojtid,
@@ -230,6 +234,8 @@ try {
             $participantsAdded++;
             if ($participant['feedback_complete']) {
                 $completedWithFeedback++;
+            } elseif ($isShortOjt) {
+                $completedShortOjt++;
             }
         }
 
@@ -250,5 +256,6 @@ echo json_encode([
     'trainings_created' => $trainingsCreated,
     'participants_added' => $participantsAdded,
     'completed_with_feedback' => $completedWithFeedback,
+    'completed_short_ojt' => $completedShortOjt,
 ]);
 ?>

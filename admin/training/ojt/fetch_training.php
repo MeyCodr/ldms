@@ -38,7 +38,7 @@ if ($_POST["action"] == "load_trainer") {
     if ($department != '' && $startdate == '') {
         if ($department != 'ALL') {
             // $sql = "select *,totalhour*totalstaff as totalmanhour from (select ojt.id,user.department,title,startdate,enddate,starttime,endtime,venue,userid,clerkid,((DATEDIFF(enddate, startdate)) + 1) as totalday,((DATEDIFF(enddate, startdate)) + 1) * ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,sum(participateojt.totalman) as totalstaff from ojt join participateojt on ojt.id = ojtid join user on userid = user.id where user.department = '$department' and attendance = 'COMPLETEDOJT' group by ojt.id)tablea;";
-            $sql = "SELECT *, totalhour * totalstaff AS totalmanhour FROM ( SELECT ojt.id, user.department, title, startdate, enddate, starttime, endtime, venue, userid, clerkid, ((DATEDIFF(enddate, startdate)) + 1) AS totalday, ((DATEDIFF(enddate, startdate)) + 1) * ROUND((TIME_TO_SEC(TIMEDIFF(endtime, starttime)) / 60) / 60, 2) AS totalhour, SUM(participateojt.totalman) AS totalstaff FROM ojt JOIN participateojt ON ojt.id = ojtid JOIN user ON userid = user.id WHERE user.department = '$department' AND attendance = 'COMPLETEDOJT' GROUP BY ojt.id, user.department, title, startdate, enddate, starttime, endtime, venue, userid, clerkid ) AS tablea;";
+            $sql = ojtManHourSql("user.department = '$department'");
             $query = mysqli_query($conn, $sql);
             if (!$query) {
                 die("Query failed: " . mysqli_error($conn));
@@ -119,36 +119,7 @@ if ($_POST["action"] == "load_trainer") {
             //             ";
 
             // take current month as default and limit to 50 records
-            $sql = "SELECT 
-                    *, 
-                    totalhour * totalstaff AS totalmanhour 
-                FROM (
-                    SELECT 
-                        ojt.id,
-                        user.department,
-                        title,
-                        startdate,
-                        enddate,
-                        starttime,
-                        endtime,
-                        venue,
-                        userid,
-                        clerkid,
-                        ((DATEDIFF(enddate, startdate)) + 1) AS totalday,
-                        ((DATEDIFF(enddate, startdate)) + 1) * ROUND((TIME_TO_SEC(TIMEDIFF(endtime, starttime)) / 60) / 60, 2) AS totalhour,
-                        SUM(participateojt.totalman) AS totalstaff
-                    FROM ojt 
-                    JOIN participateojt ON ojt.id = ojtid 
-                    JOIN user ON userid = user.id 
-                    WHERE 
-                        attendance = 'COMPLETEDOJT' AND
-                        YEAR(startdate) = YEAR(CURDATE()) AND 
-                        MONTH(startdate) = MONTH(CURDATE())
-                    GROUP BY 
-                        ojt.id, user.department, title, startdate, enddate, starttime, endtime, venue, userid, clerkid
-                    ORDER BY startdate DESC
-                    LIMIT 50
-                ) AS tablea;";
+            $sql = ojtManHourSql("YEAR(startdate) = YEAR(CURDATE()) AND MONTH(startdate) = MONTH(CURDATE())", "ORDER BY startdate DESC LIMIT 50");
 
 
             $query = mysqli_query($conn, $sql);
@@ -201,41 +172,7 @@ if ($_POST["action"] == "load_trainer") {
         }
     } else if ($department == '' && $startdate != '') {
         // $sql = "select *,totalhour*totalstaff as totalmanhour from (select ojt.id,user.department,title,startdate,enddate,starttime,endtime,venue,userid,clerkid,((DATEDIFF(enddate, startdate)) + 1) as totalday,((DATEDIFF(enddate, startdate)) + 1) * ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,sum(participateojt.totalman) as totalstaff from ojt join participateojt on ojt.id = ojtid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance = 'COMPLETEDOJT' group by ojt.id)tablea;";
-        $sql = " SELECT *, totalhour * totalstaff AS totalmanhour 
-                    FROM (
-                        SELECT 
-                            ojt.id,
-                            user.department,
-                            title,
-                            startdate,
-                            enddate,
-                            starttime,
-                            endtime,
-                            venue,
-                            userid,
-                            clerkid,
-                            ((DATEDIFF(enddate, startdate)) + 1) AS totalday,
-                            ((DATEDIFF(enddate, startdate)) + 1) * ROUND((TIME_TO_SEC(TIMEDIFF(endtime, starttime)) / 60) / 60, 2) AS totalhour,
-                            SUM(participateojt.totalman) AS totalstaff
-                        FROM ojt
-                        JOIN participateojt ON ojt.id = ojtid
-                        JOIN user ON userid = user.id
-                        WHERE 
-                            startdate BETWEEN '$startdate' AND '$enddate'
-                            AND attendance = 'COMPLETEDOJT'
-                        GROUP BY 
-                            ojt.id,
-                            user.department,
-                            title,
-                            startdate,
-                            enddate,
-                            starttime,
-                            endtime,
-                            venue,
-                            userid,
-                            clerkid
-                    ) AS tablea
-                    ";
+        $sql = ojtManHourSql("startdate BETWEEN '$startdate' AND '$enddate'");
 
         $query = mysqli_query($conn, $sql);
         $rows = [];
@@ -287,42 +224,7 @@ if ($_POST["action"] == "load_trainer") {
     } else if ($department != '' && $startdate != '') {
         if ($department != 'ALL') {
             // $sql = "select *,totalhour*totalstaff as totalmanhour from (select ojt.id,user.department,title,startdate,enddate,starttime,endtime,venue,userid,clerkid,((DATEDIFF(enddate, startdate)) + 1) as totalday,((DATEDIFF(enddate, startdate)) + 1) * ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,sum(participateojt.totalman) as totalstaff from ojt join participateojt on ojt.id = ojtid join user on userid = user.id where user.department = '$department' and startdate between '$startdate' and '$enddate' and attendance = 'COMPLETEDOJT' group by ojt.id)tablea;";
-            $sql = "SELECT *, totalhour * totalstaff AS totalmanhour
-                    FROM (
-                    SELECT 
-                        ojt.id,
-                        user.department,
-                        title,
-                        startdate,
-                        enddate,
-                        starttime,
-                        endtime,
-                        venue,
-                        userid,
-                        clerkid,
-                        ((DATEDIFF(enddate, startdate)) + 1) AS totalday,
-                        ((DATEDIFF(enddate, startdate)) + 1) * ROUND((TIME_TO_SEC(TIMEDIFF(endtime, starttime)) / 60) / 60, 2) AS totalhour,
-                        SUM(participateojt.totalman) AS totalstaff
-                    FROM ojt
-                    JOIN participateojt ON ojt.id = ojtid
-                    JOIN user ON userid = user.id
-                    WHERE 
-                        user.department = '$department'
-                        AND startdate BETWEEN '$startdate' AND '$enddate'
-                        AND attendance = 'COMPLETEDOJT'
-                    GROUP BY 
-                        ojt.id,
-                        user.department,
-                        title,
-                        startdate,
-                        enddate,
-                        starttime,
-                        endtime,
-                        venue,
-                        userid,
-                        clerkid
-                    ) AS tablea;
-                    ";
+            $sql = ojtManHourSql("user.department = '$department' AND startdate BETWEEN '$startdate' AND '$enddate'");
             $query = mysqli_query($conn, $sql);
             $rows = [];
             $ojtids = [];
@@ -372,41 +274,7 @@ if ($_POST["action"] == "load_trainer") {
             }
         } else if ($department == 'ALL') {
             // $sql = "select *,(totalhour*60)*totalstaff as totalmanhour from (select ojt.id,user.department,title,startdate,enddate,starttime,endtime,venue,userid,clerkid,((DATEDIFF(enddate, startdate)) + 1) as totalday,((DATEDIFF(enddate, startdate)) + 1) * ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,sum(participateojt.totalman) as totalstaff from ojt join participateojt on ojt.id = ojtid join user on userid = user.id where startdate between '$startdate' and '$enddate' and attendance = 'COMPLETEDOJT' group by ojt.id)tablea;";
-            $sql = "SELECT *, (totalhour * 60) * totalstaff AS totalmanhour
-                    FROM (
-                    SELECT 
-                        ojt.id,
-                        user.department,
-                        title,
-                        startdate,
-                        enddate,
-                        starttime,
-                        endtime,
-                        venue,
-                        userid,
-                        clerkid,
-                        ((DATEDIFF(enddate, startdate)) + 1) AS totalday,
-                        ((DATEDIFF(enddate, startdate)) + 1) * ROUND((TIME_TO_SEC(TIMEDIFF(endtime, starttime)) / 60) / 60, 2) AS totalhour,
-                        SUM(participateojt.totalman) AS totalstaff
-                    FROM ojt
-                    JOIN participateojt ON ojt.id = ojtid
-                    JOIN user ON userid = user.id
-                    WHERE 
-                        startdate BETWEEN '$startdate' AND '$enddate'
-                        AND attendance = 'COMPLETEDOJT'
-                    GROUP BY 
-                        ojt.id,
-                        user.department,
-                        title,
-                        startdate,
-                        enddate,
-                        starttime,
-                        endtime,
-                        venue,
-                        userid,
-                        clerkid
-                    ) AS tablea;
-                    ";
+            $sql = ojtManHourSql("startdate BETWEEN '$startdate' AND '$enddate'");
             $query = mysqli_query($conn, $sql);
             $rows = [];
             $ojtids = [];
@@ -459,41 +327,7 @@ if ($_POST["action"] == "load_trainer") {
         $firstdate = date('Y-m-d', strtotime('first day of this month'));
         $lastdate = date('Y-m-d', strtotime('last day of this month'));
         // $sql = "select *,totalhour*totalstaff as totalmanhour from (select ojt.id,user.department,title,startdate,enddate,starttime,endtime,venue,userid,clerkid,((DATEDIFF(enddate, startdate)) + 1) as totalday,((DATEDIFF(enddate, startdate)) + 1) * ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,sum(participateojt.totalman) as totalstaff from ojt join participateojt on ojt.id = ojtid join user on userid = user.id where startdate between '$firstdate' and '$lastdate' and attendance = 'COMPLETEDOJT' group by ojt.id)tablea;";
-        $sql = " SELECT *, totalhour * totalstaff AS totalmanhour 
-                    FROM (
-                        SELECT 
-                            ojt.id,
-                            user.department,
-                            title,
-                            startdate,
-                            enddate,
-                            starttime,
-                            endtime,
-                            venue,
-                            userid,
-                            clerkid,
-                            ((DATEDIFF(enddate, startdate)) + 1) AS totalday,
-                            ((DATEDIFF(enddate, startdate)) + 1) * ROUND((TIME_TO_SEC(TIMEDIFF(endtime, starttime)) / 60) / 60, 2) AS totalhour,
-                            SUM(participateojt.totalman) AS totalstaff
-                        FROM ojt
-                        JOIN participateojt ON ojt.id = ojtid
-                        JOIN user ON userid = user.id
-                        WHERE 
-                            startdate BETWEEN '$firstdate' AND '$lastdate'
-                            AND attendance = 'COMPLETEDOJT'
-                        GROUP BY 
-                            ojt.id,
-                            user.department,
-                            title,
-                            startdate,
-                            enddate,
-                            starttime,
-                            endtime,
-                            venue,
-                            userid,
-                            clerkid
-                    ) AS tablea
-                    ";
+        $sql = ojtManHourSql("startdate BETWEEN '$firstdate' AND '$lastdate'");
 
         $query = mysqli_query($conn, $sql);
         $rows = [];
@@ -822,6 +656,35 @@ function loadStaff()
         }
     }
     return $options;
+}
+
+// One row per OJT: man hour = total hour x number of completed participants matching $where
+function ojtManHourSql($where, $tail = '')
+{
+    return "SELECT *, totalhour * totalstaff AS totalmanhour
+            FROM (
+                SELECT
+                    ojt.id,
+                    GROUP_CONCAT(DISTINCT user.department ORDER BY user.department SEPARATOR '<br>') AS department,
+                    title,
+                    startdate,
+                    enddate,
+                    starttime,
+                    endtime,
+                    venue,
+                    MIN(participateojt.userid) AS userid,
+                    MAX(participateojt.clerkid) AS clerkid,
+                    ((DATEDIFF(enddate, startdate)) + 1) AS totalday,
+                    ((DATEDIFF(enddate, startdate)) + 1) * ROUND((TIME_TO_SEC(TIMEDIFF(endtime, starttime)) / 60) / 60, 2) AS totalhour,
+                    SUM(participateojt.totalman) AS totalstaff
+                FROM ojt
+                JOIN participateojt ON ojt.id = ojtid
+                JOIN user ON participateojt.userid = user.id
+                WHERE $where
+                    AND attendance = 'COMPLETEDOJT'
+                GROUP BY ojt.id
+                $tail
+            ) AS tablea";
 }
 
 function ojtFetchPeopleCounts($conn, $ojtids)

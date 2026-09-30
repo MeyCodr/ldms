@@ -41,10 +41,11 @@
     // A0001 shows the feedback columns filled in (imports as already
     // completed); A0002 leaves them blank (imports as pending, same as
     // before this feature existed - that participant fills in their own
-    // attendance form later).
+    // attendance form later). The example runs 5 hours so A0002 really does
+    // stay pending - an OJT of 4 hours or less is completed regardless.
     $exampleRows = [
-        ['(EXAMPLE) SAFETY BRIEFING - LINE 1', 'ASSEMBLY LINE 1', '2026-01-05', '2026-01-05', '08:00', '09:00', 'INTERNAL', 'AHMAD BIN ALI', 'A0001', 'Lockout-tagout procedure for Line 1', '2', '4'],
-        ['(EXAMPLE) SAFETY BRIEFING - LINE 1', 'ASSEMBLY LINE 1', '2026-01-05', '2026-01-05', '08:00', '09:00', 'INTERNAL', 'AHMAD BIN ALI', 'A0002', '', '', ''],
+        ['(EXAMPLE) SAFETY BRIEFING - LINE 1', 'ASSEMBLY LINE 1', '2026-01-05', '2026-01-05', '08:00', '13:00', 'INTERNAL', 'AHMAD BIN ALI', 'A0001', 'Lockout-tagout procedure for Line 1', '2', '4'],
+        ['(EXAMPLE) SAFETY BRIEFING - LINE 1', 'ASSEMBLY LINE 1', '2026-01-05', '2026-01-05', '08:00', '13:00', 'INTERNAL', 'AHMAD BIN ALI', 'A0002', '', '', ''],
     ];
     $row = 2;
     foreach ($exampleRows as $exampleRow) {
@@ -150,6 +151,8 @@
         ['   this is meant for OJT that already happened and was recorded on paper/elsewhere beforehand.'],
         ['   Skill Before/After must each be a whole number 1-5 (1 = Poor, 5 = Excellent). You must fill in'],
         ['   all three columns together or leave all three blank - filling only one or two is rejected.'],
+        ['   OJT of 4 HOURS OR LESS in total (number of days x hours per day): every participant is imported'],
+        ['   as COMPLETED even with J-L left blank - no attendance form is needed for a short OJT.'],
         [''],
         ['9. Delete the two grey example rows (or leave them - rows whose Title starts with "(EXAMPLE)"'],
         ['   will still be imported as a real training, so it is best to delete them before uploading).'],

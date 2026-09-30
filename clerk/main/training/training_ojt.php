@@ -443,7 +443,7 @@
                         data:{id:id,btn_action:btn_action},
                         success:function(data)
                         {
-                            var response = JSON.parse(data)
+                            var response = (typeof data === 'string') ? JSON.parse(data) : data;
                             if((response.message) == 'delete') {
                                 swal(
                                     'Deleted!',
@@ -501,6 +501,9 @@
                                 var summary = data.trainings_created + ' training(s) added with ' + data.participants_added + ' participant(s) in total.';
                                 if (data.completed_with_feedback > 0) {
                                     summary += ' ' + data.completed_with_feedback + ' participant(s) imported as already completed with feedback.';
+                                }
+                                if (data.completed_short_ojt > 0) {
+                                    summary += ' ' + data.completed_short_ojt + ' participant(s) auto-completed (OJT of 4 hours or less).';
                                 }
                                 swal(
                                     'Imported!',

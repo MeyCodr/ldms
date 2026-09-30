@@ -549,7 +549,9 @@
                 data:form_data,
                 success:function(data)
                 {
-                    var response = JSON.parse(data)
+                    // training_action.php sends a JSON Content-Type, so jQuery
+                    // has usually parsed it already.
+                    var response = (typeof data === 'string') ? JSON.parse(data) : data;
                     if((response.message) == 'insert') {
                         swal(
                             'Added!',

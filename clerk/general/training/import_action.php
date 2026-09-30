@@ -33,6 +33,12 @@ if ($_FILES['import_file']['name']) {
 
             $title = $titlebef . " - " . $datetime;
 
+            // Short OJT (total hours <= 4, calendar days x hours per day - same
+            // rule as manual add) completes the participant on import.
+            $rowhours = (strtotime($endtime) - strtotime($starttime)) / 3600;
+            $rowdays = (new DateTime($startdate))->diff(new DateTime($enddate))->days + 1;
+            $attendance = ($rowhours > 0 && $rowdays * $rowhours <= 4) ? 'COMPLETEDOJT' : '';
+
             $sql = "SELECT title, startdate FROM ojt WHERE title = '$title'";
             $query = mysqli_query($conn, $sql);
             if (!$query) {
@@ -84,8 +90,8 @@ if ($_FILES['import_file']['name']) {
                 $userid = mysqli_real_escape_string($conn, $row['id']);
                 $department = mysqli_real_escape_string($conn, $row['department']);
 
-                $sql = "INSERT INTO participateojt (ojtid, userid, totalman, department, clerkid) 
-                        VALUES ('$ojtid', '$userid', '1', '$department', '$clerkid')";
+                $sql = "INSERT INTO participateojt (ojtid, userid, totalman, department, clerkid, attendance)
+                        VALUES ('$ojtid', '$userid', '1', '$department', '$clerkid', '$attendance')";
                 mysqli_query($conn, $sql);
 
                 $sql = "SELECT SUM(totalman) AS totaluser FROM participateojt WHERE ojtid = '$ojtid'";
@@ -109,8 +115,8 @@ if ($_FILES['import_file']['name']) {
                 $userid = mysqli_real_escape_string($conn, $row['id']);
                 $department = mysqli_real_escape_string($conn, $row['department']);
 
-                $sql = "INSERT INTO participateojt (ojtid, userid, totalman, department, clerkid) 
-                        VALUES ('$ojtid', '$userid', '1', '$department', '$clerkid')";
+                $sql = "INSERT INTO participateojt (ojtid, userid, totalman, department, clerkid, attendance)
+                        VALUES ('$ojtid', '$userid', '1', '$department', '$clerkid', '$attendance')";
                 mysqli_query($conn, $sql);
 
                 $sql = "SELECT SUM(totalman) AS totaluser FROM participateojt WHERE ojtid = '$ojtid'";
