@@ -24,6 +24,7 @@
     <script type="text/javascript"
         src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.18/b-1.5.4/b-colvis-1.5.4/b-flash-1.5.4/b-html5-1.5.4/b-print-1.5.4/datatables.min.js">
     </script>
+<?php require_once __DIR__ . '/../../tna_training_options.php'; echo tna_training_options_script($conn); ?>
 </head>
 
 <style>
@@ -661,16 +662,7 @@ $.ajax({
                                         <td>
                                             <select name="traininges${noides}" id="traininges${noides}" class="form-control">
                                                 <option selected disabled>-- Select Training --</option>
-                                                <option value="CARBON BORDER ADJUSTMENT MECHANISM (CBAM) COMPLIANCE">CARBON BORDER ADJUSTMENT MECHANISM (CBAM) COMPLIANCE</option>
-                                                <option value="EU BATTERY REGULATION AWARENESS">EU BATTERY REGULATION AWARENESS</option>
-                                                <option value="ESG REPORTING STANDARDS (BURSA, SC)">ESG REPORTING STANDARDS (BURSA, SC)</option>
-                                                <option value="LIFE CYCLE ASSESSMENT (LCA) FOR AUTOMOTIVE">LIFE CYCLE ASSESSMENT (LCA) FOR AUTOMOTIVE</option>
-                                                <option value="WASTE REDUCTION & CIRCULAR ECONOMY">WASTE REDUCTION & CIRCULAR ECONOMY</option>
-                                                <option value="ESG AWARENESS AND STRATEGIC IMPLEMENTATION">ESG AWARENESS AND STRATEGIC IMPLEMENTATION</option>
-                                                <option value="ENVIRONMENTAL MANAGEMENT SYSTEM (ISO 14001) AND GOVERNMENT COMPLIANCE">ENVIRONMENTAL MANAGEMENT SYSTEM (ISO 14001) AND GOVERNMENT COMPLIANCE</option>
-                                                <option value="GOVERNMENT INCENTIVES FOR SUSTAINABLE MANUFACTURING">GOVERNMENT INCENTIVES FOR SUSTAINABLE MANUFACTURING</option>
-                                                <option value="GREEN BOOK">GREEN BOOK</option>
-                                                <option value="OTHERS">OTHERS</option>
+                                                    ${TNA_TRAINING_OPTIONS.esgaware}
                                             </select>
                                             <br>
                                             <input type="text" name="otres${noides}" id="otres${noides}" class="form-control" value="${data.othertr}" />
@@ -743,22 +735,7 @@ $.ajax({
                                         <td>
                                             <select name="trainingse${noidse}" id="trainingse${noidse}" class="form-control">
                                                 <option selected disabled>-- Select Training --</option>
-                                                <option value="TRAIN THE TRAINER (TTT)">TRAIN THE TRAINER (TTT)</option>
-                                                <option value="EFFECTIVE BUSINESS COMMUNICATION">EFFECTIVE BUSINESS COMMUNICATION</option>
-                                                <option value="ENGLISH FOR PROFESSIONAL PURPOSES">ENGLISH FOR PROFESSIONAL PURPOSES</option>
-                                                <option value="INTERPERSONAL COMMUNICATION AND RELATIONSHIP BUILDING">INTERPERSONAL COMMUNICATION AND RELATIONSHIP BUILDING</option>
-                                                <option value="PRESENTATION AND PUBLIC SPEAKING SKILLS">PRESENTATION AND PUBLIC SPEAKING SKILLS</option>
-                                                <option value="EMOTIONAL INTELLIGENCE (EQ) FOR WORKPLACE EFFECTIVENESS">EMOTIONAL INTELLIGENCE (EQ) FOR WORKPLACE EFFECTIVENESS</option>
-                                                <option value="CONFLICT RESOLUTION AND NEGOTIATION SKILLS">CONFLICT RESOLUTION AND NEGOTIATION SKILLS</option>
-                                                <option value="TIME MANAGEMENT AND PRODUCTIVITY SKILLS">TIME MANAGEMENT AND PRODUCTIVITY SKILLS</option>
-                                                <option value="CROSS-CULTURAL COMMUNICATION">CROSS-CULTURAL COMMUNICATION</option>
-                                                <option value="CUSTOMER SERVICE AND PROFESSIONAL ETIQUETTE">CUSTOMER SERVICE AND PROFESSIONAL ETIQUETTE</option>
-                                                <option value="CREATIVE THINKING AND PROBLEM-SOLVING">CREATIVE THINKING AND PROBLEM-SOLVING</option>
-                                                <option value="MICROSOFT TEAMS AND COLLABORATION TOOLS">MICROSOFT TEAMS AND COLLABORATION TOOLS</option>
-                                                <option value="TIME MANAGEMENT USING MICROSOFT 365 TOOLS">TIME MANAGEMENT USING MICROSOFT 365 TOOLS</option>
-                                                <option value="GREEN TECHNOLOGY AND ENERGY EFFICIENCY">GREEN TECHNOLOGY AND ENERGY EFFICIENCY</option>
-                                                <option value="ANTI BRRIBERY & ANTI CORRUPTION">ANTI BRRIBERY & ANTI CORRUPTION</option>
-                                                <option value="OTHERS">OTHERS</option>
+                                                    ${TNA_TRAINING_OPTIONS.selfaware}
                                             </select>
                                             <br>
                                             <input type="text" name="otrse${noidse}" id="otrse${noidse}" class="form-control" value="${data.othertr}" />
@@ -831,18 +808,7 @@ $.ajax({
                                         <td>
                                             <select name="trainingle${noidle}" id="trainingle${noidle}" class="form-control">
                                                 <option selected disabled>-- Select Training --</option>
-                                                <option value="ETHICAL LEADERSHIP & GOVERNANCE">ETHICAL LEADERSHIP & GOVERNANCE</option>
-                                                <option value="RESILIENCE & STRESS MANAGEMENT">RESILIENCE & STRESS MANAGEMENT</option>
-                                                <option value="INCLUSIVE LEADERSHIP & DIVERSITY AWARENESS">INCLUSIVE LEADERSHIP & DIVERSITY AWARENESS</option>
-                                                <option value="HIGH IMPACT TRANSFORMATIONAL LEADERSHIP SKILLS FOR MANAGERS & LEADERS">HIGH IMPACT TRANSFORMATIONAL LEADERSHIP SKILLS FOR MANAGERS & LEADERS</option>
-                                                <option value="GREEN TECHNOLOGY AND ENERGY EFFICIENCY">GREEN TECHNOLOGY AND ENERGY EFFICIENCY</option>
-                                                <option value="LEADING HIGH-PERFORMANCE TEAMS IN MANUFACTURING">LEADING HIGH-PERFORMANCE TEAMS IN MANUFACTURING</option>
-                                                <option value="STRATEGIC LEADERSHIP AND DECISION-MAKING">STRATEGIC LEADERSHIP AND DECISION-MAKING</option>
-                                                <option value="CHANGE MANAGEMENT AND CULTURE TRANSFORMATION">CHANGE MANAGEMENT AND CULTURE TRANSFORMATION</option>
-                                                <option value="CUSTOMER-CENTRIC LEADERSHIP">CUSTOMER-CENTRIC LEADERSHIP</option>
-                                                <option value="STRATEGIC SUPPLY CHAIN LEADERSHIP">STRATEGIC SUPPLY CHAIN LEADERSHIP</option>
-                                                <option value="CROSS-FUNCTIONAL COLLABORATION AND INFLUENCE">CROSS-FUNCTIONAL COLLABORATION AND INFLUENCE</option>
-                                                <option value="OTHERS">OTHERS</option>
+                                                    ${TNA_TRAINING_OPTIONS.leadaware}
                                             </select>
                                             <br>
                                             <input type="text" name="otrle${noidle}" id="otrle${noidle}" class="form-control" value="${data.othertr}" />
@@ -915,14 +881,7 @@ $.ajax({
                                         <td>
                                             <select name="trainingda${noidda}" id="trainingda${noidda}" class="form-control">
                                                 <option selected disabled>-- Select Training --</option>
-                                                <option value="DATA PRIVACY & PDPA 2010 IN MANUFACTURING">DATA PRIVACY & PDPA 2010 IN MANUFACTURING</option>
-                                                <option value="AI & ROBOTICS IN AUTOMOTIVE">AI & ROBOTICS IN AUTOMOTIVE</option>
-                                                <option value="EV FUNDAMENTALS (BATTERY, CHARGER, REGULATIONS)">EV FUNDAMENTALS (BATTERY, CHARGER, REGULATIONS)</option>
-                                                <option value="MICROSOFT POWER BI: DATA VISUALISATION AND DASHBOARD CREATION">MICROSOFT POWER BI: DATA VISUALISATION AND DASHBOARD CREATION</option>
-                                                <option value="MICROSOFT EXCEL: ADVANCED FORMULAS, PIVOT TABLES, AND MACROS">MICROSOFT EXCEL: ADVANCED FORMULAS, PIVOT TABLES, AND MACROS</option>
-                                                <option value="MICROSOFT VISUAL BASIC FOR APPLICATIONS (VBA) AUTOMATION">MICROSOFT VISUAL BASIC FOR APPLICATIONS (VBA) AUTOMATION</option>
-                                                <option value="MICROSOFT POWER AUTOMATE: WORKFLOW AUTOMATION">MICROSOFT POWER AUTOMATE: WORKFLOW AUTOMATION</option>
-                                                <option value="OTHERS">OTHERS</option>
+                                                    ${TNA_TRAINING_OPTIONS.dataaware}
                                             </select>
                                             <br>
                                             <input type="text" name="otrda${noidda}" id="otrda${noidda}" class="form-control" value="${data.othertr}" />
@@ -997,194 +956,8 @@ $.ajax({
                                                     <td>
                                                     <select name="trainingfu${noidfu}" id="trainingfu${noidfu}" class="form-control">
                                                     <option selected disabled>-- Select Training --</option>
-                                                    <optgroup label="IT, TECHNICAL & MAINTENANCE">
-                                                        <option value="PREDICTIVE MAINTENANCE USING IOT">PREDICTIVE MAINTENANCE USING IOT</option>
-                                                        <option value="EV COMPONENT SAFETY STANDARDS">EV COMPONENT SAFETY STANDARDS</option>
-                                                        <option value="COST REDUCTION TECHNIQUES FOR MAINTENANCE">COST REDUCTION TECHNIQUES FOR MAINTENANCE</option>
-                                                        <option value="IP & PATENT">IP & PATENT</option>
-                                                        <option value="KARAKURI">KARAKURI</option>
-                                                        <option value="CATIA">CATIA</option>
-                                                        <option value="CHATGPT FOR PRODUCTIVITY AND TASK AUTOMATION">CHATGPT FOR PRODUCTIVITY AND TASK AUTOMATION</option>
-                                                        <option value="MAINTENANCE MANAGEMENT AND RELIABILITY ENGINEERING">MAINTENANCE MANAGEMENT AND RELIABILITY ENGINEERING</option>
-                                                        <option value="CNC AND STAMPING MACHINE OPERATION & TROUBLESHOOTING">CNC AND STAMPING MACHINE OPERATION & TROUBLESHOOTING</option>
-                                                        <option value="ELECTRICAL AND MECHANICAL SYSTEMS MAINTENANCE">ELECTRICAL AND MECHANICAL SYSTEMS MAINTENANCE</option>
-                                                        <option value="EV CHARGER TECHNOLOGY AND BATTERY MAINTENANCE">EV CHARGER TECHNOLOGY AND BATTERY MAINTENANCE</option>
-                                                        <option value="PLC PROGRAMMING AND AUTOMATION CONTROL">PLC PROGRAMMING AND AUTOMATION CONTROL</option>
-                                                        <option value="IT INFRASTRUCTURE AND NETWORK MANAGEMENT">IT INFRASTRUCTURE AND NETWORK MANAGEMENT</option>
-                                                        <option value="CYBERSECURITY AND DATA PROTECTION">CYBERSECURITY AND DATA PROTECTION</option>
-                                                        <option value="TROUBLESHOOTING AND ROOT CAUSE ANALYSIS FOR EQUIPMENT FAILURES">TROUBLESHOOTING AND ROOT CAUSE ANALYSIS FOR EQUIPMENT FAILURES</option>
-                                                        <option value="INDUSTRIAL ROBOTICS AND AUTOMATED ASSEMBLY SYSTEMS">INDUSTRIAL ROBOTICS AND AUTOMATED ASSEMBLY SYSTEMS</option>
-                                                        <option value="GOVERNMENT REGULATIONS AND INDUSTRIAL STANDARDS FOR TECHNICAL OPERATIONS">GOVERNMENT REGULATIONS AND INDUSTRIAL STANDARDS FOR TECHNICAL OPERATIONS</option>
-                                                        <option value="MACHINE LEARNING FOR PROCESS OPTIMISATION">MACHINE LEARNING FOR PROCESS OPTIMISATION</option>
-                                                        <option value="INDUSTRIAL ROBOT SAFETY AND COMPLIANCE">INDUSTRIAL ROBOT SAFETY AND COMPLIANCE</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="MANUFACTURING / OPERATION">
-                                                        <option value="MACHINE SAFETY & LOCKOUT–TAGOUT (LOTO)">MACHINE SAFETY & LOCKOUT–TAGOUT (LOTO)</option>
-                                                        <option value="ERGONOMICS & MANUAL HANDLING IN PRODUCTION">ERGONOMICS & MANUAL HANDLING IN PRODUCTION</option>
-                                                        <option value="STAMPING PRESS OPERATION & MAINTENANCE">STAMPING PRESS OPERATION & MAINTENANCE</option>
-                                                        <option value="DIE MAINTENANCE & TROUBLESHOOTING FOR STAMPING & ROLL FORMING">DIE MAINTENANCE & TROUBLESHOOTING FOR STAMPING & ROLL FORMING</option>
-                                                        <option value="ROLL FORMING TECHNOLOGY & DEFECT PREVENTION">ROLL FORMING TECHNOLOGY & DEFECT PREVENTION</option>
-                                                        <option value="WELDING & ASSEMBLY TECHNIQUES FOR AUTOMOTIVE CHASSIS">WELDING & ASSEMBLY TECHNIQUES FOR AUTOMOTIVE CHASSIS</option>
-                                                        <option value="ROBOTIC WELDING & AUTOMATION IN ASSEMBLY">ROBOTIC WELDING & AUTOMATION IN ASSEMBLY</option>
-                                                        <option value="STAMPING DEFECTS & TROUBLESHOOTING TECHNIQUES">STAMPING DEFECTS & TROUBLESHOOTING TECHNIQUES</option>
-                                                        <option value="ASSEMBLY LINE BALANCING & PROCESS OPTIMISATION">ASSEMBLY LINE BALANCING & PROCESS OPTIMISATION</option>
-                                                        <option value="FUNDAMENTALS OF ELECTRODEPOSITION">FUNDAMENTALS OF ELECTRODEPOSITION</option>
-                                                        <option value="MAINTENANCE OF ED TANKS, RECTIFIERS, FILTERS, AND ULTRAFILTRATION SYSTEMS">MAINTENANCE OF ED TANKS, RECTIFIERS, FILTERS, AND ULTRAFILTRATION SYSTEMS</option>
-                                                        <option value="ROBOTICS IN MATERIAL HANDLING AND PAINTING SYSTEMS">ROBOTICS IN MATERIAL HANDLING AND PAINTING SYSTEMS</option>
-                                                        <option value="5S TRAINING">5S TRAINING</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="QUALITY SYSTEMS & PRODUCTIVITY IMPROVEMENT">
-                                                        <option value="ISO 50001:2018 ENERGY MANAGEMENT SYSTEM">ISO 50001:2018 ENERGY MANAGEMENT SYSTEM</option>
-                                                        <option value="IATF 16949:2024 TRANSITION TRAINING">IATF 16949:2024 TRANSITION TRAINING</option>
-                                                        <option value="ISO 37301 COMPLIANCE MANAGEMENT">ISO 37301 COMPLIANCE MANAGEMENT</option>
-                                                        <option value="INTERNAL AUDIT AND CONTROLS">INTERNAL AUDIT AND CONTROLS</option>
-                                                        <option value="BUSINESS CONTINUITY AND CRISIS MANAGEMENT">BUSINESS CONTINUITY AND CRISIS MANAGEMENT</option>
-                                                        <option value="RISK MANAGEMENT FRAMEWORKS AND BEST PRACTICES">RISK MANAGEMENT FRAMEWORKS AND BEST PRACTICES</option>
-                                                        <option value="KAIZEN: CREATE A CULTURE OF CONTINUOUS IMPROVEMENT">KAIZEN: CREATE A CULTURE OF CONTINUOUS IMPROVEMENT</option>
-                                                        <option value="LEAN PRODUCTION SYSTEM TRAINING">LEAN PRODUCTION SYSTEM TRAINING</option>
-                                                        <option value="POKA YOKE - WHAT YOU NEED TO KNOW">POKA YOKE - WHAT YOU NEED TO KNOW</option>
-                                                        <option value="SIX SIGMA TOOLS FOR IMPROVEMENT">SIX SIGMA TOOLS FOR IMPROVEMENT</option>
-                                                        <option value="8D PROBLEM SOLVING">8D PROBLEM SOLVING</option>
-                                                        <option value="TESTING & LABORATORY MANAGEMENT">TESTING & LABORATORY MANAGEMENT</option>
-                                                        <option value="STATISTICAL PROCESS CONTROL (SPC) AND DATA-DRIVEN QUALITY IMPROVEMENT">STATISTICAL PROCESS CONTROL (SPC) AND DATA-DRIVEN QUALITY IMPROVEMENT</option>
-                                                        <option value="PRODUCTIVITY IMPROVEMENT AND OPERATIONAL EXCELLENCE">PRODUCTIVITY IMPROVEMENT AND OPERATIONAL EXCELLENCE</option>
-                                                        <option value="SUPPLIER QUALITY MANAGEMENT AND AUDIT">SUPPLIER QUALITY MANAGEMENT AND AUDIT</option>
-                                                        <option value="THE 7 NEW QC MANAGEMENT TOOLS">THE 7 NEW QC MANAGEMENT TOOLS</option>
-                                                        <option value="ISO 14001:2015 ENVIRONMENTAL MANAGEMENT SYSTEM (EMS) LEAD AUDITING TRAINING">ISO 14001:2015 ENVIRONMENTAL MANAGEMENT SYSTEM (EMS) LEAD AUDITING TRAINING</option>
-                                                        <option value="ISO 9001:2015 QUALITY MANAGEMENT SYSTEM (QMS) INTERNAL AUDITOR TRAINING">ISO 9001:2015 QUALITY MANAGEMENT SYSTEM (QMS) INTERNAL AUDITOR TRAINING</option>
-                                                        <option value="LEAD AUDITOR IATF">LEAD AUDITOR IATF</option>
-                                                        <option value="ISO 45001:2018 OCCUPATIONAL HEALTH AND SAFETY REQUIREMENTS AND INTERNAL AUDITING">ISO 45001:2018 OCCUPATIONAL HEALTH AND SAFETY REQUIREMENTS AND INTERNAL AUDITING</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="INDUSTRIAL SAFETY">
-                                                        <option value="HEALTH, SAFETY & ENVIRONMENT (HSE) COMPLIANCE">HEALTH, SAFETY & ENVIRONMENT (HSE) COMPLIANCE</option>
-                                                        <option value="OCCUPATIONAL HEALTH & SAFETY (OHS) AWARENESS">OCCUPATIONAL HEALTH & SAFETY (OHS) AWARENESS</option>
-                                                        <option value="INDUSTRIAL MACHINE SAFETY AND LOCKOUT/TAGOUT (LOTO) PROCEDURES">INDUSTRIAL MACHINE SAFETY AND LOCKOUT/TAGOUT (LOTO) PROCEDURES</option>
-                                                        <option value="HAZARD IDENTIFICATION AND RISK ASSESSMENT (HIRA)">HAZARD IDENTIFICATION AND RISK ASSESSMENT (HIRA)</option>
-                                                        <option value="FIRE SAFETY AND EMERGENCY RESPONSE">FIRE SAFETY AND EMERGENCY RESPONSE</option>
-                                                        <option value="ERGONOMICS AND MANUAL HANDLING SAFETY">ERGONOMICS AND MANUAL HANDLING SAFETY</option>
-                                                        <option value="HSE MANAGEMENT SYSTEM AND ISO 45001 COMPLIANCE">HSE MANAGEMENT SYSTEM AND ISO 45001 COMPLIANCE</option>
-                                                        <option value="CHEMICAL SAFETY AND HAZARDOUS MATERIAL HANDLING">CHEMICAL SAFETY AND HAZARDOUS MATERIAL HANDLING</option>
-                                                        <option value="SAFETY LEADERSHIP AND CULTURE BUILDING">SAFETY LEADERSHIP AND CULTURE BUILDING</option>
-                                                        <option value="INCIDENT INVESTIGATION AND REPORTING">INCIDENT INVESTIGATION AND REPORTING</option>
-                                                        <option value="EV CHARGER AND ELECTRICAL SAFETY">EV CHARGER AND ELECTRICAL SAFETY</option>
-                                                        <option value="OVERHEAD CRANE">OVERHEAD CRANE</option>
-                                                        <option value="FORKLIFT">FORKLIFT</option>
-                                                        <option value="OSH COORDINATOR TRAINING">OSH COORDINATOR TRAINING</option>
-                                                        <option value="WORKING AT HEIGHT">WORKING AT HEIGHT</option>
-                                                        <option value="SAFETY AWARENESS">SAFETY AWARENESS</option>
-                                                        <option value="SCHEDULED WASTE MANAGEMENT">SCHEDULED WASTE MANAGEMENT</option>
-                                                        <option value="OSH COORDINATOR TRAINING">OSH COORDINATOR TRAINING</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="HUMAN CAPITAL">
-                                                        <option value="SUCCESSION PLANNING">SUCCESSION PLANNING</option>
-                                                        <option value="ANTI-FORCED LABOUR COMPLIANCE (ILO + US CBP IMPORT BAN)">ANTI-FORCED LABOUR COMPLIANCE (ILO + US CBP IMPORT BAN)</option>
-                                                        <option value="HRD CORP 2026 CLAIMABLE TRAINING RULES">HRD CORP 2026 CLAIMABLE TRAINING RULES</option>
-                                                        <option value="TALENT ACQUISITION AND RECRUITMENT STRATEGIES">TALENT ACQUISITION AND RECRUITMENT STRATEGIES</option>
-                                                        <option value="PERFORMANCE MANAGEMENT SYSTEMS AND KPI TRACKING">PERFORMANCE MANAGEMENT SYSTEMS AND KPI TRACKING</option>
-                                                        <option value="EMPLOYEE ENGAGEMENT AND RETENTION STRATEGIES">EMPLOYEE ENGAGEMENT AND RETENTION STRATEGIES</option>
-                                                        <option value="LEARNING & DEVELOPMENT PLANNING">LEARNING & DEVELOPMENT PLANNING</option>
-                                                        <option value="COMPENSATION, BENEFITS, AND PAYROLL MANAGEMENT">COMPENSATION, BENEFITS, AND PAYROLL MANAGEMENT</option>
-                                                        <option value="LABOUR LAW AND EMPLOYMENT COMPLIANCE">LABOUR LAW AND EMPLOYMENT COMPLIANCE</option>
-                                                        <option value="HR ANALYTICS AND PEOPLE DATA MANAGEMENT">HR ANALYTICS AND PEOPLE DATA MANAGEMENT</option>
-                                                        <option value="COACHING AND MENTORING SKILLS FOR MANAGERS">COACHING AND MENTORING SKILLS FOR MANAGERS</option>
-                                                        <option value="CHANGE MANAGEMENT AND CULTURE TRANSFORMATION">CHANGE MANAGEMENT AND CULTURE TRANSFORMATION</option>
-                                                        <option value="DIVERSITY, EQUITY, AND INCLUSION (DEI) IN MANUFACTURING">DIVERSITY, EQUITY, AND INCLUSION (DEI) IN MANUFACTURING</option>
-                                                        <option value="EMPLOYEE WELLNESS AND WORK-LIFE BALANCE PROGRAMS">EMPLOYEE WELLNESS AND WORK-LIFE BALANCE PROGRAMS</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="LEGAL & GOVERNANCE">
-                                                        <option value="CONTRACT AND LEGAL COMPLIANCE MANAGEMENT">CONTRACT AND LEGAL COMPLIANCE MANAGEMENT</option>
-                                                        <option value="CORPORATE AND COMMERCIAL LAW AWARENESS">CORPORATE AND COMMERCIAL LAW AWARENESS</option>
-                                                        <option value="REGULATORY COMPLIANCE IN AUTOMOTIVE INDUSTRY">REGULATORY COMPLIANCE IN AUTOMOTIVE INDUSTRY</option>
-                                                        <option value="DISPUTE RESOLUTION AND LEGAL RISK MANAGEMENT">DISPUTE RESOLUTION AND LEGAL RISK MANAGEMENT</option>
-                                                        <option value="INTELLECTUAL PROPERTY ENFORCEMENT AND INFRINGEMENT MANAGEMENT">INTELLECTUAL PROPERTY ENFORCEMENT AND INFRINGEMENT MANAGEMENT</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="SALES, MARKETING & CUSTOMER SERVICE">
-                                                        <option value="B2B SALES STRATEGIES FOR MANUFACTURING">B2B SALES STRATEGIES FOR MANUFACTURING</option>
-                                                        <option value="INDUSTRIAL MARKETING AND BRAND POSITIONING">INDUSTRIAL MARKETING AND BRAND POSITIONING</option>
-                                                        <option value="CUSTOMER RELATIONSHIP MANAGEMENT (CRM)">CUSTOMER RELATIONSHIP MANAGEMENT (CRM)</option>
-                                                        <option value="TECHNICAL PRODUCT PRESENTATION SKILLS">TECHNICAL PRODUCT PRESENTATION SKILLS</option>
-                                                        <option value="NEGOTIATION AND CLOSING TECHNIQUES">NEGOTIATION AND CLOSING TECHNIQUES</option>
-                                                        <option value="MARKET AND COMPETITOR ANALYSIS">MARKET AND COMPETITOR ANALYSIS</option>
-                                                        <option value="SALES FORECASTING AND BUSINESS METRICS">SALES FORECASTING AND BUSINESS METRICS</option>
-                                                        <option value="CUSTOMER SERVICE EXCELLENCE FOR INDUSTRIAL CLIENTS">CUSTOMER SERVICE EXCELLENCE FOR INDUSTRIAL CLIENTS</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="BUSINESS & MANAGEMENT">
-                                                        <option value="BUSINESS ACUMEN FOR MANUFACTURING PROFESSIONALS">BUSINESS ACUMEN FOR MANUFACTURING PROFESSIONALS</option>
-                                                        <option value="AUTOMOTIVE INDUSTRY OVERVIEW AND TRENDS">AUTOMOTIVE INDUSTRY OVERVIEW AND TRENDS</option>
-                                                        <option value="FINANCIAL LITERACY FOR NON-FINANCE MANAGERS">FINANCIAL LITERACY FOR NON-FINANCE MANAGERS</option>
-                                                        <option value="STRATEGIC THINKING AND BUSINESS DECISION-MAKING">STRATEGIC THINKING AND BUSINESS DECISION-MAKING</option>
-                                                        <option value="CUSTOMER AND MARKET INSIGHT FOR BUSINESS SUCCESS">CUSTOMER AND MARKET INSIGHT FOR BUSINESS SUCCESS</option>
-                                                        <option value="PROJECT ROI AND BUSINESS IMPACT ANALYSIS">PROJECT ROI AND BUSINESS IMPACT ANALYSIS</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="FINANCIAL MANAGEMENT">
-                                                        <option value="ESG-LINKED FINANCE & GREEN TAX INCENTIVES">ESG-LINKED FINANCE & GREEN TAX INCENTIVES</option>
-                                                        <option value="TRANSFER PRICING & TAXATION UPDATES 2026">TRANSFER PRICING & TAXATION UPDATES 2026</option>
-                                                        <option value="STRATEGIC COST MANAGEMENT IN AUTOMOTIVE">STRATEGIC COST MANAGEMENT IN AUTOMOTIVE</option>
-                                                        <option value="REGULATORY REPORTING AND AUDIT READINESS">REGULATORY REPORTING AND AUDIT READINESS</option>
-                                                        <option value="E-INVOICING">E-INVOICING</option>
-                                                        <option value="FINANCIAL PLANNING AND BUDGETING">FINANCIAL PLANNING AND BUDGETING</option>
-                                                        <option value="FINANCIAL REGULATORY COMPLIANCE AND REPORTING">FINANCIAL REGULATORY COMPLIANCE AND REPORTING</option>
-                                                        <option value="CASH FLOW MANAGEMENT AND WORKING CAPITAL OPTIMISATION">CASH FLOW MANAGEMENT AND WORKING CAPITAL OPTIMISATION</option>
-                                                        <option value="RISK MANAGEMENT AND INTERNAL CONTROLS">RISK MANAGEMENT AND INTERNAL CONTROLS</option>
-                                                        <option value="FINANCIAL ANALYSIS AND DECISION-MAKING">FINANCIAL ANALYSIS AND DECISION-MAKING</option>
-                                                        <option value="TAXATION AND GST/SST COMPLIANCE">TAXATION AND GST/SST COMPLIANCE</option>
-                                                        <option value="PROCUREMENT AND FINANCE COLLABORATION">PROCUREMENT AND FINANCE COLLABORATION</option>
-                                                        <option value="FINANCIAL SYSTEMS AND ERP UTILISATION">FINANCIAL SYSTEMS AND ERP UTILISATION</option>
-                                                        <option value="INVESTMENT AND CAPITAL EXPENDITURE (CAPEX) MANAGEMENT">INVESTMENT AND CAPITAL EXPENDITURE (CAPEX) MANAGEMENT</option>
-                                                        <option value="AI INNOVATIONS FOR FINANCIAL PROFESSIONALS">AI INNOVATIONS FOR FINANCIAL PROFESSIONALS</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="LOGISTICS / SCM / WAREHOUSE / INVENTORY">
-                                                        <option value="SUPPLIER ESG COMPLIANCE AUDITS">SUPPLIER ESG COMPLIANCE AUDITS</option>
-                                                        <option value="DANGEROUS GOODS HANDLING IN AUTOMOTIVE LOGISTICS">DANGEROUS GOODS HANDLING IN AUTOMOTIVE LOGISTICS</option>
-                                                        <option value="MITI IMPORT/EXPORT REGULATORY UPDATES">MITI IMPORT/EXPORT REGULATORY UPDATES</option>
-                                                        <option value="SUPPLY CHAIN MANAGEMENT FUNDAMENTALS">SUPPLY CHAIN MANAGEMENT FUNDAMENTALS</option>
-                                                        <option value="WAREHOUSE MANAGEMENT AND INVENTORY CONTROL">WAREHOUSE MANAGEMENT AND INVENTORY CONTROL</option>
-                                                        <option value="LOGISTICS AND TRANSPORTATION MANAGEMENT">LOGISTICS AND TRANSPORTATION MANAGEMENT</option>
-                                                        <option value="DEMAND FORECASTING AND INVENTORY OPTIMISATION">DEMAND FORECASTING AND INVENTORY OPTIMISATION</option>
-                                                        <option value="SUSTAINABLE SUPPLY CHAIN PRACTICES">SUSTAINABLE SUPPLY CHAIN PRACTICES</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="PROCUREMENT & VENDOR DEVELOPMENT">
-                                                        <option value="AUTOMOTIVE INDUSTRY SUPPLY CHAIN STANDARDS">AUTOMOTIVE INDUSTRY SUPPLY CHAIN STANDARDS</option>
-                                                        <option value="STRATEGIC SOURCING AND SUPPLIER SELECTION">STRATEGIC SOURCING AND SUPPLIER SELECTION</option>
-                                                        <option value="SUPPLIER PERFORMANCE MANAGEMENT (SPM)">SUPPLIER PERFORMANCE MANAGEMENT (SPM)</option>
-                                                        <option value="CONTRACT MANAGEMENT AND NEGOTIATION FOR PROCUREMENT">CONTRACT MANAGEMENT AND NEGOTIATION FOR PROCUREMENT</option>
-                                                        <option value="COST ANALYSIS AND TOTAL COST OF OWNERSHIP (TCO)">COST ANALYSIS AND TOTAL COST OF OWNERSHIP (TCO)</option>
-                                                        <option value="VENDOR DEVELOPMENT AND COLLABORATION">VENDOR DEVELOPMENT AND COLLABORATION</option>
-                                                        <option value="DIGITAL PROCUREMENT TOOLS AND ERP UTILISATION">DIGITAL PROCUREMENT TOOLS AND ERP UTILISATION</option>
-                                                        <option value="SUSTAINABLE PROCUREMENT AND ESG PRACTICES">SUSTAINABLE PROCUREMENT AND ESG PRACTICES</option>
-                                                        <option value="SUPPLIER INNOVATION AND TECHNOLOGY COLLABORATION">SUPPLIER INNOVATION AND TECHNOLOGY COLLABORATION</option>
-                                                        <option value="ADVANCED PROCUREMENT">ADVANCED PROCUREMENT</option>
-                                                        <option value="DEVELOPING PURCHASING POLICIES, PROCESSES AND SLA'S">DEVELOPING PURCHASING POLICIES, PROCESSES AND SLA'S</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="GOVERNANCE RISK AND COMPLIANCE">
-                                                        <option value="COMPLIANCE MANAGEMENT IN THE AUTOMOTIVE INDUSTRY">COMPLIANCE MANAGEMENT IN THE AUTOMOTIVE INDUSTRY</option>
-                                                        <option value="ENVIRONMENTAL, SOCIAL, AND GOVERNANCE (ESG) RISK AND COMPLIANCE">ENVIRONMENTAL, SOCIAL, AND GOVERNANCE (ESG) RISK AND COMPLIANCE</option>
-                                                        <option value="HEALTH, SAFETY & ENVIRONMENT (HSE) COMPLIANCE">HEALTH, SAFETY & ENVIRONMENT (HSE) COMPLIANCE</option>
-                                                        <option value="REGISTERED ELECTRICAL ENERGY MANAGER (REM)">REGISTERED ELECTRICAL ENERGY MANAGER (REM)</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
+                                                        ${TNA_TRAINING_OPTIONS.functional}
+                                                    </select>
                                                     <br>
                                                     <input type="text" name="otrfu${noidfu}" id="otrfu${noidfu}" class="form-control" value="${data.othertr}" />
                                                     </td>
@@ -1256,20 +1029,7 @@ $.ajax({
                                                     <td>
                                                         <select name="trainingbu${noidbu}" id="trainingbu${noidbu}" class="form-control">
                                                             <option selected disabled>-- Select Training --</option>
-                                                            <optgroup label="DIGITAL TRANSFORMATION & INNOVATION">
-                                                                <option value="INDUSTRY 4.0 SMART MANUFACTURING STRATEGIES">INDUSTRY 4.0 SMART MANUFACTURING STRATEGIES</option>
-                                                                <option value="DIGITAL SUPPLY CHAIN OPTIMISATION">DIGITAL SUPPLY CHAIN OPTIMISATION</option>
-                                                                <option value="DIGITAL TWINS IN MANUFACTURING">DIGITAL TWINS IN MANUFACTURING</option>
-                                                                <option value="ROBOTICS PROCESS AUTOMATION (RPA) FOR INDUSTRIAL PROCESSES">ROBOTICS PROCESS AUTOMATION (RPA) FOR INDUSTRIAL PROCESSES</option>
-                                                                <option value="ADVANCED DATA VISUALISATION FOR OPERATIONAL DECISION-MAKING">ADVANCED DATA VISUALISATION FOR OPERATIONAL DECISION-MAKING</option>
-                                                                <option value="DIGITAL PRODUCT INNOVATION AND EV TECHNOLOGY">DIGITAL PRODUCT INNOVATION AND EV TECHNOLOGY</option>
-                                                                <option value="INTERNET OF THINGS AND CONNECTED FACTORY IMPLEMENTATION">INTERNET OF THINGS AND CONNECTED FACTORY IMPLEMENTATION</option>
-                                                                <option value="AGILE AND LEAN DIGITAL PROJECT MANAGEMENT">AGILE AND LEAN DIGITAL PROJECT MANAGEMENT</option>
-                                                                <option value="PREDICTIVE ANALYTICS AND MACHINE LEARNING FOR MANUFACTURING">PREDICTIVE ANALYTICS AND MACHINE LEARNING FOR MANUFACTURING</option>
-                                                                <option value="CLOUD COMPUTING AND ENTERPRISE DIGITAL TOOLS">CLOUD COMPUTING AND ENTERPRISE DIGITAL TOOLS</option>
-                                                                <option value="THE MODERN WORKPLACE">THE MODERN WORKPLACE</option>
-d                                                                <option value="OTHERS">OTHERS</option>
-                                                            </optgroup>
+                                                                ${TNA_TRAINING_OPTIONS.busiaware}
                                                         </select>
                                                         <br>
                                                         <input type="text" name="otrbu${noidbu}" id="otrbu${noidbu}" class="form-control" value="${data.othertr}" />
@@ -1335,7 +1095,7 @@ d                                                                <option value="
                                 noidsp + '" id="tasksp' + noidsp + '" rows="2">' + data
                                 .task + '</textarea></td><td><select name="trainingsp' +
                                 noidsp + '" id="trainingsp' + noidsp +
-                                '" class="form-control"><option selected disabled="disabled">-- Select Training --</option><option value="OTHERS" required>OTHERS</option></select><br><input type="text" name="otrsp' +
+                                '" class="form-control"><option selected disabled="disabled">-- Select Training --</option>' + TNA_TRAINING_OPTIONS.special + '</select><br><input type="text" name="otrsp' +
                                 noidsp + '" id="otrsp' + noidsp +
                                 '" class="form-control" value="' + data.othertr +
                                 '"/></td><td><select name="targetsksp' + noidsp +
@@ -1773,16 +1533,7 @@ $('#add_esg').click(function() {
                     <td>
                         <select name="traininges${countesg}" id="traininges${countesg}" class="form-control" required>
                             <option selected disabled value="">-- Select Training --</option>
-                                                <option value="CARBON BORDER ADJUSTMENT MECHANISM (CBAM) COMPLIANCE">CARBON BORDER ADJUSTMENT MECHANISM (CBAM) COMPLIANCE</option>
-                                                <option value="EU BATTERY REGULATION AWARENESS">EU BATTERY REGULATION AWARENESS</option>
-                                                <option value="ESG REPORTING STANDARDS (BURSA, SC)">ESG REPORTING STANDARDS (BURSA, SC)</option>
-                                                <option value="LIFE CYCLE ASSESSMENT (LCA) FOR AUTOMOTIVE">LIFE CYCLE ASSESSMENT (LCA) FOR AUTOMOTIVE</option>
-                                                <option value="WASTE REDUCTION & CIRCULAR ECONOMY">WASTE REDUCTION & CIRCULAR ECONOMY</option>
-                                                <option value="ESG AWARENESS AND STRATEGIC IMPLEMENTATION">ESG AWARENESS AND STRATEGIC IMPLEMENTATION</option>
-                                                <option value="ENVIRONMENTAL MANAGEMENT SYSTEM (ISO 14001) AND GOVERNMENT COMPLIANCE">ENVIRONMENTAL MANAGEMENT SYSTEM (ISO 14001) AND GOVERNMENT COMPLIANCE</option>
-                                                <option value="GOVERNMENT INCENTIVES FOR SUSTAINABLE MANUFACTURING">GOVERNMENT INCENTIVES FOR SUSTAINABLE MANUFACTURING</option>
-                                                <option value="GREEN BOOK">GREEN BOOK</option>
-                                                <option value="OTHERS">OTHERS</option>
+                                ${TNA_TRAINING_OPTIONS.esgaware}
                         </select>
                         <br>
                         <input type="text" name="otres${countesg}" id="otres${countesg}" class="form-control" placeholder="Others Training" autocomplete="off"/>
@@ -1850,16 +1601,7 @@ $('#add_esg').click(function() {
                     <td>
                         <select name="traininges${countesg}" id="traininges${countesg}" class="form-control" required>
                             <option selected disabled value="">-- Select Training --</option>
-                                                <option value="CARBON BORDER ADJUSTMENT MECHANISM (CBAM) COMPLIANCE">CARBON BORDER ADJUSTMENT MECHANISM (CBAM) COMPLIANCE</option>
-                                                <option value="EU BATTERY REGULATION AWARENESS">EU BATTERY REGULATION AWARENESS</option>
-                                                <option value="ESG REPORTING STANDARDS (BURSA, SC)">ESG REPORTING STANDARDS (BURSA, SC)</option>
-                                                <option value="LIFE CYCLE ASSESSMENT (LCA) FOR AUTOMOTIVE">LIFE CYCLE ASSESSMENT (LCA) FOR AUTOMOTIVE</option>
-                                                <option value="WASTE REDUCTION & CIRCULAR ECONOMY">WASTE REDUCTION & CIRCULAR ECONOMY</option>
-                                                <option value="ESG AWARENESS AND STRATEGIC IMPLEMENTATION">ESG AWARENESS AND STRATEGIC IMPLEMENTATION</option>
-                                                <option value="ENVIRONMENTAL MANAGEMENT SYSTEM (ISO 14001) AND GOVERNMENT COMPLIANCE">ENVIRONMENTAL MANAGEMENT SYSTEM (ISO 14001) AND GOVERNMENT COMPLIANCE</option>
-                                                <option value="GOVERNMENT INCENTIVES FOR SUSTAINABLE MANUFACTURING">GOVERNMENT INCENTIVES FOR SUSTAINABLE MANUFACTURING</option>
-                                                <option value="GREEN BOOK">GREEN BOOK</option>
-                                                <option value="OTHERS">OTHERS</option>
+                                ${TNA_TRAINING_OPTIONS.esgaware}
                         </select>
                         <br>
                         <input type="text" name="otres${countesg}" id="otres${countesg}" class="form-control" placeholder="Others Training" autocomplete="off"/>
@@ -1975,22 +1717,7 @@ $('#add_self').click(function() {
                     <td>
                         <select name="trainingse${countself}" id="trainingse${countself}" class="form-control" required>
                             <option selected disabled value="">-- Select Training --</option>
-                            <option value="TRAIN THE TRAINER (TTT)">TRAIN THE TRAINER (TTT)</option>
-                            <option value="EFFECTIVE BUSINESS COMMUNICATION">EFFECTIVE BUSINESS COMMUNICATION</option>
-                            <option value="ENGLISH FOR PROFESSIONAL PURPOSES">ENGLISH FOR PROFESSIONAL PURPOSES</option>
-                            <option value="INTERPERSONAL COMMUNICATION AND RELATIONSHIP BUILDING">INTERPERSONAL COMMUNICATION AND RELATIONSHIP BUILDING</option>
-                            <option value="PRESENTATION AND PUBLIC SPEAKING SKILLS">PRESENTATION AND PUBLIC SPEAKING SKILLS</option>
-                            <option value="EMOTIONAL INTELLIGENCE (EQ) FOR WORKPLACE EFFECTIVENESS">EMOTIONAL INTELLIGENCE (EQ) FOR WORKPLACE EFFECTIVENESS</option>
-                            <option value="CONFLICT RESOLUTION AND NEGOTIATION SKILLS">CONFLICT RESOLUTION AND NEGOTIATION SKILLS</option>
-                            <option value="TIME MANAGEMENT AND PRODUCTIVITY SKILLS">TIME MANAGEMENT AND PRODUCTIVITY SKILLS</option>
-                            <option value="CROSS-CULTURAL COMMUNICATION">CROSS-CULTURAL COMMUNICATION</option>
-                            <option value="CUSTOMER SERVICE AND PROFESSIONAL ETIQUETTE">CUSTOMER SERVICE AND PROFESSIONAL ETIQUETTE</option>
-                            <option value="CREATIVE THINKING AND PROBLEM-SOLVING">CREATIVE THINKING AND PROBLEM-SOLVING</option>
-                            <option value="MICROSOFT TEAMS AND COLLABORATION TOOLS">MICROSOFT TEAMS AND COLLABORATION TOOLS</option>
-                            <option value="TIME MANAGEMENT USING MICROSOFT 365 TOOLS">TIME MANAGEMENT USING MICROSOFT 365 TOOLS</option>
-                            <option value="GREEN TECHNOLOGY AND ENERGY EFFICIENCY">GREEN TECHNOLOGY AND ENERGY EFFICIENCY</option>
-                            <option value="ANTI BRRIBERY & ANTI CORRUPTION">ANTI BRRIBERY & ANTI CORRUPTION</option>
-                            <option value="OTHERS">OTHERS</option>
+                                ${TNA_TRAINING_OPTIONS.selfaware}
                         </select>
                         <br>
                         <input type="text" name="otrse${countself}" id="otrse${countself}" class="form-control" placeholder="Others Training" autocomplete="off"/>
@@ -2058,22 +1785,7 @@ $('#add_self').click(function() {
                     <td>
                         <select name="trainingse${countself}" id="trainingse${countself}" class="form-control" required>
                             <option selected disabled value="">-- Select Training --</option>
-                            <option value="TRAIN THE TRAINER (TTT)">TRAIN THE TRAINER (TTT)</option>
-                            <option value="EFFECTIVE BUSINESS COMMUNICATION">EFFECTIVE BUSINESS COMMUNICATION</option>
-                            <option value="ENGLISH FOR PROFESSIONAL PURPOSES">ENGLISH FOR PROFESSIONAL PURPOSES</option>
-                            <option value="INTERPERSONAL COMMUNICATION AND RELATIONSHIP BUILDING">INTERPERSONAL COMMUNICATION AND RELATIONSHIP BUILDING</option>
-                            <option value="PRESENTATION AND PUBLIC SPEAKING SKILLS">PRESENTATION AND PUBLIC SPEAKING SKILLS</option>
-                            <option value="EMOTIONAL INTELLIGENCE (EQ) FOR WORKPLACE EFFECTIVENESS">EMOTIONAL INTELLIGENCE (EQ) FOR WORKPLACE EFFECTIVENESS</option>
-                            <option value="CONFLICT RESOLUTION AND NEGOTIATION SKILLS">CONFLICT RESOLUTION AND NEGOTIATION SKILLS</option>
-                            <option value="TIME MANAGEMENT AND PRODUCTIVITY SKILLS">TIME MANAGEMENT AND PRODUCTIVITY SKILLS</option>
-                            <option value="CROSS-CULTURAL COMMUNICATION">CROSS-CULTURAL COMMUNICATION</option>
-                            <option value="CUSTOMER SERVICE AND PROFESSIONAL ETIQUETTE">CUSTOMER SERVICE AND PROFESSIONAL ETIQUETTE</option>
-                            <option value="CREATIVE THINKING AND PROBLEM-SOLVING">CREATIVE THINKING AND PROBLEM-SOLVING</option>
-                            <option value="MICROSOFT TEAMS AND COLLABORATION TOOLS">MICROSOFT TEAMS AND COLLABORATION TOOLS</option>
-                            <option value="TIME MANAGEMENT USING MICROSOFT 365 TOOLS">TIME MANAGEMENT USING MICROSOFT 365 TOOLS</option>
-                            <option value="GREEN TECHNOLOGY AND ENERGY EFFICIENCY">GREEN TECHNOLOGY AND ENERGY EFFICIENCY</option>
-                            <option value="ANTI BRRIBERY & ANTI CORRUPTION">ANTI BRRIBERY & ANTI CORRUPTION</option>
-                            <option value="OTHERS">OTHERS</option>
+                                ${TNA_TRAINING_OPTIONS.selfaware}
                         </select>
                         <br>
                         <input type="text" name="otrse${countself}" id="otrse${countself}" class="form-control" placeholder="Others Training" autocomplete="off"/>
@@ -2189,18 +1901,7 @@ $('#add_lead').click(function() {
                         <td>
                             <select name="trainingle${countlead}" id="trainingle${countlead}" class="form-control" required>
                                 <option selected disabled value="">-- Select Training --</option>
-                                <option value="ETHICAL LEADERSHIP & GOVERNANCE">ETHICAL LEADERSHIP & GOVERNANCE</option>
-                                <option value="RESILIENCE & STRESS MANAGEMENT">RESILIENCE & STRESS MANAGEMENT</option>
-                                <option value="INCLUSIVE LEADERSHIP & DIVERSITY AWARENESS">INCLUSIVE LEADERSHIP & DIVERSITY AWARENESS</option>
-                                <option value="HIGH IMPACT TRANSFORMATIONAL LEADERSHIP SKILLS FOR MANAGERS & LEADERS">HIGH IMPACT TRANSFORMATIONAL LEADERSHIP SKILLS FOR MANAGERS & LEADERS</option>
-                                <option value="GREEN TECHNOLOGY AND ENERGY EFFICIENCY">GREEN TECHNOLOGY AND ENERGY EFFICIENCY</option>
-                                <option value="LEADING HIGH-PERFORMANCE TEAMS IN MANUFACTURING">LEADING HIGH-PERFORMANCE TEAMS IN MANUFACTURING</option>
-                                <option value="STRATEGIC LEADERSHIP AND DECISION-MAKING">STRATEGIC LEADERSHIP AND DECISION-MAKING</option>
-                                <option value="CHANGE MANAGEMENT AND CULTURE TRANSFORMATION">CHANGE MANAGEMENT AND CULTURE TRANSFORMATION</option>
-                                <option value="CUSTOMER-CENTRIC LEADERSHIP">CUSTOMER-CENTRIC LEADERSHIP</option>
-                                <option value="STRATEGIC SUPPLY CHAIN LEADERSHIP">STRATEGIC SUPPLY CHAIN LEADERSHIP</option>
-                                <option value="CROSS-FUNCTIONAL COLLABORATION AND INFLUENCE">CROSS-FUNCTIONAL COLLABORATION AND INFLUENCE</option>
-                                <option value="OTHERS">OTHERS</option>
+                                    ${TNA_TRAINING_OPTIONS.leadaware}
                             </select>
                             <br>
                             <input type="text" name="otrle${countlead}" id="otrle${countlead}" class="form-control" placeholder="Others Training" autocomplete="off" />
@@ -2268,18 +1969,7 @@ $('#add_lead').click(function() {
                         <td>
                             <select name="trainingle${countlead}" id="trainingle${countlead}" class="form-control" required>
                                 <option selected disabled value="">-- Select Training --</option>
-                                <option value="ETHICAL LEADERSHIP & GOVERNANCE">ETHICAL LEADERSHIP & GOVERNANCE</option>
-                                <option value="RESILIENCE & STRESS MANAGEMENT">RESILIENCE & STRESS MANAGEMENT</option>
-                                <option value="INCLUSIVE LEADERSHIP & DIVERSITY AWARENESS">INCLUSIVE LEADERSHIP & DIVERSITY AWARENESS</option>
-                                <option value="HIGH IMPACT TRANSFORMATIONAL LEADERSHIP SKILLS FOR MANAGERS & LEADERS">HIGH IMPACT TRANSFORMATIONAL LEADERSHIP SKILLS FOR MANAGERS & LEADERS</option>
-                                <option value="GREEN TECHNOLOGY AND ENERGY EFFICIENCY">GREEN TECHNOLOGY AND ENERGY EFFICIENCY</option>
-                                <option value="LEADING HIGH-PERFORMANCE TEAMS IN MANUFACTURING">LEADING HIGH-PERFORMANCE TEAMS IN MANUFACTURING</option>
-                                <option value="STRATEGIC LEADERSHIP AND DECISION-MAKING">STRATEGIC LEADERSHIP AND DECISION-MAKING</option>
-                                <option value="CHANGE MANAGEMENT AND CULTURE TRANSFORMATION">CHANGE MANAGEMENT AND CULTURE TRANSFORMATION</option>
-                                <option value="CUSTOMER-CENTRIC LEADERSHIP">CUSTOMER-CENTRIC LEADERSHIP</option>
-                                <option value="STRATEGIC SUPPLY CHAIN LEADERSHIP">STRATEGIC SUPPLY CHAIN LEADERSHIP</option>
-                                <option value="CROSS-FUNCTIONAL COLLABORATION AND INFLUENCE">CROSS-FUNCTIONAL COLLABORATION AND INFLUENCE</option>
-                                <option value="OTHERS">OTHERS</option>
+                                    ${TNA_TRAINING_OPTIONS.leadaware}
                             </select>
                             <br>
                             <input type="text" name="otrle${countlead}" id="otrle${countlead}" class="form-control" placeholder="Others Training" autocomplete="off"/>
@@ -2394,14 +2084,7 @@ $('#add_driven').click(function() {
                         <td>
                             <select name="trainingda${countdriven}" id="trainingda${countdriven}" class="form-control" required>
                                                 <option selected disabled value="">-- Select Training --</option>
-                                                <option value="DATA PRIVACY & PDPA 2010 IN MANUFACTURING">DATA PRIVACY & PDPA 2010 IN MANUFACTURING</option>
-                                                <option value="AI & ROBOTICS IN AUTOMOTIVE">AI & ROBOTICS IN AUTOMOTIVE</option>
-                                                <option value="EV FUNDAMENTALS (BATTERY, CHARGER, REGULATIONS)">EV FUNDAMENTALS (BATTERY, CHARGER, REGULATIONS)</option>
-                                                <option value="MICROSOFT POWER BI: DATA VISUALISATION AND DASHBOARD CREATION">MICROSOFT POWER BI: DATA VISUALISATION AND DASHBOARD CREATION</option>
-                                                <option value="MICROSOFT EXCEL: ADVANCED FORMULAS, PIVOT TABLES, AND MACROS">MICROSOFT EXCEL: ADVANCED FORMULAS, PIVOT TABLES, AND MACROS</option>
-                                                <option value="MICROSOFT VISUAL BASIC FOR APPLICATIONS (VBA) AUTOMATION">MICROSOFT VISUAL BASIC FOR APPLICATIONS (VBA) AUTOMATION</option>
-                                                <option value="MICROSOFT POWER AUTOMATE: WORKFLOW AUTOMATION">MICROSOFT POWER AUTOMATE: WORKFLOW AUTOMATION</option>
-                                                <option value="OTHERS">OTHERS</option>
+                                                    ${TNA_TRAINING_OPTIONS.dataaware}
                             </select>
                             <br>
                             <input type="text" name="otrda${countdriven}" id="otrda${countdriven}" class="form-control" placeholder="Others Training" autocomplete="off" />
@@ -2470,14 +2153,7 @@ $('#add_driven').click(function() {
                         <td>
                             <select name="trainingda${countdriven}" id="trainingda${countdriven}" class="form-control" required>
                                 <option selected disabled value="">-- Select Training --</option>
-                                                <option value="DATA PRIVACY & PDPA 2010 IN MANUFACTURING">DATA PRIVACY & PDPA 2010 IN MANUFACTURING</option>
-                                                <option value="AI & ROBOTICS IN AUTOMOTIVE">AI & ROBOTICS IN AUTOMOTIVE</option>
-                                                <option value="EV FUNDAMENTALS (BATTERY, CHARGER, REGULATIONS)">EV FUNDAMENTALS (BATTERY, CHARGER, REGULATIONS)</option>
-                                                <option value="MICROSOFT POWER BI: DATA VISUALISATION AND DASHBOARD CREATION">MICROSOFT POWER BI: DATA VISUALISATION AND DASHBOARD CREATION</option>
-                                                <option value="MICROSOFT EXCEL: ADVANCED FORMULAS, PIVOT TABLES, AND MACROS">MICROSOFT EXCEL: ADVANCED FORMULAS, PIVOT TABLES, AND MACROS</option>
-                                                <option value="MICROSOFT VISUAL BASIC FOR APPLICATIONS (VBA) AUTOMATION">MICROSOFT VISUAL BASIC FOR APPLICATIONS (VBA) AUTOMATION</option>
-                                                <option value="MICROSOFT POWER AUTOMATE: WORKFLOW AUTOMATION">MICROSOFT POWER AUTOMATE: WORKFLOW AUTOMATION</option>
-                                                <option value="OTHERS">OTHERS</option>
+                                    ${TNA_TRAINING_OPTIONS.dataaware}
                             </select>
                             <br>
                             <input type="text" name="otrda${countdriven}" id="otrda${countdriven}" class="form-control" placeholder="Others Training" autocomplete="off"/>
@@ -2592,195 +2268,7 @@ $('#add_func').click(function() {
                     <td>
                         <select name="trainingfu${countfunc}" id="trainingfu${countfunc}" class="form-control" required>
                             <option selected disabled value="">-- Select Training --</option>
-                                                    <optgroup label="IT, TECHNICAL & MAINTENANCE">
-                                                        <option value="PREDICTIVE MAINTENANCE USING IOT">PREDICTIVE MAINTENANCE USING IOT</option>
-                                                        <option value="EV COMPONENT SAFETY STANDARDS">EV COMPONENT SAFETY STANDARDS</option>
-                                                        <option value="COST REDUCTION TECHNIQUES FOR MAINTENANCE">COST REDUCTION TECHNIQUES FOR MAINTENANCE</option>
-                                                        <option value="IP & PATENT">IP & PATENT</option>
-                                                        <option value="KARAKURI">KARAKURI</option>
-                                                        <option value="CATIA">CATIA</option>
-                                                        <option value="CHATGPT FOR PRODUCTIVITY AND TASK AUTOMATION">CHATGPT FOR PRODUCTIVITY AND TASK AUTOMATION</option>
-                                                        <option value="MAINTENANCE MANAGEMENT AND RELIABILITY ENGINEERING">MAINTENANCE MANAGEMENT AND RELIABILITY ENGINEERING</option>
-                                                        <option value="CNC AND STAMPING MACHINE OPERATION & TROUBLESHOOTING">CNC AND STAMPING MACHINE OPERATION & TROUBLESHOOTING</option>
-                                                        <option value="ELECTRICAL AND MECHANICAL SYSTEMS MAINTENANCE">ELECTRICAL AND MECHANICAL SYSTEMS MAINTENANCE</option>
-                                                        <option value="EV CHARGER TECHNOLOGY AND BATTERY MAINTENANCE">EV CHARGER TECHNOLOGY AND BATTERY MAINTENANCE</option>
-                                                        <option value="PLC PROGRAMMING AND AUTOMATION CONTROL">PLC PROGRAMMING AND AUTOMATION CONTROL</option>
-                                                        <option value="IT INFRASTRUCTURE AND NETWORK MANAGEMENT">IT INFRASTRUCTURE AND NETWORK MANAGEMENT</option>
-                                                        <option value="CYBERSECURITY AND DATA PROTECTION">CYBERSECURITY AND DATA PROTECTION</option>
-                                                        <option value="TROUBLESHOOTING AND ROOT CAUSE ANALYSIS FOR EQUIPMENT FAILURES">TROUBLESHOOTING AND ROOT CAUSE ANALYSIS FOR EQUIPMENT FAILURES</option>
-                                                        <option value="INDUSTRIAL ROBOTICS AND AUTOMATED ASSEMBLY SYSTEMS">INDUSTRIAL ROBOTICS AND AUTOMATED ASSEMBLY SYSTEMS</option>
-                                                        <option value="GOVERNMENT REGULATIONS AND INDUSTRIAL STANDARDS FOR TECHNICAL OPERATIONS">GOVERNMENT REGULATIONS AND INDUSTRIAL STANDARDS FOR TECHNICAL OPERATIONS</option>
-                                                        <option value="MACHINE LEARNING FOR PROCESS OPTIMISATION">MACHINE LEARNING FOR PROCESS OPTIMISATION</option>
-                                                        <option value="INDUSTRIAL ROBOT SAFETY AND COMPLIANCE">INDUSTRIAL ROBOT SAFETY AND COMPLIANCE</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="MANUFACTURING / OPERATION">
-                                                        <option value="MACHINE SAFETY & LOCKOUT–TAGOUT (LOTO)">MACHINE SAFETY & LOCKOUT–TAGOUT (LOTO)</option>
-                                                        <option value="ERGONOMICS & MANUAL HANDLING IN PRODUCTION">ERGONOMICS & MANUAL HANDLING IN PRODUCTION</option>
-                                                        <option value="STAMPING PRESS OPERATION & MAINTENANCE">STAMPING PRESS OPERATION & MAINTENANCE</option>
-                                                        <option value="DIE MAINTENANCE & TROUBLESHOOTING FOR STAMPING & ROLL FORMING">DIE MAINTENANCE & TROUBLESHOOTING FOR STAMPING & ROLL FORMING</option>
-                                                        <option value="ROLL FORMING TECHNOLOGY & DEFECT PREVENTION">ROLL FORMING TECHNOLOGY & DEFECT PREVENTION</option>
-                                                        <option value="WELDING & ASSEMBLY TECHNIQUES FOR AUTOMOTIVE CHASSIS">WELDING & ASSEMBLY TECHNIQUES FOR AUTOMOTIVE CHASSIS</option>
-                                                        <option value="ROBOTIC WELDING & AUTOMATION IN ASSEMBLY">ROBOTIC WELDING & AUTOMATION IN ASSEMBLY</option>
-                                                        <option value="STAMPING DEFECTS & TROUBLESHOOTING TECHNIQUES">STAMPING DEFECTS & TROUBLESHOOTING TECHNIQUES</option>
-                                                        <option value="ASSEMBLY LINE BALANCING & PROCESS OPTIMISATION">ASSEMBLY LINE BALANCING & PROCESS OPTIMISATION</option>
-                                                        <option value="FUNDAMENTALS OF ELECTRODEPOSITION">FUNDAMENTALS OF ELECTRODEPOSITION</option>
-                                                        <option value="MAINTENANCE OF ED TANKS, RECTIFIERS, FILTERS, AND ULTRAFILTRATION SYSTEMS">MAINTENANCE OF ED TANKS, RECTIFIERS, FILTERS, AND ULTRAFILTRATION SYSTEMS</option>
-                                                        <option value="ROBOTICS IN MATERIAL HANDLING AND PAINTING SYSTEMS">ROBOTICS IN MATERIAL HANDLING AND PAINTING SYSTEMS</option>
-                                                        <option value="5S TRAINING">5S TRAINING</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="QUALITY SYSTEMS & PRODUCTIVITY IMPROVEMENT">
-                                                        <option value="ISO 50001:2018 ENERGY MANAGEMENT SYSTEM">ISO 50001:2018 ENERGY MANAGEMENT SYSTEM</option>
-                                                        <option value="IATF 16949:2024 TRANSITION TRAINING">IATF 16949:2024 TRANSITION TRAINING</option>
-                                                        <option value="ISO 37301 COMPLIANCE MANAGEMENT">ISO 37301 COMPLIANCE MANAGEMENT</option>
-                                                        <option value="INTERNAL AUDIT AND CONTROLS">INTERNAL AUDIT AND CONTROLS</option>
-                                                        <option value="BUSINESS CONTINUITY AND CRISIS MANAGEMENT">BUSINESS CONTINUITY AND CRISIS MANAGEMENT</option>
-                                                        <option value="RISK MANAGEMENT FRAMEWORKS AND BEST PRACTICES">RISK MANAGEMENT FRAMEWORKS AND BEST PRACTICES</option>
-                                                        <option value="KAIZEN: CREATE A CULTURE OF CONTINUOUS IMPROVEMENT">KAIZEN: CREATE A CULTURE OF CONTINUOUS IMPROVEMENT</option>
-                                                        <option value="LEAN PRODUCTION SYSTEM TRAINING">LEAN PRODUCTION SYSTEM TRAINING</option>
-                                                        <option value="POKA YOKE - WHAT YOU NEED TO KNOW">POKA YOKE - WHAT YOU NEED TO KNOW</option>
-                                                        <option value="SIX SIGMA TOOLS FOR IMPROVEMENT">SIX SIGMA TOOLS FOR IMPROVEMENT</option>
-                                                        <option value="8D PROBLEM SOLVING">8D PROBLEM SOLVING</option>
-                                                        <option value="TESTING & LABORATORY MANAGEMENT">TESTING & LABORATORY MANAGEMENT</option>
-                                                        <option value="STATISTICAL PROCESS CONTROL (SPC) AND DATA-DRIVEN QUALITY IMPROVEMENT">STATISTICAL PROCESS CONTROL (SPC) AND DATA-DRIVEN QUALITY IMPROVEMENT</option>
-                                                        <option value="PRODUCTIVITY IMPROVEMENT AND OPERATIONAL EXCELLENCE">PRODUCTIVITY IMPROVEMENT AND OPERATIONAL EXCELLENCE</option>
-                                                        <option value="SUPPLIER QUALITY MANAGEMENT AND AUDIT">SUPPLIER QUALITY MANAGEMENT AND AUDIT</option>
-                                                        <option value="THE 7 NEW QC MANAGEMENT TOOLS">THE 7 NEW QC MANAGEMENT TOOLS</option>
-                                                        <option value="ISO 14001:2015 ENVIRONMENTAL MANAGEMENT SYSTEM (EMS) LEAD AUDITING TRAINING">ISO 14001:2015 ENVIRONMENTAL MANAGEMENT SYSTEM (EMS) LEAD AUDITING TRAINING</option>
-                                                        <option value="ISO 9001:2015 QUALITY MANAGEMENT SYSTEM (QMS) INTERNAL AUDITOR TRAINING">ISO 9001:2015 QUALITY MANAGEMENT SYSTEM (QMS) INTERNAL AUDITOR TRAINING</option>
-                                                        <option value="LEAD AUDITOR IATF">LEAD AUDITOR IATF</option>
-                                                        <option value="ISO 45001:2018 OCCUPATIONAL HEALTH AND SAFETY REQUIREMENTS AND INTERNAL AUDITING">ISO 45001:2018 OCCUPATIONAL HEALTH AND SAFETY REQUIREMENTS AND INTERNAL AUDITING</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="INDUSTRIAL SAFETY">
-                                                        <option value="HEALTH, SAFETY & ENVIRONMENT (HSE) COMPLIANCE">HEALTH, SAFETY & ENVIRONMENT (HSE) COMPLIANCE</option>
-                                                        <option value="OCCUPATIONAL HEALTH & SAFETY (OHS) AWARENESS">OCCUPATIONAL HEALTH & SAFETY (OHS) AWARENESS</option>
-                                                        <option value="INDUSTRIAL MACHINE SAFETY AND LOCKOUT/TAGOUT (LOTO) PROCEDURES">INDUSTRIAL MACHINE SAFETY AND LOCKOUT/TAGOUT (LOTO) PROCEDURES</option>
-                                                        <option value="HAZARD IDENTIFICATION AND RISK ASSESSMENT (HIRA)">HAZARD IDENTIFICATION AND RISK ASSESSMENT (HIRA)</option>
-                                                        <option value="FIRE SAFETY AND EMERGENCY RESPONSE">FIRE SAFETY AND EMERGENCY RESPONSE</option>
-                                                        <option value="ERGONOMICS AND MANUAL HANDLING SAFETY">ERGONOMICS AND MANUAL HANDLING SAFETY</option>
-                                                        <option value="HSE MANAGEMENT SYSTEM AND ISO 45001 COMPLIANCE">HSE MANAGEMENT SYSTEM AND ISO 45001 COMPLIANCE</option>
-                                                        <option value="CHEMICAL SAFETY AND HAZARDOUS MATERIAL HANDLING">CHEMICAL SAFETY AND HAZARDOUS MATERIAL HANDLING</option>
-                                                        <option value="SAFETY LEADERSHIP AND CULTURE BUILDING">SAFETY LEADERSHIP AND CULTURE BUILDING</option>
-                                                        <option value="INCIDENT INVESTIGATION AND REPORTING">INCIDENT INVESTIGATION AND REPORTING</option>
-                                                        <option value="EV CHARGER AND ELECTRICAL SAFETY">EV CHARGER AND ELECTRICAL SAFETY</option>
-                                                        <option value="OVERHEAD CRANE">OVERHEAD CRANE</option>
-                                                        <option value="FORKLIFT">FORKLIFT</option>
-                                                        <option value="OSH COORDINATOR TRAINING">OSH COORDINATOR TRAINING</option>
-                                                        <option value="WORKING AT HEIGHT">WORKING AT HEIGHT</option>
-                                                        <option value="SAFETY AWARENESS">SAFETY AWARENESS</option>
-                                                        <option value="SCHEDULED WASTE MANAGEMENT">SCHEDULED WASTE MANAGEMENT</option>
-                                                        <option value="OSH COORDINATOR TRAINING">OSH COORDINATOR TRAINING</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="HUMAN CAPITAL">
-                                                        <option value="SUCCESSION PLANNING">SUCCESSION PLANNING</option>
-                                                        <option value="ANTI-FORCED LABOUR COMPLIANCE (ILO + US CBP IMPORT BAN)">ANTI-FORCED LABOUR COMPLIANCE (ILO + US CBP IMPORT BAN)</option>
-                                                        <option value="HRD CORP 2026 CLAIMABLE TRAINING RULES">HRD CORP 2026 CLAIMABLE TRAINING RULES</option>
-                                                        <option value="TALENT ACQUISITION AND RECRUITMENT STRATEGIES">TALENT ACQUISITION AND RECRUITMENT STRATEGIES</option>
-                                                        <option value="PERFORMANCE MANAGEMENT SYSTEMS AND KPI TRACKING">PERFORMANCE MANAGEMENT SYSTEMS AND KPI TRACKING</option>
-                                                        <option value="EMPLOYEE ENGAGEMENT AND RETENTION STRATEGIES">EMPLOYEE ENGAGEMENT AND RETENTION STRATEGIES</option>
-                                                        <option value="LEARNING & DEVELOPMENT PLANNING">LEARNING & DEVELOPMENT PLANNING</option>
-                                                        <option value="COMPENSATION, BENEFITS, AND PAYROLL MANAGEMENT">COMPENSATION, BENEFITS, AND PAYROLL MANAGEMENT</option>
-                                                        <option value="LABOUR LAW AND EMPLOYMENT COMPLIANCE">LABOUR LAW AND EMPLOYMENT COMPLIANCE</option>
-                                                        <option value="HR ANALYTICS AND PEOPLE DATA MANAGEMENT">HR ANALYTICS AND PEOPLE DATA MANAGEMENT</option>
-                                                        <option value="COACHING AND MENTORING SKILLS FOR MANAGERS">COACHING AND MENTORING SKILLS FOR MANAGERS</option>
-                                                        <option value="CHANGE MANAGEMENT AND CULTURE TRANSFORMATION">CHANGE MANAGEMENT AND CULTURE TRANSFORMATION</option>
-                                                        <option value="DIVERSITY, EQUITY, AND INCLUSION (DEI) IN MANUFACTURING">DIVERSITY, EQUITY, AND INCLUSION (DEI) IN MANUFACTURING</option>
-                                                        <option value="EMPLOYEE WELLNESS AND WORK-LIFE BALANCE PROGRAMS">EMPLOYEE WELLNESS AND WORK-LIFE BALANCE PROGRAMS</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="LEGAL & GOVERNANCE">
-                                                        <option value="CONTRACT AND LEGAL COMPLIANCE MANAGEMENT">CONTRACT AND LEGAL COMPLIANCE MANAGEMENT</option>
-                                                        <option value="CORPORATE AND COMMERCIAL LAW AWARENESS">CORPORATE AND COMMERCIAL LAW AWARENESS</option>
-                                                        <option value="REGULATORY COMPLIANCE IN AUTOMOTIVE INDUSTRY">REGULATORY COMPLIANCE IN AUTOMOTIVE INDUSTRY</option>
-                                                        <option value="DISPUTE RESOLUTION AND LEGAL RISK MANAGEMENT">DISPUTE RESOLUTION AND LEGAL RISK MANAGEMENT</option>
-                                                        <option value="INTELLECTUAL PROPERTY ENFORCEMENT AND INFRINGEMENT MANAGEMENT">INTELLECTUAL PROPERTY ENFORCEMENT AND INFRINGEMENT MANAGEMENT</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="SALES, MARKETING & CUSTOMER SERVICE">
-                                                        <option value="B2B SALES STRATEGIES FOR MANUFACTURING">B2B SALES STRATEGIES FOR MANUFACTURING</option>
-                                                        <option value="INDUSTRIAL MARKETING AND BRAND POSITIONING">INDUSTRIAL MARKETING AND BRAND POSITIONING</option>
-                                                        <option value="CUSTOMER RELATIONSHIP MANAGEMENT (CRM)">CUSTOMER RELATIONSHIP MANAGEMENT (CRM)</option>
-                                                        <option value="TECHNICAL PRODUCT PRESENTATION SKILLS">TECHNICAL PRODUCT PRESENTATION SKILLS</option>
-                                                        <option value="NEGOTIATION AND CLOSING TECHNIQUES">NEGOTIATION AND CLOSING TECHNIQUES</option>
-                                                        <option value="MARKET AND COMPETITOR ANALYSIS">MARKET AND COMPETITOR ANALYSIS</option>
-                                                        <option value="SALES FORECASTING AND BUSINESS METRICS">SALES FORECASTING AND BUSINESS METRICS</option>
-                                                        <option value="CUSTOMER SERVICE EXCELLENCE FOR INDUSTRIAL CLIENTS">CUSTOMER SERVICE EXCELLENCE FOR INDUSTRIAL CLIENTS</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="BUSINESS & MANAGEMENT">
-                                                        <option value="BUSINESS ACUMEN FOR MANUFACTURING PROFESSIONALS">BUSINESS ACUMEN FOR MANUFACTURING PROFESSIONALS</option>
-                                                        <option value="AUTOMOTIVE INDUSTRY OVERVIEW AND TRENDS">AUTOMOTIVE INDUSTRY OVERVIEW AND TRENDS</option>
-                                                        <option value="FINANCIAL LITERACY FOR NON-FINANCE MANAGERS">FINANCIAL LITERACY FOR NON-FINANCE MANAGERS</option>
-                                                        <option value="STRATEGIC THINKING AND BUSINESS DECISION-MAKING">STRATEGIC THINKING AND BUSINESS DECISION-MAKING</option>
-                                                        <option value="CUSTOMER AND MARKET INSIGHT FOR BUSINESS SUCCESS">CUSTOMER AND MARKET INSIGHT FOR BUSINESS SUCCESS</option>
-                                                        <option value="PROJECT ROI AND BUSINESS IMPACT ANALYSIS">PROJECT ROI AND BUSINESS IMPACT ANALYSIS</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="FINANCIAL MANAGEMENT">
-                                                        <option value="ESG-LINKED FINANCE & GREEN TAX INCENTIVES">ESG-LINKED FINANCE & GREEN TAX INCENTIVES</option>
-                                                        <option value="TRANSFER PRICING & TAXATION UPDATES 2026">TRANSFER PRICING & TAXATION UPDATES 2026</option>
-                                                        <option value="STRATEGIC COST MANAGEMENT IN AUTOMOTIVE">STRATEGIC COST MANAGEMENT IN AUTOMOTIVE</option>
-                                                        <option value="REGULATORY REPORTING AND AUDIT READINESS">REGULATORY REPORTING AND AUDIT READINESS</option>
-                                                        <option value="E-INVOICING">E-INVOICING</option>
-                                                        <option value="FINANCIAL PLANNING AND BUDGETING">FINANCIAL PLANNING AND BUDGETING</option>
-                                                        <option value="FINANCIAL REGULATORY COMPLIANCE AND REPORTING">FINANCIAL REGULATORY COMPLIANCE AND REPORTING</option>
-                                                        <option value="CASH FLOW MANAGEMENT AND WORKING CAPITAL OPTIMISATION">CASH FLOW MANAGEMENT AND WORKING CAPITAL OPTIMISATION</option>
-                                                        <option value="RISK MANAGEMENT AND INTERNAL CONTROLS">RISK MANAGEMENT AND INTERNAL CONTROLS</option>
-                                                        <option value="FINANCIAL ANALYSIS AND DECISION-MAKING">FINANCIAL ANALYSIS AND DECISION-MAKING</option>
-                                                        <option value="TAXATION AND GST/SST COMPLIANCE">TAXATION AND GST/SST COMPLIANCE</option>
-                                                        <option value="PROCUREMENT AND FINANCE COLLABORATION">PROCUREMENT AND FINANCE COLLABORATION</option>
-                                                        <option value="FINANCIAL SYSTEMS AND ERP UTILISATION">FINANCIAL SYSTEMS AND ERP UTILISATION</option>
-                                                        <option value="INVESTMENT AND CAPITAL EXPENDITURE (CAPEX) MANAGEMENT">INVESTMENT AND CAPITAL EXPENDITURE (CAPEX) MANAGEMENT</option>
-                                                        <option value="AI INNOVATIONS FOR FINANCIAL PROFESSIONALS">AI INNOVATIONS FOR FINANCIAL PROFESSIONALS</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="LOGISTICS / SCM / WAREHOUSE / INVENTORY">
-                                                        <option value="SUPPLIER ESG COMPLIANCE AUDITS">SUPPLIER ESG COMPLIANCE AUDITS</option>
-                                                        <option value="DANGEROUS GOODS HANDLING IN AUTOMOTIVE LOGISTICS">DANGEROUS GOODS HANDLING IN AUTOMOTIVE LOGISTICS</option>
-                                                        <option value="MITI IMPORT/EXPORT REGULATORY UPDATES">MITI IMPORT/EXPORT REGULATORY UPDATES</option>
-                                                        <option value="SUPPLY CHAIN MANAGEMENT FUNDAMENTALS">SUPPLY CHAIN MANAGEMENT FUNDAMENTALS</option>
-                                                        <option value="WAREHOUSE MANAGEMENT AND INVENTORY CONTROL">WAREHOUSE MANAGEMENT AND INVENTORY CONTROL</option>
-                                                        <option value="LOGISTICS AND TRANSPORTATION MANAGEMENT">LOGISTICS AND TRANSPORTATION MANAGEMENT</option>
-                                                        <option value="DEMAND FORECASTING AND INVENTORY OPTIMISATION">DEMAND FORECASTING AND INVENTORY OPTIMISATION</option>
-                                                        <option value="SUSTAINABLE SUPPLY CHAIN PRACTICES">SUSTAINABLE SUPPLY CHAIN PRACTICES</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="PROCUREMENT & VENDOR DEVELOPMENT">
-                                                        <option value="AUTOMOTIVE INDUSTRY SUPPLY CHAIN STANDARDS">AUTOMOTIVE INDUSTRY SUPPLY CHAIN STANDARDS</option>
-                                                        <option value="STRATEGIC SOURCING AND SUPPLIER SELECTION">STRATEGIC SOURCING AND SUPPLIER SELECTION</option>
-                                                        <option value="SUPPLIER PERFORMANCE MANAGEMENT (SPM)">SUPPLIER PERFORMANCE MANAGEMENT (SPM)</option>
-                                                        <option value="CONTRACT MANAGEMENT AND NEGOTIATION FOR PROCUREMENT">CONTRACT MANAGEMENT AND NEGOTIATION FOR PROCUREMENT</option>
-                                                        <option value="COST ANALYSIS AND TOTAL COST OF OWNERSHIP (TCO)">COST ANALYSIS AND TOTAL COST OF OWNERSHIP (TCO)</option>
-                                                        <option value="VENDOR DEVELOPMENT AND COLLABORATION">VENDOR DEVELOPMENT AND COLLABORATION</option>
-                                                        <option value="DIGITAL PROCUREMENT TOOLS AND ERP UTILISATION">DIGITAL PROCUREMENT TOOLS AND ERP UTILISATION</option>
-                                                        <option value="SUSTAINABLE PROCUREMENT AND ESG PRACTICES">SUSTAINABLE PROCUREMENT AND ESG PRACTICES</option>
-                                                        <option value="SUPPLIER INNOVATION AND TECHNOLOGY COLLABORATION">SUPPLIER INNOVATION AND TECHNOLOGY COLLABORATION</option>
-                                                        <option value="ADVANCED PROCUREMENT">ADVANCED PROCUREMENT</option>
-                                                        <option value="DEVELOPING PURCHASING POLICIES, PROCESSES AND SLA'S">DEVELOPING PURCHASING POLICIES, PROCESSES AND SLA'S</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="GOVERNANCE RISK AND COMPLIANCE">
-                                                        <option value="COMPLIANCE MANAGEMENT IN THE AUTOMOTIVE INDUSTRY">COMPLIANCE MANAGEMENT IN THE AUTOMOTIVE INDUSTRY</option>
-                                                        <option value="ENVIRONMENTAL, SOCIAL, AND GOVERNANCE (ESG) RISK AND COMPLIANCE">ENVIRONMENTAL, SOCIAL, AND GOVERNANCE (ESG) RISK AND COMPLIANCE</option>
-                                                        <option value="HEALTH, SAFETY & ENVIRONMENT (HSE) COMPLIANCE">HEALTH, SAFETY & ENVIRONMENT (HSE) COMPLIANCE</option>
-                                                        <option value="REGISTERED ELECTRICAL ENERGY MANAGER (REM)">REGISTERED ELECTRICAL ENERGY MANAGER (REM)</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-                            <!-- Add more <optgroup> here as necessary -->
+                                ${TNA_TRAINING_OPTIONS.functional}
                         </select>
                         <br>
                         <input type="text" name="otrfu${countfunc}" id="otrfu${countfunc}" class="form-control" placeholder="Others Training" autocomplete="off"/>
@@ -2846,194 +2334,7 @@ $('#add_func').click(function() {
                     <td>
                         <select name="trainingfu${countfunc}" id="trainingfu${countfunc}" class="form-control" required>
                             <option selected disabled value="">-- Select Training --</option>
-                                                    <optgroup label="IT, TECHNICAL & MAINTENANCE">
-                                                        <option value="PREDICTIVE MAINTENANCE USING IOT">PREDICTIVE MAINTENANCE USING IOT</option>
-                                                        <option value="EV COMPONENT SAFETY STANDARDS">EV COMPONENT SAFETY STANDARDS</option>
-                                                        <option value="COST REDUCTION TECHNIQUES FOR MAINTENANCE">COST REDUCTION TECHNIQUES FOR MAINTENANCE</option>
-                                                        <option value="IP & PATENT">IP & PATENT</option>
-                                                        <option value="KARAKURI">KARAKURI</option>
-                                                        <option value="CATIA">CATIA</option>
-                                                        <option value="CHATGPT FOR PRODUCTIVITY AND TASK AUTOMATION">CHATGPT FOR PRODUCTIVITY AND TASK AUTOMATION</option>
-                                                        <option value="MAINTENANCE MANAGEMENT AND RELIABILITY ENGINEERING">MAINTENANCE MANAGEMENT AND RELIABILITY ENGINEERING</option>
-                                                        <option value="CNC AND STAMPING MACHINE OPERATION & TROUBLESHOOTING">CNC AND STAMPING MACHINE OPERATION & TROUBLESHOOTING</option>
-                                                        <option value="ELECTRICAL AND MECHANICAL SYSTEMS MAINTENANCE">ELECTRICAL AND MECHANICAL SYSTEMS MAINTENANCE</option>
-                                                        <option value="EV CHARGER TECHNOLOGY AND BATTERY MAINTENANCE">EV CHARGER TECHNOLOGY AND BATTERY MAINTENANCE</option>
-                                                        <option value="PLC PROGRAMMING AND AUTOMATION CONTROL">PLC PROGRAMMING AND AUTOMATION CONTROL</option>
-                                                        <option value="IT INFRASTRUCTURE AND NETWORK MANAGEMENT">IT INFRASTRUCTURE AND NETWORK MANAGEMENT</option>
-                                                        <option value="CYBERSECURITY AND DATA PROTECTION">CYBERSECURITY AND DATA PROTECTION</option>
-                                                        <option value="TROUBLESHOOTING AND ROOT CAUSE ANALYSIS FOR EQUIPMENT FAILURES">TROUBLESHOOTING AND ROOT CAUSE ANALYSIS FOR EQUIPMENT FAILURES</option>
-                                                        <option value="INDUSTRIAL ROBOTICS AND AUTOMATED ASSEMBLY SYSTEMS">INDUSTRIAL ROBOTICS AND AUTOMATED ASSEMBLY SYSTEMS</option>
-                                                        <option value="GOVERNMENT REGULATIONS AND INDUSTRIAL STANDARDS FOR TECHNICAL OPERATIONS">GOVERNMENT REGULATIONS AND INDUSTRIAL STANDARDS FOR TECHNICAL OPERATIONS</option>
-                                                        <option value="MACHINE LEARNING FOR PROCESS OPTIMISATION">MACHINE LEARNING FOR PROCESS OPTIMISATION</option>
-                                                        <option value="INDUSTRIAL ROBOT SAFETY AND COMPLIANCE">INDUSTRIAL ROBOT SAFETY AND COMPLIANCE</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="MANUFACTURING / OPERATION">
-                                                        <option value="MACHINE SAFETY & LOCKOUT–TAGOUT (LOTO)">MACHINE SAFETY & LOCKOUT–TAGOUT (LOTO)</option>
-                                                        <option value="ERGONOMICS & MANUAL HANDLING IN PRODUCTION">ERGONOMICS & MANUAL HANDLING IN PRODUCTION</option>
-                                                        <option value="STAMPING PRESS OPERATION & MAINTENANCE">STAMPING PRESS OPERATION & MAINTENANCE</option>
-                                                        <option value="DIE MAINTENANCE & TROUBLESHOOTING FOR STAMPING & ROLL FORMING">DIE MAINTENANCE & TROUBLESHOOTING FOR STAMPING & ROLL FORMING</option>
-                                                        <option value="ROLL FORMING TECHNOLOGY & DEFECT PREVENTION">ROLL FORMING TECHNOLOGY & DEFECT PREVENTION</option>
-                                                        <option value="WELDING & ASSEMBLY TECHNIQUES FOR AUTOMOTIVE CHASSIS">WELDING & ASSEMBLY TECHNIQUES FOR AUTOMOTIVE CHASSIS</option>
-                                                        <option value="ROBOTIC WELDING & AUTOMATION IN ASSEMBLY">ROBOTIC WELDING & AUTOMATION IN ASSEMBLY</option>
-                                                        <option value="STAMPING DEFECTS & TROUBLESHOOTING TECHNIQUES">STAMPING DEFECTS & TROUBLESHOOTING TECHNIQUES</option>
-                                                        <option value="ASSEMBLY LINE BALANCING & PROCESS OPTIMISATION">ASSEMBLY LINE BALANCING & PROCESS OPTIMISATION</option>
-                                                        <option value="FUNDAMENTALS OF ELECTRODEPOSITION">FUNDAMENTALS OF ELECTRODEPOSITION</option>
-                                                        <option value="MAINTENANCE OF ED TANKS, RECTIFIERS, FILTERS, AND ULTRAFILTRATION SYSTEMS">MAINTENANCE OF ED TANKS, RECTIFIERS, FILTERS, AND ULTRAFILTRATION SYSTEMS</option>
-                                                        <option value="ROBOTICS IN MATERIAL HANDLING AND PAINTING SYSTEMS">ROBOTICS IN MATERIAL HANDLING AND PAINTING SYSTEMS</option>
-                                                        <option value="5S TRAINING">5S TRAINING</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="QUALITY SYSTEMS & PRODUCTIVITY IMPROVEMENT">
-                                                        <option value="ISO 50001:2018 ENERGY MANAGEMENT SYSTEM">ISO 50001:2018 ENERGY MANAGEMENT SYSTEM</option>
-                                                        <option value="IATF 16949:2024 TRANSITION TRAINING">IATF 16949:2024 TRANSITION TRAINING</option>
-                                                        <option value="ISO 37301 COMPLIANCE MANAGEMENT">ISO 37301 COMPLIANCE MANAGEMENT</option>
-                                                        <option value="INTERNAL AUDIT AND CONTROLS">INTERNAL AUDIT AND CONTROLS</option>
-                                                        <option value="BUSINESS CONTINUITY AND CRISIS MANAGEMENT">BUSINESS CONTINUITY AND CRISIS MANAGEMENT</option>
-                                                        <option value="RISK MANAGEMENT FRAMEWORKS AND BEST PRACTICES">RISK MANAGEMENT FRAMEWORKS AND BEST PRACTICES</option>
-                                                        <option value="KAIZEN: CREATE A CULTURE OF CONTINUOUS IMPROVEMENT">KAIZEN: CREATE A CULTURE OF CONTINUOUS IMPROVEMENT</option>
-                                                        <option value="LEAN PRODUCTION SYSTEM TRAINING">LEAN PRODUCTION SYSTEM TRAINING</option>
-                                                        <option value="POKA YOKE - WHAT YOU NEED TO KNOW">POKA YOKE - WHAT YOU NEED TO KNOW</option>
-                                                        <option value="SIX SIGMA TOOLS FOR IMPROVEMENT">SIX SIGMA TOOLS FOR IMPROVEMENT</option>
-                                                        <option value="8D PROBLEM SOLVING">8D PROBLEM SOLVING</option>
-                                                        <option value="TESTING & LABORATORY MANAGEMENT">TESTING & LABORATORY MANAGEMENT</option>
-                                                        <option value="STATISTICAL PROCESS CONTROL (SPC) AND DATA-DRIVEN QUALITY IMPROVEMENT">STATISTICAL PROCESS CONTROL (SPC) AND DATA-DRIVEN QUALITY IMPROVEMENT</option>
-                                                        <option value="PRODUCTIVITY IMPROVEMENT AND OPERATIONAL EXCELLENCE">PRODUCTIVITY IMPROVEMENT AND OPERATIONAL EXCELLENCE</option>
-                                                        <option value="SUPPLIER QUALITY MANAGEMENT AND AUDIT">SUPPLIER QUALITY MANAGEMENT AND AUDIT</option>
-                                                        <option value="THE 7 NEW QC MANAGEMENT TOOLS">THE 7 NEW QC MANAGEMENT TOOLS</option>
-                                                        <option value="ISO 14001:2015 ENVIRONMENTAL MANAGEMENT SYSTEM (EMS) LEAD AUDITING TRAINING">ISO 14001:2015 ENVIRONMENTAL MANAGEMENT SYSTEM (EMS) LEAD AUDITING TRAINING</option>
-                                                        <option value="ISO 9001:2015 QUALITY MANAGEMENT SYSTEM (QMS) INTERNAL AUDITOR TRAINING">ISO 9001:2015 QUALITY MANAGEMENT SYSTEM (QMS) INTERNAL AUDITOR TRAINING</option>
-                                                        <option value="LEAD AUDITOR IATF">LEAD AUDITOR IATF</option>
-                                                        <option value="ISO 45001:2018 OCCUPATIONAL HEALTH AND SAFETY REQUIREMENTS AND INTERNAL AUDITING">ISO 45001:2018 OCCUPATIONAL HEALTH AND SAFETY REQUIREMENTS AND INTERNAL AUDITING</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="INDUSTRIAL SAFETY">
-                                                        <option value="HEALTH, SAFETY & ENVIRONMENT (HSE) COMPLIANCE">HEALTH, SAFETY & ENVIRONMENT (HSE) COMPLIANCE</option>
-                                                        <option value="OCCUPATIONAL HEALTH & SAFETY (OHS) AWARENESS">OCCUPATIONAL HEALTH & SAFETY (OHS) AWARENESS</option>
-                                                        <option value="INDUSTRIAL MACHINE SAFETY AND LOCKOUT/TAGOUT (LOTO) PROCEDURES">INDUSTRIAL MACHINE SAFETY AND LOCKOUT/TAGOUT (LOTO) PROCEDURES</option>
-                                                        <option value="HAZARD IDENTIFICATION AND RISK ASSESSMENT (HIRA)">HAZARD IDENTIFICATION AND RISK ASSESSMENT (HIRA)</option>
-                                                        <option value="FIRE SAFETY AND EMERGENCY RESPONSE">FIRE SAFETY AND EMERGENCY RESPONSE</option>
-                                                        <option value="ERGONOMICS AND MANUAL HANDLING SAFETY">ERGONOMICS AND MANUAL HANDLING SAFETY</option>
-                                                        <option value="HSE MANAGEMENT SYSTEM AND ISO 45001 COMPLIANCE">HSE MANAGEMENT SYSTEM AND ISO 45001 COMPLIANCE</option>
-                                                        <option value="CHEMICAL SAFETY AND HAZARDOUS MATERIAL HANDLING">CHEMICAL SAFETY AND HAZARDOUS MATERIAL HANDLING</option>
-                                                        <option value="SAFETY LEADERSHIP AND CULTURE BUILDING">SAFETY LEADERSHIP AND CULTURE BUILDING</option>
-                                                        <option value="INCIDENT INVESTIGATION AND REPORTING">INCIDENT INVESTIGATION AND REPORTING</option>
-                                                        <option value="EV CHARGER AND ELECTRICAL SAFETY">EV CHARGER AND ELECTRICAL SAFETY</option>
-                                                        <option value="OVERHEAD CRANE">OVERHEAD CRANE</option>
-                                                        <option value="FORKLIFT">FORKLIFT</option>
-                                                        <option value="OSH COORDINATOR TRAINING">OSH COORDINATOR TRAINING</option>
-                                                        <option value="WORKING AT HEIGHT">WORKING AT HEIGHT</option>
-                                                        <option value="SAFETY AWARENESS">SAFETY AWARENESS</option>
-                                                        <option value="SCHEDULED WASTE MANAGEMENT">SCHEDULED WASTE MANAGEMENT</option>
-                                                        <option value="OSH COORDINATOR TRAINING">OSH COORDINATOR TRAINING</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="HUMAN CAPITAL">
-                                                        <option value="SUCCESSION PLANNING">SUCCESSION PLANNING</option>
-                                                        <option value="ANTI-FORCED LABOUR COMPLIANCE (ILO + US CBP IMPORT BAN)">ANTI-FORCED LABOUR COMPLIANCE (ILO + US CBP IMPORT BAN)</option>
-                                                        <option value="HRD CORP 2026 CLAIMABLE TRAINING RULES">HRD CORP 2026 CLAIMABLE TRAINING RULES</option>
-                                                        <option value="TALENT ACQUISITION AND RECRUITMENT STRATEGIES">TALENT ACQUISITION AND RECRUITMENT STRATEGIES</option>
-                                                        <option value="PERFORMANCE MANAGEMENT SYSTEMS AND KPI TRACKING">PERFORMANCE MANAGEMENT SYSTEMS AND KPI TRACKING</option>
-                                                        <option value="EMPLOYEE ENGAGEMENT AND RETENTION STRATEGIES">EMPLOYEE ENGAGEMENT AND RETENTION STRATEGIES</option>
-                                                        <option value="LEARNING & DEVELOPMENT PLANNING">LEARNING & DEVELOPMENT PLANNING</option>
-                                                        <option value="COMPENSATION, BENEFITS, AND PAYROLL MANAGEMENT">COMPENSATION, BENEFITS, AND PAYROLL MANAGEMENT</option>
-                                                        <option value="LABOUR LAW AND EMPLOYMENT COMPLIANCE">LABOUR LAW AND EMPLOYMENT COMPLIANCE</option>
-                                                        <option value="HR ANALYTICS AND PEOPLE DATA MANAGEMENT">HR ANALYTICS AND PEOPLE DATA MANAGEMENT</option>
-                                                        <option value="COACHING AND MENTORING SKILLS FOR MANAGERS">COACHING AND MENTORING SKILLS FOR MANAGERS</option>
-                                                        <option value="CHANGE MANAGEMENT AND CULTURE TRANSFORMATION">CHANGE MANAGEMENT AND CULTURE TRANSFORMATION</option>
-                                                        <option value="DIVERSITY, EQUITY, AND INCLUSION (DEI) IN MANUFACTURING">DIVERSITY, EQUITY, AND INCLUSION (DEI) IN MANUFACTURING</option>
-                                                        <option value="EMPLOYEE WELLNESS AND WORK-LIFE BALANCE PROGRAMS">EMPLOYEE WELLNESS AND WORK-LIFE BALANCE PROGRAMS</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="LEGAL & GOVERNANCE">
-                                                        <option value="CONTRACT AND LEGAL COMPLIANCE MANAGEMENT">CONTRACT AND LEGAL COMPLIANCE MANAGEMENT</option>
-                                                        <option value="CORPORATE AND COMMERCIAL LAW AWARENESS">CORPORATE AND COMMERCIAL LAW AWARENESS</option>
-                                                        <option value="REGULATORY COMPLIANCE IN AUTOMOTIVE INDUSTRY">REGULATORY COMPLIANCE IN AUTOMOTIVE INDUSTRY</option>
-                                                        <option value="DISPUTE RESOLUTION AND LEGAL RISK MANAGEMENT">DISPUTE RESOLUTION AND LEGAL RISK MANAGEMENT</option>
-                                                        <option value="INTELLECTUAL PROPERTY ENFORCEMENT AND INFRINGEMENT MANAGEMENT">INTELLECTUAL PROPERTY ENFORCEMENT AND INFRINGEMENT MANAGEMENT</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="SALES, MARKETING & CUSTOMER SERVICE">
-                                                        <option value="B2B SALES STRATEGIES FOR MANUFACTURING">B2B SALES STRATEGIES FOR MANUFACTURING</option>
-                                                        <option value="INDUSTRIAL MARKETING AND BRAND POSITIONING">INDUSTRIAL MARKETING AND BRAND POSITIONING</option>
-                                                        <option value="CUSTOMER RELATIONSHIP MANAGEMENT (CRM)">CUSTOMER RELATIONSHIP MANAGEMENT (CRM)</option>
-                                                        <option value="TECHNICAL PRODUCT PRESENTATION SKILLS">TECHNICAL PRODUCT PRESENTATION SKILLS</option>
-                                                        <option value="NEGOTIATION AND CLOSING TECHNIQUES">NEGOTIATION AND CLOSING TECHNIQUES</option>
-                                                        <option value="MARKET AND COMPETITOR ANALYSIS">MARKET AND COMPETITOR ANALYSIS</option>
-                                                        <option value="SALES FORECASTING AND BUSINESS METRICS">SALES FORECASTING AND BUSINESS METRICS</option>
-                                                        <option value="CUSTOMER SERVICE EXCELLENCE FOR INDUSTRIAL CLIENTS">CUSTOMER SERVICE EXCELLENCE FOR INDUSTRIAL CLIENTS</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="BUSINESS & MANAGEMENT">
-                                                        <option value="BUSINESS ACUMEN FOR MANUFACTURING PROFESSIONALS">BUSINESS ACUMEN FOR MANUFACTURING PROFESSIONALS</option>
-                                                        <option value="AUTOMOTIVE INDUSTRY OVERVIEW AND TRENDS">AUTOMOTIVE INDUSTRY OVERVIEW AND TRENDS</option>
-                                                        <option value="FINANCIAL LITERACY FOR NON-FINANCE MANAGERS">FINANCIAL LITERACY FOR NON-FINANCE MANAGERS</option>
-                                                        <option value="STRATEGIC THINKING AND BUSINESS DECISION-MAKING">STRATEGIC THINKING AND BUSINESS DECISION-MAKING</option>
-                                                        <option value="CUSTOMER AND MARKET INSIGHT FOR BUSINESS SUCCESS">CUSTOMER AND MARKET INSIGHT FOR BUSINESS SUCCESS</option>
-                                                        <option value="PROJECT ROI AND BUSINESS IMPACT ANALYSIS">PROJECT ROI AND BUSINESS IMPACT ANALYSIS</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="FINANCIAL MANAGEMENT">
-                                                        <option value="ESG-LINKED FINANCE & GREEN TAX INCENTIVES">ESG-LINKED FINANCE & GREEN TAX INCENTIVES</option>
-                                                        <option value="TRANSFER PRICING & TAXATION UPDATES 2026">TRANSFER PRICING & TAXATION UPDATES 2026</option>
-                                                        <option value="STRATEGIC COST MANAGEMENT IN AUTOMOTIVE">STRATEGIC COST MANAGEMENT IN AUTOMOTIVE</option>
-                                                        <option value="REGULATORY REPORTING AND AUDIT READINESS">REGULATORY REPORTING AND AUDIT READINESS</option>
-                                                        <option value="E-INVOICING">E-INVOICING</option>
-                                                        <option value="FINANCIAL PLANNING AND BUDGETING">FINANCIAL PLANNING AND BUDGETING</option>
-                                                        <option value="FINANCIAL REGULATORY COMPLIANCE AND REPORTING">FINANCIAL REGULATORY COMPLIANCE AND REPORTING</option>
-                                                        <option value="CASH FLOW MANAGEMENT AND WORKING CAPITAL OPTIMISATION">CASH FLOW MANAGEMENT AND WORKING CAPITAL OPTIMISATION</option>
-                                                        <option value="RISK MANAGEMENT AND INTERNAL CONTROLS">RISK MANAGEMENT AND INTERNAL CONTROLS</option>
-                                                        <option value="FINANCIAL ANALYSIS AND DECISION-MAKING">FINANCIAL ANALYSIS AND DECISION-MAKING</option>
-                                                        <option value="TAXATION AND GST/SST COMPLIANCE">TAXATION AND GST/SST COMPLIANCE</option>
-                                                        <option value="PROCUREMENT AND FINANCE COLLABORATION">PROCUREMENT AND FINANCE COLLABORATION</option>
-                                                        <option value="FINANCIAL SYSTEMS AND ERP UTILISATION">FINANCIAL SYSTEMS AND ERP UTILISATION</option>
-                                                        <option value="INVESTMENT AND CAPITAL EXPENDITURE (CAPEX) MANAGEMENT">INVESTMENT AND CAPITAL EXPENDITURE (CAPEX) MANAGEMENT</option>
-                                                        <option value="AI INNOVATIONS FOR FINANCIAL PROFESSIONALS">AI INNOVATIONS FOR FINANCIAL PROFESSIONALS</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="LOGISTICS / SCM / WAREHOUSE / INVENTORY">
-                                                        <option value="SUPPLIER ESG COMPLIANCE AUDITS">SUPPLIER ESG COMPLIANCE AUDITS</option>
-                                                        <option value="DANGEROUS GOODS HANDLING IN AUTOMOTIVE LOGISTICS">DANGEROUS GOODS HANDLING IN AUTOMOTIVE LOGISTICS</option>
-                                                        <option value="MITI IMPORT/EXPORT REGULATORY UPDATES">MITI IMPORT/EXPORT REGULATORY UPDATES</option>
-                                                        <option value="SUPPLY CHAIN MANAGEMENT FUNDAMENTALS">SUPPLY CHAIN MANAGEMENT FUNDAMENTALS</option>
-                                                        <option value="WAREHOUSE MANAGEMENT AND INVENTORY CONTROL">WAREHOUSE MANAGEMENT AND INVENTORY CONTROL</option>
-                                                        <option value="LOGISTICS AND TRANSPORTATION MANAGEMENT">LOGISTICS AND TRANSPORTATION MANAGEMENT</option>
-                                                        <option value="DEMAND FORECASTING AND INVENTORY OPTIMISATION">DEMAND FORECASTING AND INVENTORY OPTIMISATION</option>
-                                                        <option value="SUSTAINABLE SUPPLY CHAIN PRACTICES">SUSTAINABLE SUPPLY CHAIN PRACTICES</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="PROCUREMENT & VENDOR DEVELOPMENT">
-                                                        <option value="AUTOMOTIVE INDUSTRY SUPPLY CHAIN STANDARDS">AUTOMOTIVE INDUSTRY SUPPLY CHAIN STANDARDS</option>
-                                                        <option value="STRATEGIC SOURCING AND SUPPLIER SELECTION">STRATEGIC SOURCING AND SUPPLIER SELECTION</option>
-                                                        <option value="SUPPLIER PERFORMANCE MANAGEMENT (SPM)">SUPPLIER PERFORMANCE MANAGEMENT (SPM)</option>
-                                                        <option value="CONTRACT MANAGEMENT AND NEGOTIATION FOR PROCUREMENT">CONTRACT MANAGEMENT AND NEGOTIATION FOR PROCUREMENT</option>
-                                                        <option value="COST ANALYSIS AND TOTAL COST OF OWNERSHIP (TCO)">COST ANALYSIS AND TOTAL COST OF OWNERSHIP (TCO)</option>
-                                                        <option value="VENDOR DEVELOPMENT AND COLLABORATION">VENDOR DEVELOPMENT AND COLLABORATION</option>
-                                                        <option value="DIGITAL PROCUREMENT TOOLS AND ERP UTILISATION">DIGITAL PROCUREMENT TOOLS AND ERP UTILISATION</option>
-                                                        <option value="SUSTAINABLE PROCUREMENT AND ESG PRACTICES">SUSTAINABLE PROCUREMENT AND ESG PRACTICES</option>
-                                                        <option value="SUPPLIER INNOVATION AND TECHNOLOGY COLLABORATION">SUPPLIER INNOVATION AND TECHNOLOGY COLLABORATION</option>
-                                                        <option value="ADVANCED PROCUREMENT">ADVANCED PROCUREMENT</option>
-                                                        <option value="DEVELOPING PURCHASING POLICIES, PROCESSES AND SLA'S">DEVELOPING PURCHASING POLICIES, PROCESSES AND SLA'S</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
-
-                                                    <optgroup label="GOVERNANCE RISK AND COMPLIANCE">
-                                                        <option value="COMPLIANCE MANAGEMENT IN THE AUTOMOTIVE INDUSTRY">COMPLIANCE MANAGEMENT IN THE AUTOMOTIVE INDUSTRY</option>
-                                                        <option value="ENVIRONMENTAL, SOCIAL, AND GOVERNANCE (ESG) RISK AND COMPLIANCE">ENVIRONMENTAL, SOCIAL, AND GOVERNANCE (ESG) RISK AND COMPLIANCE</option>
-                                                        <option value="HEALTH, SAFETY & ENVIRONMENT (HSE) COMPLIANCE">HEALTH, SAFETY & ENVIRONMENT (HSE) COMPLIANCE</option>
-                                                        <option value="REGISTERED ELECTRICAL ENERGY MANAGER (REM)">REGISTERED ELECTRICAL ENERGY MANAGER (REM)</option>
-                                                        <option value="OTHERS">OTHERS</option>
-                                                    </optgroup>
+                                ${TNA_TRAINING_OPTIONS.functional}
                         </select>
                         <br>
                         <input type="text" name="otrfu${countfunc}" id="otrfu${countfunc}" class="form-control" placeholder="Others Training" autocomplete="off"/>
@@ -3148,19 +2449,7 @@ $('#add_busi').click(function() {
                         <td>
                             <select name="trainingbu${countbusi}" id="trainingbu${countbusi}" class="form-control" required>
                                 <option selected disabled value="">-- Select Training --</option>
-                                <optgroup label="DIGITAL TRANSFORMATION & INNOVATION">
-                                    <option value="INDUSTRY 4.0 SMART MANUFACTURING STRATEGIES">INDUSTRY 4.0 SMART MANUFACTURING STRATEGIES</option>
-                                    <option value="DIGITAL SUPPLY CHAIN OPTIMISATION">DIGITAL SUPPLY CHAIN OPTIMISATION</option>
-                                    <option value="DIGITAL TWINS IN MANUFACTURING">DIGITAL TWINS IN MANUFACTURING</option>
-                                    <option value="ROBOTICS PROCESS AUTOMATION (RPA) FOR INDUSTRIAL PROCESSES">ROBOTICS PROCESS AUTOMATION (RPA) FOR INDUSTRIAL PROCESSES</option>
-                                    <option value="ADVANCED DATA VISUALISATION FOR OPERATIONAL DECISION-MAKING">ADVANCED DATA VISUALISATION FOR OPERATIONAL DECISION-MAKING</option>
-                                    <option value="DIGITAL PRODUCT INNOVATION AND EV TECHNOLOGY">DIGITAL PRODUCT INNOVATION AND EV TECHNOLOGY</option>
-                                    <option value="INTERNET OF THINGS AND CONNECTED FACTORY IMPLEMENTATION">INTERNET OF THINGS AND CONNECTED FACTORY IMPLEMENTATION</option>
-                                    <option value="AGILE AND LEAN DIGITAL PROJECT MANAGEMENT">AGILE AND LEAN DIGITAL PROJECT MANAGEMENT</option>
-                                    <option value="PREDICTIVE ANALYTICS AND MACHINE LEARNING FOR MANUFACTURING">PREDICTIVE ANALYTICS AND MACHINE LEARNING FOR MANUFACTURING</option>
-                                    <option value="CLOUD COMPUTING AND ENTERPRISE DIGITAL TOOLS">CLOUD COMPUTING AND ENTERPRISE DIGITAL TOOLS</option>
-                                    <option value="THE MODERN WORKPLACE">THE MODERN WORKPLACE</option>
-d                                   <option value="OTHERS">OTHERS</option>                                </optgroup>
+                                    ${TNA_TRAINING_OPTIONS.busiaware}
                             </select>
                             <br>
                             <input type="text" name="otrbu${countbusi}" id="otrbu${countbusi}" class="form-control" placeholder="Others Training" autocomplete="off"/>
@@ -3226,20 +2515,7 @@ d                                   <option value="OTHERS">OTHERS</option>      
                             <td>
                                 <select name="trainingbu${countbusi}" id="trainingbu${countbusi}" class="form-control" required>
                                     <option selected disabled value="">-- Select Training --</option>
-                                    <optgroup label="DIGITAL TRANSFORMATION & INNOVATION">
-                                        <option value="INDUSTRY 4.0 SMART MANUFACTURING STRATEGIES">INDUSTRY 4.0 SMART MANUFACTURING STRATEGIES</option>
-                                        <option value="DIGITAL SUPPLY CHAIN OPTIMISATION">DIGITAL SUPPLY CHAIN OPTIMISATION</option>
-                                        <option value="DIGITAL TWINS IN MANUFACTURING">DIGITAL TWINS IN MANUFACTURING</option>
-                                        <option value="ROBOTICS PROCESS AUTOMATION (RPA) FOR INDUSTRIAL PROCESSES">ROBOTICS PROCESS AUTOMATION (RPA) FOR INDUSTRIAL PROCESSES</option>
-                                        <option value="ADVANCED DATA VISUALISATION FOR OPERATIONAL DECISION-MAKING">ADVANCED DATA VISUALISATION FOR OPERATIONAL DECISION-MAKING</option>
-                                        <option value="DIGITAL PRODUCT INNOVATION AND EV TECHNOLOGY">DIGITAL PRODUCT INNOVATION AND EV TECHNOLOGY</option>
-                                        <option value="INTERNET OF THINGS AND CONNECTED FACTORY IMPLEMENTATION">INTERNET OF THINGS AND CONNECTED FACTORY IMPLEMENTATION</option>
-                                        <option value="AGILE AND LEAN DIGITAL PROJECT MANAGEMENT">AGILE AND LEAN DIGITAL PROJECT MANAGEMENT</option>
-                                        <option value="PREDICTIVE ANALYTICS AND MACHINE LEARNING FOR MANUFACTURING">PREDICTIVE ANALYTICS AND MACHINE LEARNING FOR MANUFACTURING</option>
-                                        <option value="CLOUD COMPUTING AND ENTERPRISE DIGITAL TOOLS">CLOUD COMPUTING AND ENTERPRISE DIGITAL TOOLS</option>
-                                        <option value="THE MODERN WORKPLACE">THE MODERN WORKPLACE</option>
-    d                                   <option value="OTHERS">OTHERS</option>                                </optgroup>
-                                    </optgroup>
+                                        ${TNA_TRAINING_OPTIONS.busiaware}
                                 </select>
                                 <br>
                                 <input type="text" name="otrbu${countbusi}" id="otrbu${countbusi}" class="form-control" placeholder="Others Training" autocomplete="off"/>
@@ -3348,7 +2624,7 @@ $('#add_spec').click(function() {
             countspec +
             '" rows="2" placeholder="Insert your problem statement" required></textarea></td><td><select name="trainingsp' +
             countspec + '" id="trainingsp' + countspec +
-            '" class="form-control" required><option selected disabled value="">-- Select Training --</option><option value="OTHERS" required>OTHERS</option></select><br><input type="text" name="otrsp' +
+            '" class="form-control" required><option selected disabled value="">-- Select Training --</option>' + TNA_TRAINING_OPTIONS.special + '</select><br><input type="text" name="otrsp' +
             countspec + '" id="otrsp' + countspec +
             '" class="form-control" placeholder="Others Training" autocomplete="off"/></td><td><select name="targetsksp' +
             countspec + '" id="targetsksp' + countspec +
@@ -3369,7 +2645,7 @@ $('#add_spec').click(function() {
             countspec +
             '" rows="2" placeholder="Insert your problem statement" required></textarea></td><td><select name="trainingsp' +
             countspec + '" id="trainingsp' + countspec +
-            '" class="form-control" required><option selected disabled value="">-- Select Training --</option><option value="OTHERS" required>OTHERS</option></select><br><input type="text" name="otrsp' +
+            '" class="form-control" required><option selected disabled value="">-- Select Training --</option>' + TNA_TRAINING_OPTIONS.special + '</select><br><input type="text" name="otrsp' +
             countspec + '" id="otrsp' + countspec +
             '" class="form-control" placeholder="Others Training" autocomplete="off"/></td><td><select name="targetsksp' +
             countspec + '" id="targetsksp' + countspec +

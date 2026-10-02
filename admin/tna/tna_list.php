@@ -153,10 +153,11 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                     <div class="panel panel-default">
                         <div class="panel-heading">
                             <div class="row">
-                                <div class="col-md-11" style="margin-top: 10px;">
+                                <div class="col-md-8" style="margin-top: 10px;">
                                     <strong>TNA List (by Individual)</strong>
                                 </div>
-                                <div class="col-md-1" align="right">
+                                <div class="col-md-4" align="right">
+                                    <a href="training_options.php" class="btn btn-primary btn-md"><i class="fas fa-list"></i> TRAINING OPTIONS</a>
                                     <button type="button" name="add_tna" id="add_tna" class="btn btn-success btn-md">MY TNA
                                         <i class="far fa-arrow-alt-circle-right"></i> </button>
                                 </div>
