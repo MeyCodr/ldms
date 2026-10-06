@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "../../../dbconn.php";
+include "../../../skill_matrix_period.php";
 
 function matrixPieLevel($score)
 {
@@ -41,8 +42,7 @@ $canViewSkillMatrix = !empty($_SESSION['is_sm_user']) || (
 
 if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
     $department = $_SESSION['department'];
-    $currentYear = (int) date('Y');
-    $currentQuarter = (int) ceil(date('n') / 3);
+    list($currentYear, $currentQuarter) = skillMatrixFillPeriod();
     $staffRows = array();
     $topicColumns = array();
 
@@ -66,8 +66,8 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                             LEFT JOIN departments dp ON u.department_id = dp.id
                             LEFT JOIN sections s ON u.section_id = s.id
                             WHERE u.department = ?
-                            AND YEAR(sme.evaluation_date) = ?
-                            AND QUARTER(sme.evaluation_date) = ?
+                            AND sme.eval_year = ?
+                            AND sme.eval_quarter = ?
                             AND sme.approval_status IN ('APPROVED', 'PENDING')
                             ORDER BY u.staffname");
     $stmt->bind_param("sii", $department, $currentYear, $currentQuarter);
@@ -460,7 +460,7 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
                         </div>
                         <div class="panel-body">
                             <div class="alert alert-info">
-                                Current Quarter: Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?>
+                                Evaluation Quarter: Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?>
                             </div>
 
                             <?php if (count($staffRows) == 0 || count($topicColumns) == 0) { ?>

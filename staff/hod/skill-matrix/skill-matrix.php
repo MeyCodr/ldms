@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "../../../dbconn.php";
+include "../../../skill_matrix_period.php";
 
 function canApproveSkillMatrix()
 {
@@ -34,8 +35,7 @@ function canApproveSkillMatrix()
 
 if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
     $hodId = (int) $_SESSION['id'];
-    $currentYear = (int) date('Y');
-    $currentQuarter = (int) ceil(date('n') / 3);
+    list($currentYear, $currentQuarter) = skillMatrixFillPeriod();
     $records = array();
 
     $stmt = $conn->prepare("SELECT
@@ -62,8 +62,8 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
                                 OR EXISTS (SELECT 1 FROM skill_matrix_whitelist w WHERE w.staffno = creator.staffno COLLATE utf8mb4_0900_ai_ci)
                             )
                             AND sme.approval_status IS NOT NULL
-                            AND YEAR(sme.evaluation_date) = ?
-                            AND QUARTER(sme.evaluation_date) = ?
+                            AND sme.eval_year = ?
+                            AND sme.eval_quarter = ?
                             ORDER BY FIELD(sme.approval_status, 'PENDING', 'APPROVED'), sme.evaluation_date DESC, target.staffname");
     $creatorDesignation = "MANAGER (AM/HOS & ABOVE)";
     $stmt->bind_param("isii", $hodId, $creatorDesignation, $currentYear, $currentQuarter);
@@ -103,16 +103,16 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
                                 SELECT sme.approval_status
                                 FROM skill_matrix_evaluations sme
                                 WHERE sme.staffid = u.id
-                                AND YEAR(sme.evaluation_date) = ?
-                                AND QUARTER(sme.evaluation_date) = ?
+                                AND sme.eval_year = ?
+                                AND sme.eval_quarter = ?
                                 ORDER BY sme.evaluation_date DESC, sme.id DESC
                                 LIMIT 1
                             ) AS approval_status,
                             EXISTS (
                                 SELECT 1 FROM skill_matrix_evaluations sme
                                 WHERE sme.staffid = u.id
-                                AND YEAR(sme.evaluation_date) = ?
-                                AND QUARTER(sme.evaluation_date) = ?
+                                AND sme.eval_year = ?
+                                AND sme.eval_quarter = ?
                             ) AS has_current_quarter_evaluation
                         FROM user u
                         LEFT JOIN departments dp ON u.department_id = dp.id
@@ -223,6 +223,11 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
                 </ul>
             </div>
         </nav>
+
+        <div class="alert alert-info">
+            <strong>Evaluation Quarter: Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?></strong>
+            (<?php echo skillMatrixQuarterMonths($currentQuarter); ?> <?php echo $currentYear; ?>)
+        </div>
 
         <div class="panel panel-default">
             <div class="panel-heading">

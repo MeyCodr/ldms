@@ -1,6 +1,9 @@
 <?php
 session_start();
 include "../../dbconn.php";
+include "../../skill_matrix_period.php";
+list($currentYear, $currentQuarter) = skillMatrixFillPeriod();
+list($previousYear, $previousQuarter) = skillMatrixPreviousPeriod($currentYear, $currentQuarter);
 
 if (isset($_SESSION['id']) && (!isset($_SESSION['designation']) || !isset($_SESSION['hodid']))) {
     $sessionUserId = (int) $_SESSION['id'];
@@ -165,6 +168,11 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
                 </div>
             </nav>
 
+            <div class="alert alert-info">
+                <strong>Evaluation Quarter: Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?></strong>
+                (<?php echo skillMatrixQuarterMonths($currentQuarter); ?> <?php echo $currentYear; ?>)
+            </div>
+
             <div class="row">
                 <div class="col-md-12">
                     <div class="panel panel-default">
@@ -236,6 +244,10 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
                             </div>
                         </div>
                         <div class="panel-body">
+                            <ul class="nav nav-tabs" id="period_tabs" style="margin-bottom: 15px;">
+                                <li class="active"><a href="#" data-period="current">Evaluation Quarter (Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?>)</a></li>
+                                <li><a href="#" data-period="previous">Previous Quarter (Q<?php echo $previousQuarter; ?> <?php echo $previousYear; ?>)</a></li>
+                            </ul>
                             <div class="row">
                                 <div class="col-sm-12 table-responsive">
                                     <table id="skillmatrixlist" class="table table-bordered table-striped">
@@ -386,6 +398,9 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
             return i;
         }
 
+        // Which tab the staff table is showing: the evaluation quarter or the one before it.
+        var skillMatrixPeriod = /[?&]period=previous(&|$)/.test(window.location.search) ? 'previous' : 'current';
+
         var skillMatrixTable = $('#skillmatrixlist').DataTable({
             "paging": true,
             "lengthChange": true,
@@ -401,6 +416,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
                 dataSrc: '',
                 data: function (data) {
                     data.action = "load_non_executive_staff";
+                    data.period = skillMatrixPeriod;
                     data.department = $('#department').val() || "ALL";
                     data.section = $('#section').val() || "ALL";
                     data.plant = $('#plant').val() || "ALL";
@@ -700,6 +716,36 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || $canUseSkil
             resetSectionFilter();
             disableMatrixChartButton();
             skillMatrixTable.ajax.reload();
+        });
+
+
+        $('#period_tabs li').removeClass('active');
+        $('#period_tabs a[data-period="' + skillMatrixPeriod + '"]').parent().addClass('active');
+
+        $('#period_tabs a').click(function (e) {
+            e.preventDefault();
+            skillMatrixPeriod = $(this).data('period');
+            $('#period_tabs li').removeClass('active');
+            $(this).parent().addClass('active');
+            skillMatrixTable.ajax.reload();
+        });
+
+        $('#skillmatrixlist').on('click', '.copy-previous-btn', function () {
+            var staffId = $(this).data('staffid');
+
+            swal({
+                title: "Copy to Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?>?",
+                text: "The Q<?php echo $previousQuarter; ?> <?php echo $previousYear; ?> skill matrix of " + $(this).data('staffname') + " will be copied into Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?> as a draft for you to review and submit.",
+                icon: "warning",
+                buttons: true
+            }).then(function (confirmed) {
+                if (confirmed) {
+                    $('<form method="post"><input type="hidden" name="form_action" value="copy_previous"></form>')
+                        .attr('action', 'evaluation-matrix.php?staffid=' + encodeURIComponent(staffId))
+                        .appendTo('body')
+                        .submit();
+                }
+            });
         });
 
     </script>

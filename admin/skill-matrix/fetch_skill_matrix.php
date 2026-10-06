@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "../../dbconn.php";
+include "../../skill_matrix_period.php";
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -97,8 +98,16 @@ if ($_POST["action"] == "load_non_executive_staff") {
     $department = isset($_POST["department"]) ? $_POST["department"] : "ALL";
     $section = isset($_POST["section"]) ? $_POST["section"] : "ALL";
     $plant = isset($_POST["plant"]) ? $_POST["plant"] : "ALL";
-    $currentYear = (int) date('Y');
-    $currentQuarter = (int) ceil(date('n') / 3);
+    list($currentYear, $currentQuarter) = skillMatrixFillPeriod();
+    // period=previous lists the quarter before the evaluation quarter instead.
+    $viewingPrevious = isset($_POST['period']) && $_POST['period'] == 'previous';
+    $fillYear = $currentYear;
+    $fillQuarter = $currentQuarter;
+    $fillStaffIds = array();
+    if ($viewingPrevious) {
+        list($currentYear, $currentQuarter) = skillMatrixPreviousPeriod($fillYear, $fillQuarter);
+        $fillStaffIds = skillMatrixStaffIdsWithEvaluation($conn, $fillYear, $fillQuarter);
+    }
     $output = array();
 
     if (skillMatrixUserCanUse()) {
@@ -135,15 +144,15 @@ if ($_POST["action"] == "load_non_executive_staff") {
                     SELECT 1
                     FROM skill_matrix_evaluations sme
                     WHERE sme.staffid = u.id
-                    AND YEAR(sme.evaluation_date) = ?
-                    AND QUARTER(sme.evaluation_date) = ?
+                    AND sme.eval_year = ?
+                    AND sme.eval_quarter = ?
                 ) AS has_current_quarter_evaluation,
                 (
                     SELECT sme.approval_status
                     FROM skill_matrix_evaluations sme
                     WHERE sme.staffid = u.id
-                    AND YEAR(sme.evaluation_date) = ?
-                    AND QUARTER(sme.evaluation_date) = ?
+                    AND sme.eval_year = ?
+                    AND sme.eval_quarter = ?
                     ORDER BY sme.evaluation_date DESC, sme.id DESC
                     LIMIT 1
                 ) AS approval_status
@@ -226,6 +235,26 @@ if ($_POST["action"] == "load_non_executive_staff") {
             $action = '<a href="evaluation-matrix.php?staffid=' . $row['id'] . '" class="btn btn-info btn-sm"><i class="fa fa-edit"></i> FILL SKILL MATRIX</a>';
         } else {
             $action = '<span class="label label-pill label-warning">PENDING HOS</span>';
+        }
+
+        // Previous quarter tab: only staff who have a matrix for it, view only,
+        // with a shortcut to copy it into the evaluation quarter.
+        if ($viewingPrevious) {
+            if (!$row['has_current_quarter_evaluation']) {
+                continue;
+            }
+
+            $action = '<div style="display: flex; gap: 6px; justify-content: center; align-items: center; white-space: nowrap;">';
+            $action .= '<a href="evaluation-matrix.php?staffid=' . $row['id'] . '&period=previous" class="btn btn-default btn-sm"><i class="fa fa-search"></i> VIEW</a>';
+            if (isset($fillStaffIds[(int) $row['id']])) {
+                $action .= '<span class="label label-pill label-default">Q' . $fillQuarter . ' ' . $fillYear . ' STARTED</span>';
+            } else if ($isAdmin || skillMatrixUserCanUse()) {
+                $action .= '<button type="button" class="btn btn-warning btn-sm copy-previous-btn" data-staffid="' . $row['id'] . '" data-staffname="' . htmlspecialchars($row['staffname'], ENT_QUOTES) . '"><i class="fa fa-copy"></i> COPY TO Q' . $fillQuarter . ' ' . $fillYear . '</button>';
+            }
+            if ($isAdmin || skillMatrixUserCanUse()) {
+                $action .= '<a href="duplicate-matrix.php?staffid=' . $row['id'] . '&period=previous" class="btn btn-warning btn-sm"><i class="fa fa-copy"></i> DUPLICATE</a>';
+            }
+            $action .= '</div>';
         }
 
         $output[] = array(

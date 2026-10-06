@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "../../dbconn.php";
+include "../../skill_matrix_period.php";
 
 function skillMatrixDuplicateUserCanUse()
 {
@@ -26,13 +27,22 @@ function skillMatrixDuplicateUserCanUse()
         );
 }
 
-if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
+if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || skillMatrixDuplicateUserCanUse())) {
     $canUseSkillMatrix = skillMatrixDuplicateUserCanUse();
     $isClerkMatrixUser = $canUseSkillMatrix && $_SESSION['role'] == 'CLERK';
     $sourceStaffId = isset($_GET['staffid']) ? (int) $_GET['staffid'] : 0;
     $department = '';
-    $currentYear = (int) date('Y');
-    $currentQuarter = (int) ceil(date('n') / 3);
+    list($currentYear, $currentQuarter) = skillMatrixFillPeriod();
+    // ?period=previous takes the source matrix from the quarter before the
+    // evaluation quarter. The copies always go into the evaluation quarter, so
+    // in that mode the source staff can be one of the targets too.
+    $fromPrevious = isset($_GET['period']) && $_GET['period'] == 'previous';
+    $sourceYear = $currentYear;
+    $sourceQuarter = $currentQuarter;
+    if ($fromPrevious) {
+        list($sourceYear, $sourceQuarter) = skillMatrixPreviousPeriod($currentYear, $currentQuarter);
+    }
+    $excludeStaffId = $fromPrevious ? 0 : $sourceStaffId;
     $sourceStaff = null;
     $sourceEvaluation = null;
     $eligibleStaff = array();
@@ -88,11 +98,11 @@ if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
             $evaluationStmt = $conn->prepare("SELECT id, evaluation_date
                                              FROM skill_matrix_evaluations
                                              WHERE staffid = ?
-                                             AND YEAR(evaluation_date) = ?
-                                             AND QUARTER(evaluation_date) = ?
+                                             AND eval_year = ?
+                                             AND eval_quarter = ?
                                              ORDER BY evaluation_date DESC, id DESC
                                              LIMIT 1");
-            $evaluationStmt->bind_param("iii", $sourceStaffId, $currentYear, $currentQuarter);
+            $evaluationStmt->bind_param("iii", $sourceStaffId, $sourceYear, $sourceQuarter);
             $evaluationStmt->execute();
             $sourceEvaluation = $evaluationStmt->get_result()->fetch_assoc();
         }
@@ -108,7 +118,7 @@ if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
             foreach ($targetStaffIds as $targetStaffId) {
                 $targetStaffId = (int) $targetStaffId;
 
-                if ($targetStaffId <= 0 || $targetStaffId == $sourceStaffId) {
+                if ($targetStaffId <= 0 || $targetStaffId == $excludeStaffId) {
                     continue;
                 }
 
@@ -123,8 +133,8 @@ if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
                                                 SELECT 1
                                                 FROM skill_matrix_evaluations sme
                                                 WHERE sme.staffid = u.id
-                                                AND YEAR(sme.evaluation_date) = ?
-                                                AND QUARTER(sme.evaluation_date) = ?
+                                                AND sme.eval_year = ?
+                                                AND sme.eval_quarter = ?
                                              )");
                 $designation1 = "NON EXECUTIVE";
                 $designation2 = "CONTRACT";
@@ -177,12 +187,12 @@ if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
                 $evaluationDateForDb = date('Y-m-d');
                 $copiedCount = 0;
 
-                $insertEvaluationStmt = $conn->prepare("INSERT INTO skill_matrix_evaluations (staffid, evaluation_date, created_by, approval_status) VALUES (?, ?, ?, NULL)");
+                $insertEvaluationStmt = $conn->prepare("INSERT INTO skill_matrix_evaluations (staffid, evaluation_date, eval_year, eval_quarter, created_by, approval_status) VALUES (?, ?, ?, ?, ?, NULL)");
                 $insertTopicStmt = $conn->prepare("INSERT INTO skill_matrix_topics (evaluation_id, section_type, topic_name, sort_order) VALUES (?, ?, ?, ?)");
                 $insertItemStmt = $conn->prepare("INSERT INTO skill_matrix_items (topic_id, evaluation_text, rating, sort_order) VALUES (?, ?, ?, ?)");
 
                 foreach ($validTargetStaffIds as $targetStaffId) {
-                    $insertEvaluationStmt->bind_param("isi", $targetStaffId, $evaluationDateForDb, $createdBy);
+                    $insertEvaluationStmt->bind_param("isiii", $targetStaffId, $evaluationDateForDb, $currentYear, $currentQuarter, $createdBy);
                     $insertEvaluationStmt->execute();
                     $newEvaluationId = $conn->insert_id;
 
@@ -201,7 +211,7 @@ if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
                 }
 
                 mysqli_commit($conn);
-                header("Location: duplicate-matrix.php?staffid=" . urlencode($sourceStaffId) . "&copied=" . $copiedCount);
+                header("Location: duplicate-matrix.php?staffid=" . urlencode($sourceStaffId) . "&copied=" . $copiedCount . ($fromPrevious ? '&period=previous' : ''));
                 exit();
             } catch (Exception $e) {
                 mysqli_rollback($conn);
@@ -228,14 +238,14 @@ if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
                                             SELECT 1
                                             FROM skill_matrix_evaluations sme
                                             WHERE sme.staffid = u.id
-                                            AND YEAR(sme.evaluation_date) = ?
-                                            AND QUARTER(sme.evaluation_date) = ?
+                                            AND sme.eval_year = ?
+                                            AND sme.eval_quarter = ?
                                         )
                                         ORDER BY u.staffname");
         $designation1 = "NON EXECUTIVE";
         $designation2 = "CONTRACT";
         $inactiveStatus = "RESIGN";
-        $eligibleStmt->bind_param("isssssii", $sourceStaffId, $department, $department, $designation1, $designation2, $inactiveStatus, $currentYear, $currentQuarter);
+        $eligibleStmt->bind_param("isssssii", $excludeStaffId, $department, $department, $designation1, $designation2, $inactiveStatus, $currentYear, $currentQuarter);
         $eligibleStmt->execute();
         $eligibleResult = $eligibleStmt->get_result();
 
@@ -329,7 +339,7 @@ if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
                                     <strong>Duplicate Skill Matrix</strong>
                                 </div>
                                 <div class="col-md-4" align="right">
-                                    <a href="skill-matrix.php" class="btn btn-success btn-md">
+                                    <a href="skill-matrix.php<?php echo $fromPrevious ? '?period=previous' : ''; ?>" class="btn btn-success btn-md">
                                         <i class="far fa-arrow-alt-circle-left"></i> BACK TO SKILL MATRIX
                                     </a>
                                 </div>
@@ -347,7 +357,7 @@ if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
                             <?php if (!$sourceStaff) { ?>
                                 <div class="alert alert-warning">Source staff record not found.</div>
                             <?php } else if (!$sourceEvaluation) { ?>
-                                <div class="alert alert-warning">This staff has no skill matrix for the current quarter.</div>
+                                <div class="alert alert-warning">This staff has no skill matrix for Q<?php echo $sourceQuarter; ?> <?php echo $sourceYear; ?>.</div>
                             <?php } else { ?>
                                 <table class="table table-bordered">
                                     <tr>
@@ -364,14 +374,22 @@ if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
                                     </tr>
                                     <tr>
                                         <th>Quarter</th>
-                                        <td colspan="3">Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?></td>
+                                        <td colspan="3">Q<?php echo $sourceQuarter; ?> <?php echo $sourceYear; ?><?php if ($fromPrevious) { ?> (previous quarter) - copies go into Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?><?php } ?></td>
                                     </tr>
                                 </table>
 
                                 <?php if (count($eligibleStaff) == 0) { ?>
-                                    <div class="alert alert-info">No eligible staff found. Staff who already submitted this quarter are excluded.</div>
+                                    <div class="alert alert-info">No eligible staff found. Staff who already have a skill matrix for Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?> are excluded.</div>
                                 <?php } else { ?>
                                     <form method="post" id="duplicate_form">
+                                        <div class="row" style="margin-bottom: 10px;">
+                                            <div class="col-md-5">
+                                                <input type="text" id="staff_search" class="form-control" placeholder="Search staff no. or staff name" autocomplete="off">
+                                            </div>
+                                            <div class="col-md-7" align="right" style="margin-top: 7px;">
+                                                <strong><span id="selected_count">0</span></strong> staff selected
+                                            </div>
+                                        </div>
                                         <div class="table-responsive">
                                             <table class="table table-bordered table-striped">
                                                 <thead>
@@ -399,6 +417,7 @@ if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
                                                     <?php } ?>
                                                 </tbody>
                                             </table>
+                                            <div id="no_staff_match" class="alert alert-warning" style="display: none;">No staff match your search.</div>
                                         </div>
 
                                         <div align="right">
@@ -435,8 +454,35 @@ if (isset($_SESSION['fullname']) && skillMatrixDuplicateUserCanUse()) {
             return i;
         }
 
+        // Select all only ticks the rows the search is currently showing; rows
+        // ticked earlier and then filtered out stay ticked and are still submitted.
         $('#select_all').change(function () {
-            $('input[name="target_staff[]"]').prop('checked', $(this).prop('checked'));
+            $('#duplicate_form tbody tr:visible input[name="target_staff[]"]').prop('checked', $(this).prop('checked'));
+        });
+
+        $('#staff_search').on('input', function () {
+            var keyword = $.trim($(this).val()).toLowerCase();
+            var matches = 0;
+
+            $('#duplicate_form tbody tr').each(function () {
+                var cells = $(this).children('td');
+                var text = (cells.eq(1).text() + ' ' + cells.eq(2).text()).toLowerCase();
+                var show = text.indexOf(keyword) !== -1;
+
+                $(this).toggle(show);
+                matches += show ? 1 : 0;
+            });
+
+            $('#no_staff_match').toggle(matches === 0);
+            $('#select_all').prop('checked', false);
+        }).on('keydown', function (e) {
+            if (e.which === 13) {
+                e.preventDefault();
+            }
+        });
+
+        $('#duplicate_form').on('click change', function () {
+            $('#selected_count').text($('input[name="target_staff[]"]:checked').length);
         });
 
         setTimeout(function () {

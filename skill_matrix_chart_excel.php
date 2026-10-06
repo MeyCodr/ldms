@@ -72,7 +72,7 @@ function outputMatrixChartExcel($staffRows, $topicColumns, $matrixFixedLevels, $
     $sheet->mergeCells('A1:' . $lastColumn . '1')->setCellValue('A1', $titleText);
     $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
 
-    $filterText = 'Current Quarter: Q' . $currentQuarter . ' ' . $currentYear;
+    $filterText = 'Evaluation Quarter: Q' . $currentQuarter . ' ' . $currentYear;
     foreach ($filterParts as $filterPart) {
         $filterText .= '   |   ' . $filterPart;
     }

@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "../../dbconn.php";
+include "../../skill_matrix_period.php";
 
 require '../../asset/vendor/autoload.php';
 
@@ -42,8 +43,10 @@ if (!isset($_SESSION['fullname']) || !($_SESSION['role'] == 'ADMIN' || skillMatr
 }
 
 $staffid = isset($_GET['staffid']) ? (int) $_GET['staffid'] : 0;
-$currentYear = (int) date('Y');
-$currentQuarter = (int) ceil(date('n') / 3);
+list($currentYear, $currentQuarter) = skillMatrixFillPeriod();
+if (isset($_GET['period']) && $_GET['period'] == 'previous') {
+    list($currentYear, $currentQuarter) = skillMatrixPreviousPeriod($currentYear, $currentQuarter);
+}
 
 $stmt = $conn->prepare("SELECT
                             u.staffno,
@@ -73,7 +76,7 @@ if (skillMatrixUserCanUse() && $_SESSION['role'] != 'ADMIN') {
     }
 }
 
-$quarterStmt = $conn->prepare("SELECT id, evaluation_date FROM skill_matrix_evaluations WHERE staffid = ? AND YEAR(evaluation_date) = ? AND QUARTER(evaluation_date) = ? ORDER BY evaluation_date DESC, id DESC LIMIT 1");
+$quarterStmt = $conn->prepare("SELECT id, evaluation_date FROM skill_matrix_evaluations WHERE staffid = ? AND eval_year = ? AND eval_quarter = ? ORDER BY evaluation_date DESC, id DESC LIMIT 1");
 $quarterStmt->bind_param("iii", $staffid, $currentYear, $currentQuarter);
 $quarterStmt->execute();
 $quarterResult = $quarterStmt->get_result()->fetch_assoc();

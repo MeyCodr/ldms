@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "../../../dbconn.php";
+include "../../../skill_matrix_period.php";
 
 require '../../../asset/vendor/autoload.php';
 
@@ -24,8 +25,7 @@ if (!$isSmWhitelisted && !$isRegularManager) {
 // Mirrors fetch_skill_matrix.php's load_non_executive_staff query exactly, so
 // the export always matches what the on-screen table is showing.
 $department = isset($_SESSION['department']) ? $_SESSION['department'] : '';
-$currentYear = (int) date('Y');
-$currentQuarter = (int) ceil(date('n') / 3);
+list($currentYear, $currentQuarter) = skillMatrixFillPeriod();
 
 if ($department == '' && isset($_SESSION['id'])) {
     $stmtDepartment = $conn->prepare("SELECT department FROM user WHERE id = ?");
@@ -55,8 +55,8 @@ $sql = "SELECT
                 SELECT sme.approval_status
                 FROM skill_matrix_evaluations sme
                 WHERE sme.staffid = u.id
-                AND YEAR(sme.evaluation_date) = ?
-                AND QUARTER(sme.evaluation_date) = ?
+                AND sme.eval_year = ?
+                AND sme.eval_quarter = ?
                 ORDER BY sme.evaluation_date DESC, sme.id DESC
                 LIMIT 1
             ) AS approval_status,
@@ -64,8 +64,8 @@ $sql = "SELECT
                 SELECT 1
                 FROM skill_matrix_evaluations sme
                 WHERE sme.staffid = u.id
-                AND YEAR(sme.evaluation_date) = ?
-                AND QUARTER(sme.evaluation_date) = ?
+                AND sme.eval_year = ?
+                AND sme.eval_quarter = ?
             ) AS has_current_quarter_evaluation
         FROM user u
         LEFT JOIN departments dp ON u.department_id = dp.id

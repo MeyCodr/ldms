@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "../../dbconn.php";
+include "../../skill_matrix_period.php";
 
 function skillMatrixRatingLabel($rating)
 {
@@ -50,11 +51,20 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || skillMatrix
     $displayEvaluationDate = $evaluationDate;
     $saveMessage = '';
     $saveError = '';
-    $currentYear = (int) date('Y');
-    $currentQuarter = (int) ceil(date('n') / 3);
+    list($currentYear, $currentQuarter) = skillMatrixFillPeriod();
+    // ?period=previous shows the quarter before the evaluation quarter, view only.
+    $viewingPrevious = isset($_GET['period']) && $_GET['period'] == 'previous';
+    $fillYear = $currentYear;
+    $fillQuarter = $currentQuarter;
+    list($previousYear, $previousQuarter) = skillMatrixPreviousPeriod($fillYear, $fillQuarter);
+    if ($viewingPrevious) {
+        $currentYear = $previousYear;
+        $currentQuarter = $previousQuarter;
+    }
+    $canCopyPrevious = false;
     $hasCurrentQuarterEvaluation = false;
     $currentApprovalStatus = null;
-    $editRequested = isset($_GET['edit']) && $_GET['edit'] == '1';
+    $editRequested = !$viewingPrevious && isset($_GET['edit']) && $_GET['edit'] == '1';
     $canFillSkillMatrix = skillMatrixUserCanUse() || $_SESSION['role'] == 'ADMIN';
     $viewEvaluationId = null;
     $viewTopics = array(
@@ -122,7 +132,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || skillMatrix
         }
 
         if ($staff) {
-            $quarterStmt = $conn->prepare("SELECT id, evaluation_date, created_by, approved_by, approval_status FROM skill_matrix_evaluations WHERE staffid = ? AND YEAR(evaluation_date) = ? AND QUARTER(evaluation_date) = ? ORDER BY evaluation_date DESC, id DESC LIMIT 1");
+            $quarterStmt = $conn->prepare("SELECT id, evaluation_date, created_by, approved_by, approval_status FROM skill_matrix_evaluations WHERE staffid = ? AND eval_year = ? AND eval_quarter = ? ORDER BY evaluation_date DESC, id DESC LIMIT 1");
             $quarterStmt->bind_param("iii", $staffid, $currentYear, $currentQuarter);
             $quarterStmt->execute();
             $quarterResult = $quarterStmt->get_result()->fetch_assoc();
@@ -213,7 +223,38 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || skillMatrix
 
     $canEditExisting = isset($canEditExisting) ? $canEditExisting : false;
 
-    if ($_SERVER['REQUEST_METHOD'] == 'POST' && $staff && $canFillSkillMatrix) {
+    // A staff with a previous quarter matrix and nothing yet for the evaluation
+    // quarter can have the previous one copied in as a draft to start from.
+    if ($staff && $canFillSkillMatrix) {
+        $canCopyPrevious = skillMatrixFindEvaluationId($conn, (int) $staffid, $previousYear, $previousQuarter) > 0
+            && skillMatrixFindEvaluationId($conn, (int) $staffid, $fillYear, $fillQuarter) == 0;
+    }
+
+    $copyRequested = $_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['form_action']) && $_POST['form_action'] == 'copy_previous';
+
+    if ($copyRequested) {
+        $copiedEvaluationId = 0;
+
+        if ($canCopyPrevious) {
+            $copiedEvaluationId = skillMatrixCopyToPeriod(
+                $conn,
+                skillMatrixFindEvaluationId($conn, (int) $staffid, $previousYear, $previousQuarter),
+                (int) $staffid,
+                $fillYear,
+                $fillQuarter,
+                isset($_SESSION['id']) ? (int) $_SESSION['id'] : null
+            );
+        }
+
+        if ($copiedEvaluationId > 0) {
+            header("Location: evaluation-matrix.php?staffid=" . urlencode($staffid) . "&edit=1&copied=1");
+            exit();
+        }
+
+        $saveError = 'Unable to copy the Q' . $previousQuarter . ' ' . $previousYear . ' skill matrix into Q' . $fillQuarter . ' ' . $fillYear . '.';
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && !$viewingPrevious && !$copyRequested && $staff && $canFillSkillMatrix) {
         $formAction = isset($_POST['form_action']) && $_POST['form_action'] == 'submit' ? 'submit' : 'save';
         $sections = array('knowledge', 'skill', 'ability');
         $topicsToSave = array();
@@ -225,7 +266,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || skillMatrix
         $errors = array();
 
         if ($hasCurrentQuarterEvaluation && !$canEditExisting) {
-            $errors[] = 'Skill matrix already submitted for this quarter. Please submit again next quarter.';
+            $errors[] = 'Skill matrix already submitted for Q' . $currentQuarter . ' ' . $currentYear . '.';
         }
 
         if (!$hasCurrentQuarterEvaluation || $canEditExisting) {
@@ -325,8 +366,8 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || skillMatrix
                     $createdBy = isset($_SESSION['id']) ? (int) $_SESSION['id'] : null;
                     $initialApprovalStatus = $formAction == 'submit' ? 'PENDING' : null;
 
-                    $evaluationStmt = $conn->prepare("INSERT INTO skill_matrix_evaluations (staffid, evaluation_date, created_by, approval_status) VALUES (?, ?, ?, ?)");
-                    $evaluationStmt->bind_param("isis", $staffid, $evaluationDateForDb, $createdBy, $initialApprovalStatus);
+                    $evaluationStmt = $conn->prepare("INSERT INTO skill_matrix_evaluations (staffid, evaluation_date, eval_year, eval_quarter, created_by, approval_status) VALUES (?, ?, ?, ?, ?, ?)");
+                    $evaluationStmt->bind_param("isiiis", $staffid, $evaluationDateForDb, $currentYear, $currentQuarter, $createdBy, $initialApprovalStatus);
                     $evaluationStmt->execute();
                     $evaluationId = $conn->insert_id;
                 }
@@ -527,17 +568,49 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || skillMatrix
                                 </div>
                                 <div class="col-md-4" align="right">
                                     <?php if ($hasCurrentQuarterEvaluation && !$canEditExisting) { ?>
-                                        <a href="export_evaluation_matrix.php?staffid=<?php echo urlencode($staffid); ?>" class="btn btn-info btn-md">
+                                        <a href="export_evaluation_matrix.php?staffid=<?php echo urlencode($staffid); ?><?php echo $viewingPrevious ? '&amp;period=previous' : ''; ?>" class="btn btn-info btn-md">
                                             <i class="fa fa-download"></i> DOWNLOAD AS EXCEL
                                         </a>
                                     <?php } ?>
-                                    <a href="skill-matrix.php" class="btn btn-success btn-md">
+                                    <a href="skill-matrix.php<?php echo $viewingPrevious ? '?period=previous' : ''; ?>" class="btn btn-success btn-md">
                                         <i class="far fa-arrow-alt-circle-left"></i> BACK TO SKILL MATRIX
                                     </a>
                                 </div>
                             </div>
                         </div>
                         <div class="panel-body">
+                            <?php if ($viewingPrevious) { ?>
+                                <div class="alert alert-warning">
+                                    <strong>Previous Quarter: Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?></strong>
+                                    (<?php echo skillMatrixQuarterMonths($currentQuarter); ?> <?php echo $currentYear; ?>) - view only
+                                </div>
+                            <?php } else { ?>
+                                <div class="alert alert-info">
+                                    <strong>Evaluation Quarter: Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?></strong>
+                                    (<?php echo skillMatrixQuarterMonths($currentQuarter); ?> <?php echo $currentYear; ?>)
+                                </div>
+                            <?php } ?>
+
+                            <?php if (isset($_GET['copied']) && $_GET['copied'] == '1' && $canEditExisting) { ?>
+                                <div class="alert alert-info">
+                                    Copied from Q<?php echo $previousQuarter; ?> <?php echo $previousYear; ?> as a draft. Review the topics and ratings, then save or submit for approval.
+                                </div>
+                            <?php } ?>
+
+                            <?php if ($canCopyPrevious) { ?>
+                                <form method="post" action="evaluation-matrix.php?staffid=<?php echo urlencode($staffid); ?>" class="alert alert-info">
+                                    <input type="hidden" name="form_action" value="copy_previous">
+                                    <?php if ($viewingPrevious) { ?>
+                                        This staff has no Q<?php echo $fillQuarter; ?> <?php echo $fillYear; ?> skill matrix yet.
+                                    <?php } else { ?>
+                                        This staff has a Q<?php echo $previousQuarter; ?> <?php echo $previousYear; ?> skill matrix.
+                                    <?php } ?>
+                                    <button type="submit" class="btn btn-warning btn-sm" style="margin-left: 10px;">
+                                        <i class="fa fa-copy"></i> COPY Q<?php echo $previousQuarter; ?> <?php echo $previousYear; ?> INTO Q<?php echo $fillQuarter; ?> <?php echo $fillYear; ?>
+                                    </button>
+                                </form>
+                            <?php } ?>
+
                             <?php if ($saveMessage != '') { ?>
                                 <div class="alert alert-success"><?php echo htmlspecialchars($saveMessage); ?></div>
                             <?php } ?>
@@ -652,6 +725,8 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN' || skillMatrix
                                             <td><?php echo htmlspecialchars($signOff['approved_by']); ?></td>
                                         </tr>
                                     </table>
+                                <?php } else if ($viewingPrevious) { ?>
+                                    <div class="alert alert-warning">This staff has no skill matrix for Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?>.</div>
                                 <?php } else if ($canFillSkillMatrix) { ?>
                                 <form method="post" id="evaluation_form">
                                     <input type="hidden" name="staffid" value="<?php echo $staffid; ?>">

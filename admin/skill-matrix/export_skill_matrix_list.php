@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "../../dbconn.php";
+include "../../skill_matrix_period.php";
 
 require '../../asset/vendor/autoload.php';
 
@@ -54,8 +55,7 @@ if (!isset($_SESSION['fullname']) || !($_SESSION['role'] == 'ADMIN' || skillMatr
 $department = isset($_GET['department']) ? $_GET['department'] : 'ALL';
 $section = isset($_GET['section']) ? $_GET['section'] : 'ALL';
 $plant = isset($_GET['plant']) ? $_GET['plant'] : 'ALL';
-$currentYear = (int) date('Y');
-$currentQuarter = (int) ceil(date('n') / 3);
+list($currentYear, $currentQuarter) = skillMatrixFillPeriod();
 
 if (skillMatrixUserCanUse()) {
     if (!isset($_SESSION['department']) || $_SESSION['department'] == '') {
@@ -104,8 +104,8 @@ $sql = "SELECT
             SELECT sme2.id
             FROM skill_matrix_evaluations sme2
             WHERE sme2.staffid = u.id
-            AND YEAR(sme2.evaluation_date) = ?
-            AND QUARTER(sme2.evaluation_date) = ?
+            AND sme2.eval_year = ?
+            AND sme2.eval_quarter = ?
             ORDER BY sme2.evaluation_date DESC, sme2.id DESC
             LIMIT 1
         )

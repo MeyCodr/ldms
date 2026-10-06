@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "../../dbconn.php";
+include "../../skill_matrix_period.php";
 
 function matrixPieLevel($score)
 {
@@ -57,8 +58,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
         'TANJUNG MALIM 2',
         'WAREHOUSE BB',
     ];
-    $currentYear = (int) date('Y');
-    $currentQuarter = (int) ceil(date('n') / 3);
+    list($currentYear, $currentQuarter) = skillMatrixFillPeriod();
     $staffRows = array();
     $topicColumns = array();
     $departmentOptions = array();
@@ -111,8 +111,8 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                             LEFT JOIN user approver ON approver.id = sme.approved_by
                             LEFT JOIN departments dp ON u.department_id = dp.id
                             LEFT JOIN sections s ON u.section_id = s.id
-                            WHERE YEAR(sme.evaluation_date) = ?
-                            AND QUARTER(sme.evaluation_date) = ?
+                            WHERE sme.eval_year = ?
+                            AND sme.eval_quarter = ?
                             AND sme.approval_status IN ('APPROVED', 'PENDING')
                             ";
 
@@ -623,7 +623,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == 'ADMIN')) {
                         </div>
                         <div class="panel-body">
                             <div class="alert alert-info">
-                                Current Quarter: Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?>
+                                Evaluation Quarter: Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?>
                                 <?php if ($department != '' && $department != 'ALL') { ?>
                                     | Department: <?php echo htmlspecialchars($department); ?>
                                 <?php } ?>

@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "../../../dbconn.php";
+include "../../../skill_matrix_period.php";
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -31,8 +32,16 @@ if (
 }
 
 $department = isset($_SESSION['department']) ? $_SESSION['department'] : '';
-$currentYear = (int) date('Y');
-$currentQuarter = (int) ceil(date('n') / 3);
+list($currentYear, $currentQuarter) = skillMatrixFillPeriod();
+// period=previous lists the quarter before the evaluation quarter instead.
+$viewingPrevious = isset($_POST['period']) && $_POST['period'] == 'previous';
+$fillYear = $currentYear;
+$fillQuarter = $currentQuarter;
+$fillStaffIds = array();
+if ($viewingPrevious) {
+    list($currentYear, $currentQuarter) = skillMatrixPreviousPeriod($fillYear, $fillQuarter);
+    $fillStaffIds = skillMatrixStaffIdsWithEvaluation($conn, $fillYear, $fillQuarter);
+}
 
 if ($department == '' && isset($_SESSION['id'])) {
     $stmtDepartment = $conn->prepare("SELECT department FROM user WHERE id = ?");
@@ -62,8 +71,8 @@ $sql = "SELECT
                 SELECT sme.approval_status
                 FROM skill_matrix_evaluations sme
                 WHERE sme.staffid = u.id
-                AND YEAR(sme.evaluation_date) = ?
-                AND QUARTER(sme.evaluation_date) = ?
+                AND sme.eval_year = ?
+                AND sme.eval_quarter = ?
                 ORDER BY sme.evaluation_date DESC, sme.id DESC
                 LIMIT 1
             ) AS approval_status,
@@ -71,8 +80,8 @@ $sql = "SELECT
                 SELECT 1
                 FROM skill_matrix_evaluations sme
                 WHERE sme.staffid = u.id
-                AND YEAR(sme.evaluation_date) = ?
-                AND QUARTER(sme.evaluation_date) = ?
+                AND sme.eval_year = ?
+                AND sme.eval_quarter = ?
             ) AS has_current_quarter_evaluation
         FROM user u
         LEFT JOIN departments dp ON u.department_id = dp.id
@@ -117,6 +126,24 @@ while ($row = $result->fetch_assoc()) {
         $action .= '</div>';
     } else {
         $action = '<a href="evaluation-matrix.php?staffid=' . $row['id'] . '" class="btn btn-info btn-sm"><i class="fa fa-edit"></i> FILL SKILL MATRIX</a>';
+    }
+
+    // Previous quarter tab: only staff who have a matrix for it, view only,
+    // with a shortcut to copy it into the evaluation quarter.
+    if ($viewingPrevious) {
+        if (!$row['has_current_quarter_evaluation']) {
+            continue;
+        }
+
+        $action = '<div style="display: flex; gap: 6px; justify-content: center; align-items: center; white-space: nowrap;">';
+        $action .= '<a href="evaluation-matrix.php?staffid=' . $row['id'] . '&period=previous" class="btn btn-default btn-sm"><i class="fa fa-search"></i> VIEW</a>';
+        if (isset($fillStaffIds[(int) $row['id']])) {
+            $action .= '<span class="label label-pill label-default">Q' . $fillQuarter . ' ' . $fillYear . ' STARTED</span>';
+        } else {
+            $action .= '<button type="button" class="btn btn-warning btn-sm copy-previous-btn" data-staffid="' . $row['id'] . '" data-staffname="' . htmlspecialchars($row['staffname'], ENT_QUOTES) . '"><i class="fa fa-copy"></i> COPY TO Q' . $fillQuarter . ' ' . $fillYear . '</button>';
+        }
+        $action .= '<a href="duplicate-matrix.php?staffid=' . $row['id'] . '&period=previous" class="btn btn-warning btn-sm"><i class="fa fa-copy"></i> DUPLICATE</a>';
+        $action .= '</div>';
     }
 
     $output[] = array(

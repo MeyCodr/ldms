@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "../../../dbconn.php";
+include "../../../skill_matrix_period.php";
 
 require '../../../asset/vendor/autoload.php';
 
@@ -47,8 +48,7 @@ if (!isset($_SESSION['fullname']) || !canApproveSkillMatrix()) {
 // Mirrors skill-matrix.php's approval-queue query exactly - this page has no
 // filter controls, so the export is simply everything currently shown there.
 $hodId = (int) $_SESSION['id'];
-$currentYear = (int) date('Y');
-$currentQuarter = (int) ceil(date('n') / 3);
+list($currentYear, $currentQuarter) = skillMatrixFillPeriod();
 
 $stmt = $conn->prepare("SELECT
                             sme.approval_status,
@@ -72,8 +72,8 @@ $stmt = $conn->prepare("SELECT
                             OR EXISTS (SELECT 1 FROM skill_matrix_whitelist w WHERE w.staffno = creator.staffno COLLATE utf8mb4_0900_ai_ci)
                         )
                         AND sme.approval_status IS NOT NULL
-                        AND YEAR(sme.evaluation_date) = ?
-                        AND QUARTER(sme.evaluation_date) = ?
+                        AND sme.eval_year = ?
+                        AND sme.eval_quarter = ?
                         ORDER BY FIELD(sme.approval_status, 'PENDING', 'APPROVED'), sme.evaluation_date DESC, target.staffname");
 $creatorDesignation = "MANAGER (AM/HOS & ABOVE)";
 $stmt->bind_param("isii", $hodId, $creatorDesignation, $currentYear, $currentQuarter);
