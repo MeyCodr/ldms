@@ -9,20 +9,21 @@
 			$userid = $_POST['userid'];
 			$btnedit = '';
             $output= array();
-			$sql = "select participation.id,'PUBLIC/INHOUSE' as type,participation.attendance,training.title,training.startdate,training.enddate,'0' as clerkid,((DATEDIFF(enddate, startdate)) + 1) as totalday,ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,training.venue from training join participation on training.id = trainingid where userid = '$userid' union select ojt.id,'OJT' as type,attendance,title,startdate,enddate,clerkid,((DATEDIFF(enddate, startdate)) + 1) as totalday,ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,venue from ojt join participateojt on ojt.id = participateojt.ojtid where userid = '$userid';";
+			$sql = "select participation.id,'PUBLIC/INHOUSE' as type,participation.attendance,training.title,training.startdate,training.enddate,(NOW() >= TIMESTAMP(enddate, COALESCE(endtime, '23:59:59'))) as ended,'0' as clerkid,((DATEDIFF(enddate, startdate)) + 1) as totalday,ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,training.venue from training join participation on training.id = trainingid where userid = '$userid' union select ojt.id,'OJT' as type,attendance,title,startdate,enddate,(NOW() >= TIMESTAMP(enddate, COALESCE(endtime, '23:59:59'))) as ended,clerkid,((DATEDIFF(enddate, startdate)) + 1) as totalday,ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,venue from ojt join participateojt on ojt.id = participateojt.ojtid where userid = '$userid';";
 			$query = mysqli_query($conn,$sql);
 			while($row = mysqli_fetch_assoc($query))
 			{
+				$btnedit = '';
 				if ($row['attendance'] == 'COMPLETED') {
 					$status = '<span class="label label-pill label-success">'.$row['attendance'].'</span>';
 					$totalhour = round(($row['totalday'] * $row['totalhour']),2);
 				}else if ($row['attendance'] == '' && $row['type'] == 'PUBLIC/INHOUSE'){
 					$status = '<span class="label label-pill label-warning">WAITING</span>';
-					$btnedit = '<button type="submit" id="'.$row['id'].'" class="btn btn-warning btn-sm attendance" style="margin-left:5px;"><i class="fa fa-edit"></i> Fill in Attendance</button>';
+					$btnedit = $row['ended'] ? '<button type="submit" id="'.$row['id'].'" class="btn btn-warning btn-sm attendance" style="margin-left:5px;"><i class="fa fa-edit"></i> Fill in Attendance</button>' : '';
 					$totalhour = 0;
 				}else if ($row['attendance'] == '' && $row['type'] == 'OJT'){
 					$status = '<span class="label label-pill label-warning">WAITING</span>';
-					$btnedit = '<button type="submit" id="'.$row['id'].'" class="btn btn-warning btn-sm attendance_ojt" style="margin-left:5px;"><i class="fa fa-edit"></i> Fill In Attendance</button>';
+					$btnedit = $row['ended'] ? '<button type="submit" id="'.$row['id'].'" class="btn btn-warning btn-sm attendance_ojt" style="margin-left:5px;"><i class="fa fa-edit"></i> Fill In Attendance</button>' : '';
 					$totalhour = 0;
 				}else if ($row['attendance'] == 'ABSENT'){
 					$status = '<span class="label label-pill label-danger">'.$row['attendance'].'</span>';
@@ -58,20 +59,21 @@
 			$enddate = $_POST['enddate'];
 			$btnedit = '';
             $output= array();
-			$sql = "select participation.id,'PUBLIC/INHOUSE' as type,participation.attendance,training.title,training.startdate,training.enddate,'0' as clerkid,((DATEDIFF(enddate, startdate)) + 1) as totalday,ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,training.venue from training join participation on training.id = trainingid where userid = '$userid' and startdate between '$startdate' and '$enddate' union select ojt.id,'OJT' as type,attendance,title,startdate,enddate,clerkid,((DATEDIFF(enddate, startdate)) + 1) as totalday,ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,venue from ojt join participateojt on ojt.id = participateojt.ojtid where userid = '$userid' and startdate between '$startdate' and '$enddate';";
+			$sql = "select participation.id,'PUBLIC/INHOUSE' as type,participation.attendance,training.title,training.startdate,training.enddate,(NOW() >= TIMESTAMP(enddate, COALESCE(endtime, '23:59:59'))) as ended,'0' as clerkid,((DATEDIFF(enddate, startdate)) + 1) as totalday,ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,training.venue from training join participation on training.id = trainingid where userid = '$userid' and startdate between '$startdate' and '$enddate' union select ojt.id,'OJT' as type,attendance,title,startdate,enddate,(NOW() >= TIMESTAMP(enddate, COALESCE(endtime, '23:59:59'))) as ended,clerkid,((DATEDIFF(enddate, startdate)) + 1) as totalday,ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour,venue from ojt join participateojt on ojt.id = participateojt.ojtid where userid = '$userid' and startdate between '$startdate' and '$enddate';";
 			$query = mysqli_query($conn,$sql);
 			while($row = mysqli_fetch_assoc($query))
 			{
+				$btnedit = '';
 				if ($row['attendance'] == 'COMPLETED') {
 					$status = '<span class="label label-pill label-success">'.$row['attendance'].'</span>';
 					$totalhour = round(($row['totalday'] * $row['totalhour']),2);
 				}else if ($row['attendance'] == '' && $row['type'] == 'PUBLIC/INHOUSE'){
 					$status = '<span class="label label-pill label-warning">WAITING</span>';
-					$btnedit = '<button type="submit" id="'.$row['id'].'" class="btn btn-warning btn-sm attendance" style="margin-left:5px;"><i class="fa fa-edit"></i> Fill in Attendance</button>';
+					$btnedit = $row['ended'] ? '<button type="submit" id="'.$row['id'].'" class="btn btn-warning btn-sm attendance" style="margin-left:5px;"><i class="fa fa-edit"></i> Fill in Attendance</button>' : '';
 					$totalhour = 0;
 				}else if ($row['attendance'] == '' && $row['type'] == 'OJT'){
 					$status = '<span class="label label-pill label-warning">WAITING</span>';
-					$btnedit = '<button type="submit" id="'.$row['id'].'" class="btn btn-warning btn-sm attendance_ojt" style="margin-left:5px;"><i class="fa fa-edit"></i> Fill In Attendance</button>';
+					$btnedit = $row['ended'] ? '<button type="submit" id="'.$row['id'].'" class="btn btn-warning btn-sm attendance_ojt" style="margin-left:5px;"><i class="fa fa-edit"></i> Fill In Attendance</button>' : '';
 					$totalhour = 0;
 				}else if ($row['attendance'] == 'ABSENT'){
 					$status = '<span class="label label-pill label-danger">'.$row['attendance'].'</span>';
