@@ -50,6 +50,8 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
     $evaluationId = isset($_GET['evaluation_id']) ? (int) $_GET['evaluation_id'] : 0;
     $saveMessage = '';
     $saveError = '';
+    // Carried through only so BACK returns to the quarter tab the HOD came from.
+    $fromPrevious = isset($_GET['period']) && $_GET['period'] == 'previous';
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['evaluation_id'])) {
         $postEvaluationId = (int) $_POST['evaluation_id'];
@@ -76,7 +78,7 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
         $approveStmt->execute();
 
         if ($approveStmt->affected_rows > 0) {
-            header("Location: evaluation-matrix.php?evaluation_id=" . urlencode($postEvaluationId) . "&approved=1");
+            header("Location: evaluation-matrix.php?evaluation_id=" . urlencode($postEvaluationId) . "&approved=1" . ($fromPrevious ? '&period=previous' : ''));
             exit();
         }
 
@@ -206,7 +208,7 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
                 <div class="row">
                     <div class="col-md-8" style="margin-top: 10px;"><strong>Skill Matrix</strong></div>
                     <div class="col-md-4" align="right">
-                        <a href="skill-matrix.php" class="btn btn-success btn-md"><i class="far fa-arrow-alt-circle-left"></i> BACK</a>
+                        <a href="skill-matrix.php<?php echo $fromPrevious ? '?period=previous' : ''; ?>" class="btn btn-success btn-md"><i class="far fa-arrow-alt-circle-left"></i> BACK</a>
                     </div>
                 </div>
             </div>

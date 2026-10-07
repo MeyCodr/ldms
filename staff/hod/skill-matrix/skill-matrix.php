@@ -36,6 +36,16 @@ function canApproveSkillMatrix()
 if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
     $hodId = (int) $_SESSION['id'];
     list($currentYear, $currentQuarter) = skillMatrixFillPeriod();
+    // ?period=previous shows the quarter before the evaluation quarter instead.
+    $viewingPrevious = isset($_GET['period']) && $_GET['period'] == 'previous';
+    $fillYear = $currentYear;
+    $fillQuarter = $currentQuarter;
+    list($previousYear, $previousQuarter) = skillMatrixPreviousPeriod($fillYear, $fillQuarter);
+    if ($viewingPrevious) {
+        $currentYear = $previousYear;
+        $currentQuarter = $previousQuarter;
+    }
+    $periodQuery = $viewingPrevious ? 'period=previous' : '';
     $records = array();
 
     $stmt = $conn->prepare("SELECT
@@ -96,26 +106,40 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
 
     $overview = array('total' => 0, 'approved' => 0, 'waiting' => 0, 'draft' => 0, 'not_submitted' => 0);
 
+    // One row per department staff with their status this quarter, listed
+    // under the overview tiles so the HOD can see who is behind each count.
+    $staffStatus = array();
+
+    // evaluation-matrix.php only opens evaluations in this HOD's approval
+    // scope, so the staff list only links to those.
+    $viewableIds = array();
+    foreach ($records as $record) {
+        $viewableIds[(int) $record['id']] = true;
+    }
+
     if (count($hodDepartments) > 0) {
         $placeholders = implode(',', array_fill(0, count($hodDepartments), '?'));
         $overviewSql = "SELECT
-                            (
-                                SELECT sme.approval_status
-                                FROM skill_matrix_evaluations sme
-                                WHERE sme.staffid = u.id
-                                AND sme.eval_year = ?
-                                AND sme.eval_quarter = ?
-                                ORDER BY sme.evaluation_date DESC, sme.id DESC
-                                LIMIT 1
-                            ) AS approval_status,
-                            EXISTS (
-                                SELECT 1 FROM skill_matrix_evaluations sme
-                                WHERE sme.staffid = u.id
-                                AND sme.eval_year = ?
-                                AND sme.eval_quarter = ?
-                            ) AS has_current_quarter_evaluation
+                            u.staffno,
+                            u.staffname,
+                            COALESCE(dp.name, u.department) AS department,
+                            COALESCE(s.name, u.section) AS section,
+                            sme.id AS evaluation_id,
+                            sme.approval_status,
+                            creator.staffname AS created_by_name
                         FROM user u
                         LEFT JOIN departments dp ON u.department_id = dp.id
+                        LEFT JOIN sections s ON u.section_id = s.id
+                        LEFT JOIN skill_matrix_evaluations sme ON sme.id = (
+                            SELECT latest.id
+                            FROM skill_matrix_evaluations latest
+                            WHERE latest.staffid = u.id
+                            AND latest.eval_year = ?
+                            AND latest.eval_quarter = ?
+                            ORDER BY latest.evaluation_date DESC, latest.id DESC
+                            LIMIT 1
+                        )
+                        LEFT JOIN user creator ON creator.id = sme.created_by
                         WHERE u.designation IN ('NON EXECUTIVE', 'CONTRACT')
                         AND u.status != 'RESIGN'
                         AND (dp.name IN ($placeholders) OR u.department IN ($placeholders))";
@@ -125,8 +149,8 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
         // collations". Comparing each column against the bound params
         // separately (same pattern as admin/skill-matrix/fetch_skill_matrix.php)
         // avoids that, so each department name is bound twice, once per side.
-        $overviewTypes = 'iiii' . str_repeat('s', count($hodDepartments) * 2);
-        $overviewParams = array_merge([$currentYear, $currentQuarter, $currentYear, $currentQuarter], $hodDepartments, $hodDepartments);
+        $overviewTypes = 'ii' . str_repeat('s', count($hodDepartments) * 2);
+        $overviewParams = array_merge([$currentYear, $currentQuarter], $hodDepartments, $hodDepartments);
         $overviewStmt = $conn->prepare($overviewSql);
         $overviewStmt->bind_param($overviewTypes, ...$overviewParams);
         $overviewStmt->execute();
@@ -136,15 +160,36 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
             $overview['total']++;
             if ($orow['approval_status'] == 'APPROVED') {
                 $overview['approved']++;
+                $orow['status'] = 'APPROVED';
             } else if ($orow['approval_status'] == 'PENDING') {
                 $overview['waiting']++;
-            } else if ($orow['has_current_quarter_evaluation']) {
+                $orow['status'] = 'WAITING APPROVAL';
+            } else if ($orow['evaluation_id'] !== null) {
                 $overview['draft']++;
+                $orow['status'] = 'DRAFT';
             } else {
                 $overview['not_submitted']++;
+                $orow['status'] = 'NOT SUBMITTED';
             }
+            $staffStatus[] = $orow;
         }
+
+        // Staff the HOD still has to chase come first.
+        $statusOrder = array('NOT SUBMITTED' => 0, 'DRAFT' => 1, 'WAITING APPROVAL' => 2, 'APPROVED' => 3);
+        usort($staffStatus, function ($a, $b) use ($statusOrder) {
+            if ($statusOrder[$a['status']] != $statusOrder[$b['status']]) {
+                return $statusOrder[$a['status']] - $statusOrder[$b['status']];
+            }
+            return strcasecmp($a['staffname'], $b['staffname']);
+        });
     }
+
+    $statusLabelClass = array(
+        'APPROVED' => 'label-success',
+        'WAITING APPROVAL' => 'label-warning',
+        'DRAFT' => 'label-draft',
+        'NOT SUBMITTED' => 'label-danger'
+    );
 
     $overviewCompletionRate = $overview['total'] > 0 ? round(($overview['approved'] / $overview['total']) * 100) : 0;
 ?>
@@ -192,6 +237,19 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
             letter-spacing: 0.03em;
             margin-top: 4px;
         }
+
+        .dash-tile[data-status] {
+            cursor: pointer;
+        }
+
+        .dash-tile.active {
+            background: #eef4fb;
+            border-color: #337ab7;
+        }
+
+        .label-draft {
+            background-color: var(--status-serious);
+        }
     </style>
 </head>
 <body onload="startTime()" style="background-image:url('../../../asset/image/bg-try.png');zoom: 75%;">
@@ -225,9 +283,14 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
         </nav>
 
         <div class="alert alert-info">
-            <strong>Evaluation Quarter: Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?></strong>
-            (<?php echo skillMatrixQuarterMonths($currentQuarter); ?> <?php echo $currentYear; ?>)
+            <strong>Evaluation Quarter: Q<?php echo $fillQuarter; ?> <?php echo $fillYear; ?></strong>
+            (<?php echo skillMatrixQuarterMonths($fillQuarter); ?> <?php echo $fillYear; ?>)
         </div>
+
+        <ul class="nav nav-tabs" style="margin-bottom: 15px;">
+            <li<?php echo $viewingPrevious ? '' : ' class="active"'; ?>><a href="skill-matrix.php">Evaluation Quarter (Q<?php echo $fillQuarter; ?> <?php echo $fillYear; ?>)</a></li>
+            <li<?php echo $viewingPrevious ? ' class="active"' : ''; ?>><a href="skill-matrix.php?period=previous">Previous Quarter (Q<?php echo $previousQuarter; ?> <?php echo $previousYear; ?>)</a></li>
+        </ul>
 
         <div class="panel panel-default">
             <div class="panel-heading">
@@ -239,7 +302,7 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
                         <a href="matrix-chart.php" class="btn btn-info btn-md">
                             <i class="fa fa-chart-bar"></i> Matrix Chart
                         </a>
-                        <a href="export_skill_matrix_list.php" class="btn btn-success btn-md">
+                        <a href="export_skill_matrix_list.php<?php echo $viewingPrevious ? '?' . $periodQuery : ''; ?>" class="btn btn-success btn-md">
                             <i class="fa fa-file-excel"></i> Export Excel
                         </a>
                     </div>
@@ -247,7 +310,7 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
             </div>
             <div class="panel-body">
                 <?php if (count($records) == 0) { ?>
-                    <div class="alert alert-info">No skill matrix records are waiting for approval.</div>
+                    <div class="alert alert-info">No skill matrix records have been submitted for Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?>.</div>
                 <?php } else { ?>
                     <div class="table-responsive">
                         <table id="skillMatrixTable" class="table table-bordered table-striped">
@@ -280,7 +343,7 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
                                             <?php } ?>
                                         </td>
                                         <td class="text-center">
-                                            <a href="evaluation-matrix.php?evaluation_id=<?php echo (int) $record['id']; ?>" class="btn btn-info btn-sm">
+                                            <a href="evaluation-matrix.php?evaluation_id=<?php echo (int) $record['id']; ?><?php echo $viewingPrevious ? '&amp;' . $periodQuery : ''; ?>" class="btn btn-info btn-sm">
                                                 <i class="fa fa-search"></i> VIEW
                                             </a>
                                         </td>
@@ -300,7 +363,7 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
             <div class="panel-body">
                 <div class="row">
                     <div class="col-md-2 col-sm-4 col-xs-6">
-                        <div class="dash-tile">
+                        <div class="dash-tile active" data-status="">
                             <div class="dash-tile-value"><?php echo $overview['total']; ?></div>
                             <div class="dash-tile-label">Total Staff</div>
                         </div>
@@ -312,30 +375,73 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
                         </div>
                     </div>
                     <div class="col-md-2 col-sm-4 col-xs-6">
-                        <div class="dash-tile" style="border-left-color: var(--status-good);">
+                        <div class="dash-tile" data-status="APPROVED" style="border-left-color: var(--status-good);">
                             <div class="dash-tile-value"><?php echo $overview['approved']; ?></div>
                             <div class="dash-tile-label">Approved</div>
                         </div>
                     </div>
                     <div class="col-md-2 col-sm-4 col-xs-6">
-                        <div class="dash-tile" style="border-left-color: var(--status-warning);">
+                        <div class="dash-tile" data-status="WAITING APPROVAL" style="border-left-color: var(--status-warning);">
                             <div class="dash-tile-value"><?php echo $overview['waiting']; ?></div>
                             <div class="dash-tile-label">Waiting Approval</div>
                         </div>
                     </div>
                     <div class="col-md-2 col-sm-4 col-xs-6">
-                        <div class="dash-tile" style="border-left-color: var(--status-serious);">
+                        <div class="dash-tile" data-status="DRAFT" style="border-left-color: var(--status-serious);">
                             <div class="dash-tile-value"><?php echo $overview['draft']; ?></div>
                             <div class="dash-tile-label">Draft</div>
                         </div>
                     </div>
                     <div class="col-md-2 col-sm-4 col-xs-6">
-                        <div class="dash-tile" style="border-left-color: var(--status-critical);">
+                        <div class="dash-tile" data-status="NOT SUBMITTED" style="border-left-color: var(--status-critical);">
                             <div class="dash-tile-value"><?php echo $overview['not_submitted']; ?></div>
                             <div class="dash-tile-label">Not Submitted</div>
                         </div>
                     </div>
                 </div>
+
+                <?php if (count($staffStatus) == 0) { ?>
+                    <div class="alert alert-info">No staff found in your department.</div>
+                <?php } else { ?>
+                    <p class="text-muted">Click a tile above to filter the list by status.</p>
+                    <div class="table-responsive">
+                        <table id="staffStatusTable" class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>No.</th>
+                                    <th>Staff No.</th>
+                                    <th>Staff Name</th>
+                                    <th>Department</th>
+                                    <th>Section</th>
+                                    <th>Filled By</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($staffStatus as $index => $staff) { ?>
+                                    <tr>
+                                        <td class="text-center"><?php echo $index + 1; ?></td>
+                                        <td><?php echo htmlspecialchars($staff['staffno']); ?></td>
+                                        <td><?php echo htmlspecialchars($staff['staffname']); ?></td>
+                                        <td><?php echo htmlspecialchars((string) $staff['department']); ?></td>
+                                        <td><?php echo htmlspecialchars((string) $staff['section']); ?></td>
+                                        <td><?php echo $staff['created_by_name'] !== null ? htmlspecialchars($staff['created_by_name']) : '-'; ?></td>
+                                        <?php // Kept on one line: the tile filter matches this cell's text exactly. ?>
+                                        <td class="text-center"><span class="label <?php echo $statusLabelClass[$staff['status']]; ?>"><?php echo $staff['status']; ?></span></td>
+                                        <td class="text-center">
+                                            <?php if ($staff['evaluation_id'] !== null && isset($viewableIds[(int) $staff['evaluation_id']])) { ?>
+                                                <a href="evaluation-matrix.php?evaluation_id=<?php echo (int) $staff['evaluation_id']; ?><?php echo $viewingPrevious ? '&amp;' . $periodQuery : ''; ?>" class="btn btn-info btn-sm">
+                                                    <i class="fa fa-search"></i> VIEW
+                                                </a>
+                                            <?php } ?>
+                                        </td>
+                                    </tr>
+                                <?php } ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php } ?>
             </div>
         </div>
 
@@ -372,6 +478,28 @@ if (isset($_SESSION['fullname']) && canApproveSkillMatrix()) {
                 { className: 'text-center', targets: [0, 6, 7] },
                 { orderable: false, targets: [7] }
             ]
+        });
+
+        // "order": [] keeps the server order (not submitted first).
+        var staffStatusTable = $('#staffStatusTable').DataTable({
+            "paging": true,
+            "lengthChange": true,
+            "searching": true,
+            "ordering": true,
+            "info": true,
+            "pageLength": 10,
+            "order": [],
+            "columnDefs": [
+                { className: 'text-center', targets: [0, 6, 7] },
+                { orderable: false, targets: [7] }
+            ]
+        });
+
+        $('.dash-tile[data-status]').on('click', function () {
+            var status = $(this).data('status');
+            $('.dash-tile[data-status]').removeClass('active');
+            $(this).addClass('active');
+            staffStatusTable.column(6).search(status ? '^' + status + '$' : '', true, false).draw();
         });
     });
 </script>
