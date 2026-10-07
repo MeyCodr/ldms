@@ -263,24 +263,6 @@ if (isset($_SESSION['fullname']) && $canViewSkillMatrix) {
             skillMatrixTable.ajax.reload();
         });
 
-        $('#skillmatrixlist').on('click', '.copy-previous-btn', function () {
-            var staffId = $(this).data('staffid');
-
-            swal({
-                title: "Copy to Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?>?",
-                text: "The Q<?php echo $previousQuarter; ?> <?php echo $previousYear; ?> skill matrix of " + $(this).data('staffname') + " will be copied into Q<?php echo $currentQuarter; ?> <?php echo $currentYear; ?> as a draft for you to review and submit.",
-                icon: "warning",
-                buttons: true
-            }).then(function (confirmed) {
-                if (confirmed) {
-                    $('<form method="post"><input type="hidden" name="form_action" value="copy_previous"></form>')
-                        .attr('action', 'evaluation-matrix.php?staffid=' + encodeURIComponent(staffId))
-                        .appendTo('body')
-                        .submit();
-                }
-            });
-        });
-
     </script>
 
     </html>

@@ -5,34 +5,36 @@
 // eval_quarter instead, so they fail until this has been run against the
 // same database.
 //
-//   1. COLUMNS: add eval_year / eval_quarter to skill_matrix_evaluations.
-//   2. BACKFILL: every existing row keeps the quarter it has always been
-//      shown under, i.e. the quarter of its evaluation_date (a matrix filed
-//      in Jul-Sep 2026 stays Q3 2026). Only rows created by the new code
-//      follow the "previous quarter" rule in skill_matrix_period.php.
+// THE RULE: a skill matrix always belongs to the quarter BEFORE the one it
+// was filed in (see skill_matrix_period.php). That holds for the existing
+// records too - confirmed 2026-10-06: everything filed in Jul-Sep 2026 is the
+// Q2 2026 evaluation, and what has been filed since 1 Oct 2026 is Q3 2026.
 //
-//      EXCEPT rows filed from 2026-10-01 until this script runs. The old
-//      code saved those as Q4 2026, a quarter that under the new rule does
-//      not open until 1 Jan 2027:
-//        - staff with NO matrix filed in Jul-Sep 2026: the row becomes
-//          their Q3 2026 matrix (it is one, just filed a few days late).
-//        - staff who already HAVE a Q3 2026 matrix: the early Q4 row is
-//          DELETED (decided 2026-10-06), so they are evaluated again from
-//          January. Its topics and items go with it (ON DELETE CASCADE).
-//   3. NOT NULL + INDEX: lock the columns down and index the lookup every
+//   1. COLUMNS: add eval_year / eval_quarter to skill_matrix_evaluations.
+//   2. RESTORE: an earlier version of this script (same day) worked from the
+//      opposite reading - Jul-Sep filings as Q3 - and so DELETED the rows
+//      filed since 1 Oct for staff who already had a Jul-Sep matrix, after
+//      saving them to backup_skill_matrix_early_q4_<timestamp>.sql in this
+//      directory. Those rows are legitimate Q3 2026 matrices. If such a
+//      backup file is found here, its rows are put back. On a database the
+//      earlier version never ran against there is no backup file and this
+//      step does nothing.
+//   3. PERIOD: every row gets the quarter before the one its evaluation_date
+//      falls in. Rows that already carry the right period are left alone.
+//   4. NOT NULL + INDEX: lock the columns down and index the lookup every
 //      skill matrix page now does (staffid + period, and period alone).
 //
 // SAFETY
 //   - Dry run by default: reports what each step would change, writes
 //     nothing. Pass --apply to commit.
-//   - Before anything is deleted, the rows (evaluation + topics + items)
-//     are written to backup_skill_matrix_early_q4_<timestamp>.sql in this
-//     directory as plain INSERTs; run that file to put them back. If the
-//     backup cannot be written, step 2 stops without changing anything.
-//   - Step 2 runs in one transaction: relabel, delete and backfill either
-//     all commit or none do.
-//   - Idempotent: only rows that have no period yet are ever touched, so a
-//     re-run (or a run after the new code has gone live) changes nothing.
+//   - This version deletes nothing.
+//   - Steps 2 and 3 run in one transaction: restore and relabel either both
+//     commit or neither does.
+//   - A backed-up row is NOT restored if its id is in the table already, or
+//     if that staff has since been given another matrix filed on/after
+//     2026-10-01 (restoring would leave them with two Q3 matrices). Those
+//     are listed for a decision by hand.
+//   - Idempotent: a re-run finds nothing left to restore or relabel.
 //
 // USAGE
 //  - CLI: php scripts/deploy_skill_matrix_period_20261006.php [--apply]
@@ -40,8 +42,8 @@
 //    together with the changed .php files, then visit:
 //      https://<your-domain>/ldms/scripts/deploy_skill_matrix_period_20261006.php?key=<token>
 //      https://<your-domain>/ldms/scripts/deploy_skill_matrix_period_20261006.php?key=<token>&apply=1
-//    Delete this file AND the backup .sql it writes from the server once
-//    you're done (download the backup first).
+//    Delete this file (and any backup .sql beside it, after downloading it)
+//    from the server once you're done.
 define('DEPLOY_SM_PERIOD_TOKEN', '9c1e47a2d05b83f6e7310ab4c85d2f96b0473e1a5cd8f237');
 
 if (PHP_SAPI !== 'cli') {
@@ -75,6 +77,10 @@ function smPeriodHasIndex($conn, $name)
     return $conn->query("SHOW INDEX FROM skill_matrix_evaluations WHERE Key_name = '{$name}'")->num_rows > 0;
 }
 
+// The quarter before the one evaluation_date falls in, as SQL.
+$expectedYear = "IF(QUARTER(evaluation_date) = 1, YEAR(evaluation_date) - 1, YEAR(evaluation_date))";
+$expectedQuarter = "IF(QUARTER(evaluation_date) = 1, 4, QUARTER(evaluation_date) - 1)";
+
 // ===== STEP 1: columns =====
 echo "--- Step 1: eval_year / eval_quarter columns ---\n";
 $hasColumns = smPeriodColumn($conn, 'eval_year') && smPeriodColumn($conn, 'eval_quarter');
@@ -93,128 +99,135 @@ if (!$hasColumns) {
 }
 echo "\n";
 
-// ===== STEP 2: backfill =====
-echo "--- Step 2: backfill from evaluation_date ---\n";
-$total = (int) $conn->query("SELECT COUNT(*) c FROM skill_matrix_evaluations")->fetch_assoc()['c'];
-// Only rows without a period are in scope. Before step 1 has run that is
-// every row; afterwards it is none, which is what keeps rows written by the
-// new code (filed in October, period Q3) out of the early-Q4 handling below.
-$missingWhere = $hasColumns ? "(sme.eval_year IS NULL OR sme.eval_quarter IS NULL)" : "1 = 1";
-$missing = (int) $conn->query("SELECT COUNT(*) c FROM skill_matrix_evaluations sme WHERE {$missingWhere}")->fetch_assoc()['c'];
-echo "Rows in table: {$total}\n";
-echo "Rows needing a period: {$missing}\n";
-
 $conn->begin_transaction();
+$ok = true;
 
-$res = $conn->query("SELECT sme.id, sme.evaluation_date, sme.approval_status, u.staffno, u.staffname,
-                            EXISTS (
-                                SELECT 1
-                                FROM skill_matrix_evaluations q3
-                                WHERE q3.staffid = sme.staffid
-                                AND q3.evaluation_date BETWEEN '2026-07-01' AND '2026-09-30'
-                            ) AS has_q3
-                     FROM skill_matrix_evaluations sme
-                     LEFT JOIN user u ON u.id = sme.staffid
-                     WHERE {$missingWhere}
-                     AND sme.evaluation_date >= '2026-10-01'
-                     ORDER BY sme.evaluation_date, sme.id");
-$toRelabel = array();
-$toDelete = array();
-while ($row = $res->fetch_assoc()) {
-    if ($row['has_q3']) {
-        $toDelete[] = $row;
+// ===== STEP 2: restore rows the earlier version deleted =====
+echo "--- Step 2: restore rows deleted by the earlier version of this script ---\n";
+$backupFiles = glob(__DIR__ . '/backup_skill_matrix_early_q4_*.sql');
+$restoreStatements = array();
+$restoreCount = 0;
+
+if (!$backupFiles) {
+    echo "No backup_skill_matrix_early_q4_*.sql here - nothing to restore.\n";
+}
+
+foreach ($backupFiles ?: array() as $backupFile) {
+    // Every line is one INSERT whose first two values are numeric ids:
+    //   evaluations (id, staffid, ...), topics (id, evaluation_id, ...), items (id, topic_id, ...)
+    $evaluations = array();
+    $topicEvaluation = array();
+    $childLines = array();
+
+    foreach (file($backupFile, FILE_IGNORE_NEW_LINES) as $line) {
+        if (!preg_match("/^INSERT INTO `(skill_matrix_\w+)` \(`id`, `(\w+)`.*?\) VALUES \('(\d+)', '(\d+)'/", $line, $m)) {
+            continue;
+        }
+        $line = rtrim($line, ';');
+
+        if ($m[1] == 'skill_matrix_evaluations' && $m[2] == 'staffid') {
+            $evaluations[(int) $m[3]] = array('staffid' => (int) $m[4], 'line' => $line);
+        } elseif ($m[1] == 'skill_matrix_topics' && $m[2] == 'evaluation_id') {
+            $topicEvaluation[(int) $m[3]] = (int) $m[4];
+            $childLines[(int) $m[4]][] = $line;
+        } elseif ($m[1] == 'skill_matrix_items' && $m[2] == 'topic_id' && isset($topicEvaluation[(int) $m[4]])) {
+            $childLines[$topicEvaluation[(int) $m[4]]][] = $line;
+        }
+    }
+
+    echo basename($backupFile) . ": " . count($evaluations) . " skill matrices\n";
+
+    foreach ($evaluations as $evaluationId => $evaluation) {
+        if ($conn->query("SELECT 1 FROM skill_matrix_evaluations WHERE id = {$evaluationId}")->num_rows > 0) {
+            continue;
+        }
+
+        $newer = $conn->query("SELECT id, evaluation_date FROM skill_matrix_evaluations WHERE staffid = {$evaluation['staffid']} AND evaluation_date >= '2026-10-01' ORDER BY id LIMIT 1")->fetch_assoc();
+        if ($newer) {
+            echo "  -> NOT restoring id {$evaluationId}: staff {$evaluation['staffid']} already has matrix id {$newer['id']} filed {$newer['evaluation_date']} - decide by hand\n";
+            continue;
+        }
+
+        $restoreStatements[] = $evaluation['line'];
+        foreach (isset($childLines[$evaluationId]) ? $childLines[$evaluationId] : array() as $childLine) {
+            $restoreStatements[] = $childLine;
+        }
+        $restoreCount++;
+    }
+}
+
+if ($backupFiles) {
+    if ($restoreCount == 0) {
+        echo "Nothing left to restore.\n";
+    } elseif (!$apply) {
+        echo "Would restore {$restoreCount} skill matrices with their topics and ratings (re-run with --apply).\n";
+    } elseif (!$hasColumns) {
+        $ok = false;
+        echo "Skipping - step 1 did not complete.\n";
     } else {
-        $toRelabel[] = $row;
-    }
-}
-
-$earlyGroups = array(
-    'become Q3 2026 (staff has no Q3 matrix)' => $toRelabel,
-    'be DELETED (staff already has a Q3 matrix)' => $toDelete
-);
-foreach ($earlyGroups as $label => $rows) {
-    echo "Rows filed since 2026-10-01 that " . ($apply ? "will " : "would ") . $label . ": " . count($rows) . "\n";
-    foreach ($rows as $row) {
-        $status = $row['approval_status'] === null ? 'DRAFT' : $row['approval_status'];
-        echo "  -> id {$row['id']} | {$row['evaluation_date']} | {$status} | {$row['staffno']} | {$row['staffname']}\n";
-    }
-}
-
-$relabelIds = implode(',', array_map(function ($row) { return (int) $row['id']; }, $toRelabel));
-$deleteIds = implode(',', array_map(function ($row) { return (int) $row['id']; }, $toDelete));
-
-if ($missing == 0) {
-    $conn->rollback();
-    echo "Nothing to do.\n";
-} elseif (!$apply) {
-    $conn->rollback();
-    echo "Would give the remaining " . ($missing - count($toRelabel) - count($toDelete)) . " rows the quarter of their evaluation_date (re-run with --apply).\n";
-} elseif (!$hasColumns) {
-    $conn->rollback();
-    echo "Skipping - step 1 did not complete.\n";
-} else {
-    $ok = true;
-
-    if ($deleteIds !== '') {
-        $backupPath = __DIR__ . '/backup_skill_matrix_early_q4_' . date('Ymd_His') . '.sql';
-        $backupSql = "-- Skill matrix rows deleted by deploy_skill_matrix_period_20261006.php on " . date('Y-m-d H:i:s') . ".\n"
-                   . "-- Filed 2026-10-01 onwards as Q4 2026 for staff who already had a Q3 2026 matrix.\n"
-                   . "-- Run this file to restore them.\n";
-        $backupSources = array(
-            'skill_matrix_evaluations' => "SELECT * FROM skill_matrix_evaluations WHERE id IN ({$deleteIds}) ORDER BY id",
-            'skill_matrix_topics' => "SELECT * FROM skill_matrix_topics WHERE evaluation_id IN ({$deleteIds}) ORDER BY id",
-            'skill_matrix_items' => "SELECT i.* FROM skill_matrix_items i INNER JOIN skill_matrix_topics t ON t.id = i.topic_id WHERE t.evaluation_id IN ({$deleteIds}) ORDER BY i.id"
-        );
-        foreach ($backupSources as $table => $sql) {
-            $backupRes = $conn->query($sql);
-            while ($backupRow = $backupRes->fetch_assoc()) {
-                // Not backfilled yet at this point; the old code meant these as Q4 2026.
-                if ($table == 'skill_matrix_evaluations') {
-                    $backupRow['eval_year'] = 2026;
-                    $backupRow['eval_quarter'] = 4;
-                }
-                $values = array();
-                foreach ($backupRow as $value) {
-                    $values[] = $value === null ? 'NULL' : "'" . $conn->real_escape_string($value) . "'";
-                }
-                $backupSql .= "INSERT INTO `{$table}` (`" . implode('`, `', array_keys($backupRow)) . "`) VALUES (" . implode(', ', $values) . ");\n";
+        foreach ($restoreStatements as $statement) {
+            if (!$conn->query($statement)) {
+                $ok = false;
+                echo "FAILED to restore: {$conn->error}\n";
+                break;
             }
         }
-
-        if (file_put_contents($backupPath, $backupSql) === false) {
-            $ok = false;
-            echo "FAILED to write backup {$backupPath} - nothing changed.\n";
-        } else {
-            echo "Backup written: {$backupPath}\n";
-            $ok = $conn->query("DELETE FROM skill_matrix_evaluations WHERE id IN ({$deleteIds})");
-            echo $ok ? "Deleted {$conn->affected_rows} early Q4 rows.\n" : "FAILED to delete: {$conn->error}\n";
+        if ($ok) {
+            echo "Restored {$restoreCount} skill matrices with their topics and ratings.\n";
         }
-    }
-
-    if ($ok && $relabelIds !== '') {
-        $ok = $conn->query("UPDATE skill_matrix_evaluations SET eval_year = 2026, eval_quarter = 3 WHERE id IN ({$relabelIds})");
-        echo $ok ? "Set {$conn->affected_rows} rows to Q3 2026.\n" : "FAILED to relabel: {$conn->error}\n";
-    }
-
-    if ($ok) {
-        $ok = $conn->query("UPDATE skill_matrix_evaluations
-                            SET eval_year = YEAR(evaluation_date), eval_quarter = QUARTER(evaluation_date)
-                            WHERE eval_year IS NULL OR eval_quarter IS NULL");
-        echo $ok ? "Backfilled {$conn->affected_rows} rows from evaluation_date.\n" : "FAILED to backfill: {$conn->error}\n";
-    }
-
-    if ($ok) {
-        $conn->commit();
-        $missing = 0;
-    } else {
-        $conn->rollback();
-        echo "Step 2 rolled back.\n";
     }
 }
 echo "\n";
 
-// ===== STEP 3: NOT NULL + indexes =====
-echo "--- Step 3: NOT NULL + indexes ---\n";
+// ===== STEP 3: period =====
+echo "--- Step 3: period = the quarter before the one the matrix was filed in ---\n";
+$total = (int) $conn->query("SELECT COUNT(*) c FROM skill_matrix_evaluations")->fetch_assoc()['c'];
+$currentPeriod = $hasColumns ? "CONCAT('Q', eval_quarter, ' ', eval_year)" : "NULL";
+$wrongWhere = $hasColumns
+    ? "(eval_year IS NULL OR eval_quarter IS NULL OR eval_year <> {$expectedYear} OR eval_quarter <> {$expectedQuarter})"
+    : "1 = 1";
+$wrong = (int) $conn->query("SELECT COUNT(*) c FROM skill_matrix_evaluations WHERE {$wrongWhere}")->fetch_assoc()['c'];
+echo "Rows in table: {$total}\n";
+echo "Rows needing their period set or corrected: {$wrong}\n";
+
+$res = $conn->query("SELECT COALESCE({$currentPeriod}, 'none') AS from_period,
+                            CONCAT('Q', {$expectedQuarter}, ' ', {$expectedYear}) AS to_period,
+                            COUNT(*) n, MIN(evaluation_date) mn, MAX(evaluation_date) mx
+                     FROM skill_matrix_evaluations
+                     WHERE {$wrongWhere}
+                     GROUP BY from_period, to_period
+                     ORDER BY mn");
+while ($row = $res->fetch_assoc()) {
+    echo "  -> {$row['n']} rows filed {$row['mn']} to {$row['mx']}: {$row['from_period']} -> {$row['to_period']}\n";
+}
+
+if ($wrong > 0) {
+    if (!$apply) {
+        echo "Would update {$wrong} rows (re-run with --apply).\n";
+    } elseif (!$hasColumns || !$ok) {
+        $ok = false;
+        echo "Skipping - an earlier step did not complete.\n";
+    } else {
+        $ok = $conn->query("UPDATE skill_matrix_evaluations
+                            SET eval_year = {$expectedYear}, eval_quarter = {$expectedQuarter}
+                            WHERE {$wrongWhere}");
+        echo $ok ? "Updated {$conn->affected_rows} rows.\n" : "FAILED to update: {$conn->error}\n";
+    }
+}
+
+if ($apply && $ok) {
+    $conn->commit();
+    $wrong = 0;
+} else {
+    $conn->rollback();
+    if ($apply) {
+        echo "Steps 2 and 3 rolled back.\n";
+    }
+}
+echo "\n";
+
+// ===== STEP 4: NOT NULL + indexes =====
+echo "--- Step 4: NOT NULL + indexes ---\n";
 $yearColumn = $hasColumns ? smPeriodColumn($conn, 'eval_year') : null;
 $quarterColumn = $hasColumns ? smPeriodColumn($conn, 'eval_quarter') : null;
 $isNotNull = $yearColumn && $quarterColumn && $yearColumn['Null'] === 'NO' && $quarterColumn['Null'] === 'NO';
@@ -225,8 +238,8 @@ if ($isNotNull && $hasStaffIndex && $hasPeriodIndex) {
     echo "Already in place - nothing to do.\n";
 } elseif (!$apply) {
     echo "Would set both columns NOT NULL and add idx_sme_staff_period / idx_sme_period (re-run with --apply).\n";
-} elseif (!$hasColumns || $missing > 0) {
-    echo "Skipping - steps 1 and 2 did not complete.\n";
+} elseif (!$hasColumns || !$ok || $wrong > 0) {
+    echo "Skipping - earlier steps did not complete.\n";
 } else {
     $changes = array();
     if (!$isNotNull) {
@@ -239,8 +252,37 @@ if ($isNotNull && $hasStaffIndex && $hasPeriodIndex) {
     if (!$hasPeriodIndex) {
         $changes[] = "ADD INDEX idx_sme_period (eval_year, eval_quarter)";
     }
-    $ok = $conn->query("ALTER TABLE skill_matrix_evaluations " . implode(", ", $changes));
-    echo $ok ? "Done.\n" : "FAILED: {$conn->error}\n";
+    $changed = $conn->query("ALTER TABLE skill_matrix_evaluations " . implode(", ", $changes));
+    echo $changed ? "Done.\n" : "FAILED: {$conn->error}\n";
+}
+echo "\n";
+
+// ===== RESULT =====
+echo "--- Skill matrices per quarter" . ($apply ? "" : " (as the table stands now, before any change)") . " ---\n";
+$periodYear = $apply && $hasColumns ? "eval_year" : $expectedYear;
+$periodQuarter = $apply && $hasColumns ? "eval_quarter" : $expectedQuarter;
+if (!$apply) {
+    echo "(counted by the quarter each row WILL have)\n";
+}
+$res = $conn->query("SELECT {$periodYear} y, {$periodQuarter} q,
+                            SUM(approval_status = 'APPROVED') approved,
+                            SUM(approval_status = 'PENDING') pending,
+                            SUM(approval_status IS NULL) draft
+                     FROM skill_matrix_evaluations
+                     GROUP BY y, q
+                     ORDER BY y, q");
+while ($row = $res->fetch_assoc()) {
+    echo "  Q{$row['q']} {$row['y']}: {$row['approved']} approved, {$row['pending']} waiting approval, {$row['draft']} draft\n";
+}
+
+$res = $conn->query("SELECT sme.staffid, u.staffno, u.staffname, {$periodYear} y, {$periodQuarter} q, COUNT(*) n, GROUP_CONCAT(sme.id ORDER BY sme.id) ids
+                     FROM skill_matrix_evaluations sme
+                     LEFT JOIN user u ON u.id = sme.staffid
+                     GROUP BY sme.staffid, y, q
+                     HAVING COUNT(*) > 1");
+echo "Staff with more than one matrix in the same quarter: {$res->num_rows}\n";
+while ($row = $res->fetch_assoc()) {
+    echo "  -> {$row['staffno']} | {$row['staffname']} | Q{$row['q']} {$row['y']} | ids {$row['ids']}\n";
 }
 echo "\n";
 

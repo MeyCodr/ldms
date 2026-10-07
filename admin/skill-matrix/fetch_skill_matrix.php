@@ -238,7 +238,7 @@ if ($_POST["action"] == "load_non_executive_staff") {
         }
 
         // Previous quarter tab: only staff who have a matrix for it, view only,
-        // with a shortcut to copy it into the evaluation quarter.
+        // with a shortcut to duplicate it into the evaluation quarter.
         if ($viewingPrevious) {
             if (!$row['has_current_quarter_evaluation']) {
                 continue;
@@ -248,8 +248,6 @@ if ($_POST["action"] == "load_non_executive_staff") {
             $action .= '<a href="evaluation-matrix.php?staffid=' . $row['id'] . '&period=previous" class="btn btn-default btn-sm"><i class="fa fa-search"></i> VIEW</a>';
             if (isset($fillStaffIds[(int) $row['id']])) {
                 $action .= '<span class="label label-pill label-default">Q' . $fillQuarter . ' ' . $fillYear . ' STARTED</span>';
-            } else if ($isAdmin || skillMatrixUserCanUse()) {
-                $action .= '<button type="button" class="btn btn-warning btn-sm copy-previous-btn" data-staffid="' . $row['id'] . '" data-staffname="' . htmlspecialchars($row['staffname'], ENT_QUOTES) . '"><i class="fa fa-copy"></i> COPY TO Q' . $fillQuarter . ' ' . $fillYear . '</button>';
             }
             if ($isAdmin || skillMatrixUserCanUse()) {
                 $action .= '<a href="duplicate-matrix.php?staffid=' . $row['id'] . '&period=previous" class="btn btn-warning btn-sm"><i class="fa fa-copy"></i> DUPLICATE</a>';
