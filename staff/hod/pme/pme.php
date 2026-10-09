@@ -97,6 +97,7 @@
 						<li><a href="../attendance/training.php">MY TRAINING</a></li>
 						<li><a href="pme.php">PME</a></li>
 						<li><a href="../tna/staff_list.php">TNA</a></li>
+						<li><a href="../tni/tni.php">TNI</a></li>
 						<?php if ($showSkillMatrixNav) { ?>
                         <li><a href="../skill-matrix/skill-matrix.php">SKILL MATRIX</a></li>
                         <?php } ?>
