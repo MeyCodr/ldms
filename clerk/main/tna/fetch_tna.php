@@ -1,5 +1,6 @@
 <?php
     include "../../../dbconn.php";
+include_once __DIR__ . '/../../../planning_year.php';
 
     if($_POST["action"] == "load_staff"){
         $output= array();
@@ -12,7 +13,7 @@
             $department = $row['department'];
         }
 
-        $sql = "select user.id,staffno,staffname,user.section,ifnull(tablea.status,'not') as status from user left join (select distinct(userid) as userid,status from tna where year = '2023')tablea on user.id = tablea.userid where department = '$department' and user.id != '$userid'";
+        $sql = "select user.id,staffno,staffname,user.section,ifnull(tablea.status,'not') as status from user left join (select distinct(userid) as userid,status from tna where year = '" . ldmsPlanningYear() . "')tablea on user.id = tablea.userid where department = '$department' and user.id != '$userid'";
         $query = mysqli_query($conn,$sql);
         while($row = mysqli_fetch_assoc($query))
         {
@@ -40,8 +41,8 @@
     }else if($_POST["action"] == "gettna"){
         $userid = $_POST["userid"];
 
-        // $sql = "select count(*) as tnarecord,status from tna where userid = '$userid' and year = '2023';";
-		$sql = "SELECT status, COUNT(*) AS tnarecord FROM tna WHERE userid = '$userid' AND year = '2023' GROUP BY status;";
+        // $sql = "select count(*) as tnarecord,status from tna where userid = '$userid' and year = '" . ldmsPlanningYear() . "';";
+		$sql = "SELECT status, COUNT(*) AS tnarecord FROM tna WHERE userid = '$userid' AND year = '" . ldmsPlanningYear() . "' GROUP BY status;";
         $query = mysqli_query($conn,$sql);
         while($row = mysqli_fetch_assoc($query))
         {
@@ -82,7 +83,7 @@
     }else if($_POST["action"] == "getlisttna"){
         $userid = $_POST["userid"];
         
-        $sql = "select * from tna where userid = '$userid' and year = '2023';";
+        $sql = "select * from tna where userid = '$userid' and year = '" . ldmsPlanningYear() . "';";
         $query = mysqli_query($conn,$sql);
         while($row = mysqli_fetch_assoc($query))
         {
@@ -106,8 +107,8 @@
         $grade = $userid[0];
         $department = $userid[1];
 
-        // $sql = "select count(*) as tnarecord,status from tna where department = '$department' and grade = '$grade' and year = '2023';";
-        $sql = "SELECT status, COUNT(*) AS tnarecord FROM tna WHERE department = '$department' and grade = '$grade' AND year = '2023' GROUP BY status;";
+        // $sql = "select count(*) as tnarecord,status from tna where department = '$department' and grade = '$grade' and year = '" . ldmsPlanningYear() . "';";
+        $sql = "SELECT status, COUNT(*) AS tnarecord FROM tna WHERE department = '$department' and grade = '$grade' AND year = '" . ldmsPlanningYear() . "' GROUP BY status;";
 
         $query = mysqli_query($conn,$sql);
         while($row = mysqli_fetch_assoc($query))
@@ -127,7 +128,7 @@
         $grade = $userid[0];
         $department = $userid[1];
         
-        $sql = "select * from tna where grade = '$grade' and department = '$department' and year = '2023';";
+        $sql = "select * from tna where grade = '$grade' and department = '$department' and year = '" . ldmsPlanningYear() . "';";
         $query = mysqli_query($conn,$sql);
         while($row = mysqli_fetch_assoc($query))
         {

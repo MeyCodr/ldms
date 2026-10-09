@@ -1,5 +1,6 @@
 <?php
 include "../../dbconn.php";
+include_once __DIR__ . '/../../planning_year.php';
 // error_reporting(E_ALL);
 // ini_set('display_errors', 1);
 // print_r($_POST);
@@ -32,7 +33,7 @@ if ($_POST["action"] == "load_department") {
 			LEFT JOIN (
 				SELECT userid, MAX(status) AS status 
 				FROM tna 
-				WHERE year = '2023' 
+				WHERE year = '" . ldmsPlanningYear() . "' 
 				GROUP BY userid
 			) tablea 
 			ON user.id = tablea.userid 
@@ -48,7 +49,7 @@ if ($_POST["action"] == "load_department") {
 			LEFT JOIN (
 				SELECT userid, MAX(status) AS status 
 				FROM tna 
-				WHERE year = '2023' 
+				WHERE year = '" . ldmsPlanningYear() . "' 
 				GROUP BY userid
 			) tablea 
 			ON user.id = tablea.userid 
@@ -89,7 +90,7 @@ if ($_POST["action"] == "load_department") {
         FROM (
             SELECT DISTINCT(grade) AS grade, CONCAT(grade, '/', department) AS id, status
             FROM tna
-            WHERE department = ? AND year = '2023'
+            WHERE department = ? AND year = '" . ldmsPlanningYear() . "'
         ) tablea
         JOIN (
             SELECT grade, COUNT(*) AS headcount
@@ -128,7 +129,7 @@ if ($_POST["action"] == "load_department") {
 
     $sql = "SELECT COUNT(*) AS tnarecord, status 
             FROM tna 
-            WHERE userid = '$userid' AND year = '2023'
+            WHERE userid = '$userid' AND year = '" . ldmsPlanningYear() . "'
             GROUP BY status;
             ";
     $query = mysqli_query($conn, $sql);
@@ -137,13 +138,13 @@ if ($_POST["action"] == "load_department") {
         $status = $row['status'];
     }
 
-    $sql1 = "select ifnull(sum(totalday*totalhour),0) as sumhour from (select ((DATEDIFF(enddate, startdate)) + 1) as totalday,ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour from training join participation on training.id = trainingid where userid = '$userid' and year(startdate) = '2023')tablea;";
+    $sql1 = "select ifnull(sum(totalday*totalhour),0) as sumhour from (select ((DATEDIFF(enddate, startdate)) + 1) as totalday,ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour from training join participation on training.id = trainingid where userid = '$userid' and year(startdate) = year(curdate()))tablea;";
     $query1 = mysqli_query($conn, $sql1);
     while ($row1 = mysqli_fetch_assoc($query1)) {
         $publichour = $row1['sumhour'];
     }
 
-    $sql2 = "select ifnull(sum(totalday*totalhour),0) as sumhour from (select ((DATEDIFF(enddate, startdate)) + 1) as totalday,ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour from ojt join participateojt on ojt.id = ojtid where userid = '$userid' and year(startdate) = '2023')tablea;";
+    $sql2 = "select ifnull(sum(totalday*totalhour),0) as sumhour from (select ((DATEDIFF(enddate, startdate)) + 1) as totalday,ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour from ojt join participateojt on ojt.id = ojtid where userid = '$userid' and year(startdate) = year(curdate()))tablea;";
     $query2 = mysqli_query($conn, $sql2);
     while ($row2 = mysqli_fetch_assoc($query2)) {
         $ojthour = $row2['sumhour'];
@@ -168,7 +169,7 @@ if ($_POST["action"] == "load_department") {
 } else if ($_POST["action"] == "getlisttna") {
     $userid = $_POST["userid"];
 
-    $sql = "select * from tna where userid = '$userid' and year = '2023';";
+    $sql = "select * from tna where userid = '$userid' and year = '" . ldmsPlanningYear() . "';";
     $query = mysqli_query($conn, $sql);
     while ($row = mysqli_fetch_assoc($query)) {
         $output[] = array(
@@ -205,7 +206,7 @@ if ($_POST["action"] == "load_department") {
             FROM tna 
             WHERE department = '$department' 
             AND grade = '$grade' 
-            AND year = '2023' 
+            AND year = '" . ldmsPlanningYear() . "' 
             GROUP BY status;";
     $query = mysqli_query($conn, $sql);
 
@@ -220,7 +221,7 @@ if ($_POST["action"] == "load_department") {
     $grade = $userid[0];
     $department = $userid[1];
 
-    $sql = "select * from tna where grade = '$grade' and department = '$department' and year = '2023';";
+    $sql = "select * from tna where grade = '$grade' and department = '$department' and year = '" . ldmsPlanningYear() . "';";
     $query = mysqli_query($conn, $sql);
     while ($row = mysqli_fetch_assoc($query)) {
         $output[] = array(
@@ -259,7 +260,7 @@ function loadDepartment()
 function allDepartment()
 {
     global $conn;
-    $sql = "select u.department, count(t.id) as quantity from user u left join tna t on u.id = t.userid where t.department is not null group by u.department order by u.department;";
+    $sql = "select u.department, count(t.id) as quantity from user u left join " . ldmsPlanningYearTable() . " t on u.id = t.userid where t.department is not null group by u.department order by u.department;";
     $query = mysqli_query($conn, $sql);
     $output = [];
     $index = 1;  // Start a counter for row indexing
@@ -278,7 +279,7 @@ function allDepartment()
 function tnaStatus()
 {
     global $conn;
-    $sql = 'SELECT DISTINCT u.department, hod.staffname AS hod_name, MAX(t.status) AS tna_status FROM user u LEFT JOIN user hod ON u.hodid = hod.id LEFT JOIN tna t ON u.id = t.userid WHERE hod.staffname IS NOT NULL GROUP BY u.department, u.hodid, hod.staffname;';
+    $sql = 'SELECT DISTINCT u.department, hod.staffname AS hod_name, MAX(t.status) AS tna_status FROM user u LEFT JOIN user hod ON u.hodid = hod.id LEFT JOIN ' . ldmsPlanningYearTable() . ' t ON u.id = t.userid WHERE hod.staffname IS NOT NULL GROUP BY u.department, u.hodid, hod.staffname;';
     $query = mysqli_query($conn, $sql);
     $output = [];
     $index = 1;
@@ -300,7 +301,7 @@ function tnaStatus()
 function tnaSummaryPieChart()
 {
     global $conn;
-    $sql = "SELECT section, COUNT(id) AS no, ROUND((COUNT(id) * 100.0 / (SELECT COUNT(id) FROM tna WHERE section IN ('esgaware', 'selfaware', 'leadaware', 'busiaware', 'dataaware', 'functional', 'special'))), 2) AS percentage FROM tna WHERE section IN ('esgaware', 'selfaware', 'leadaware', 'busiaware', 'dataaware', 'functional', 'special') GROUP BY section;";
+    $sql = "SELECT section, COUNT(id) AS no, ROUND((COUNT(id) * 100.0 / (SELECT COUNT(id) FROM " . ldmsPlanningYearTable() . " tna WHERE section IN ('esgaware', 'selfaware', 'leadaware', 'busiaware', 'dataaware', 'functional', 'special'))), 2) AS percentage FROM " . ldmsPlanningYearTable() . " tna WHERE section IN ('esgaware', 'selfaware', 'leadaware', 'busiaware', 'dataaware', 'functional', 'special') GROUP BY section;";
     $query = mysqli_query($conn, $sql);
     $data = array();
     while ($row = mysqli_fetch_assoc($query)) {
@@ -353,7 +354,7 @@ function tnaSummaryPieChart()
 function tnaMethodPieChart()
 {
     global $conn;
-    $sql = "SELECT trainingtype, COUNT(id) AS no, ROUND((COUNT(id) * 100.0 / (SELECT COUNT(id) FROM tna WHERE trainingtype IN (1, 2, 3) AND trainingtype IS NOT NULL)), 2) AS percentage FROM tna WHERE trainingtype IN (1, 2, 3) AND trainingtype IS NOT NULL GROUP BY trainingtype;";
+    $sql = "SELECT trainingtype, COUNT(id) AS no, ROUND((COUNT(id) * 100.0 / (SELECT COUNT(id) FROM " . ldmsPlanningYearTable() . " tna WHERE trainingtype IN (1, 2, 3) AND trainingtype IS NOT NULL)), 2) AS percentage FROM " . ldmsPlanningYearTable() . " tna WHERE trainingtype IN (1, 2, 3) AND trainingtype IS NOT NULL GROUP BY trainingtype;";
     $query = mysqli_query($conn, $sql);
     $data = array();
     while ($row = mysqli_fetch_assoc($query)) {

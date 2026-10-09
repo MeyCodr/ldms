@@ -1,5 +1,6 @@
 <?php
 include "../../dbconn.php";
+include_once __DIR__ . '/../../planning_year.php';
 
 require '../../asset/vendor/autoload.php';
 error_reporting(E_ALL);
@@ -14,8 +15,11 @@ $spreadsheet = new Spreadsheet();
 $sheet = $spreadsheet->getSheet(0);
 $spreadsheet->getSheet(0)->setTitle("EXEC");
 $sheet->getSheetView()->setZoomScale(85);
-$query = "select training,section,count(*) as totalstaff from tna where userid != 0 and department = '' group by training,section order by totalstaff desc;";
+$query = "select training,section,count(*) as totalstaff from " . ldmsPlanningYearTable() . " tna where userid != 0 and department = '' group by training,section order by totalstaff desc;";
 $query_run = mysqli_query($conn, $query);
+// Default so an empty result (e.g. right after the yearly reset) does not
+// leave the row counter undefined below.
+$rowCountOrder = 4;
 if (mysqli_num_rows($query_run) > 0) {
     $rowCountOrder = 4;
     $bilstaff = 1;
@@ -38,8 +42,10 @@ if (mysqli_num_rows($query_run) > 0) {
         $rowCountOrder++;
     }
 }
-$sheet->getStyle('A3:D' . ($rowCountOrder - 1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-$query1 = "select othertr,count(*) as totalstaff from tna where userid != 0 and department = '' and training = 'OTHERS' group by othertr order by totalstaff desc;";
+if (mysqli_num_rows($query_run) > 0) {
+    $sheet->getStyle('A3:D' . ($rowCountOrder - 1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+}
+$query1 = "select othertr,count(*) as totalstaff from " . ldmsPlanningYearTable() . " tna where userid != 0 and department = '' and training = 'OTHERS' group by othertr order by totalstaff desc;";
 $query_run1 = mysqli_query($conn, $query1);
 if (mysqli_num_rows($query_run1) > 0) {
     $rowCountOrder1 = $rowCountOrder + 4;
@@ -61,13 +67,18 @@ if (mysqli_num_rows($query_run1) > 0) {
         $rowCountOrder1++;
     }
 }
-$sheet->getStyle('A' . ($titlerow + 2) . ':C' . ($rowCountOrder1 - 1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+if (mysqli_num_rows($query_run1) > 0) {
+    $sheet->getStyle('A' . ($titlerow + 2) . ':C' . ($rowCountOrder1 - 1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+}
 $spreadsheet->createSheet();
 $sheet1 = $spreadsheet->getSheet(1);
 $spreadsheet->getSheet(1)->setTitle("NON EXEC");
 $sheet1->getSheetView()->setZoomScale(85);
-$query = "select training,section,sum(totalman) as totalstaff from (select training,section,count(*) as totalman from tna where userid in (select userid from user join tna on user.id = userid where designation = 'NON EXECUTIVE') and department = '' group by training,section union select training,section,sum(totalstaff) as totalman from (select training,section,department,grade,concat(department, '/', grade) as departmentid from tna where department != '' group by training,section,department,grade)tablea join (select department,grade,concat(department, '/', grade) as departmentid,count(*) as totalstaff from user where designation = 'NON EXECUTIVE' and hodid = 0 group by department,grade)tableb on tablea.departmentid = tableb.departmentid group by training,section)tablea group by training,section order by totalstaff desc;";
+$query = "select training,section,sum(totalman) as totalstaff from (select training,section,count(*) as totalman from " . ldmsPlanningYearTable() . " tna where userid in (select userid from user join " . ldmsPlanningYearTable() . " tna on user.id = userid where designation = 'NON EXECUTIVE') and department = '' group by training,section union select training,section,sum(totalstaff) as totalman from (select training,section,department,grade,concat(department, '/', grade) as departmentid from " . ldmsPlanningYearTable() . " tna where department != '' group by training,section,department,grade)tablea join (select department,grade,concat(department, '/', grade) as departmentid,count(*) as totalstaff from user where designation = 'NON EXECUTIVE' and hodid = 0 group by department,grade)tableb on tablea.departmentid = tableb.departmentid group by training,section)tablea group by training,section order by totalstaff desc;";
 $query_run = mysqli_query($conn, $query);
+// Default so an empty result (e.g. right after the yearly reset) does not
+// leave the row counter undefined below.
+$rowCountOrder = 4;
 if (mysqli_num_rows($query_run) > 0) {
     $rowCountOrder = 4;
     $bilstaff = 1;
@@ -90,8 +101,10 @@ if (mysqli_num_rows($query_run) > 0) {
         $rowCountOrder++;
     }
 }
-$sheet1->getStyle('A3:D' . ($rowCountOrder - 1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-$query1 = "select othertr,sum(totalman) as totalstaff from (select othertr,count(*) as totalman from tna where userid in (select userid from user join tna on user.id = userid where designation = 'NON EXECUTIVE') and department = '' and training = 'OTHERS' group by othertr union select othertr,sum(totalstaff) as totalman from (select othertr,department,grade,concat(department, '/', grade) as departmentid from tna where department != '' and training = 'OTHERS' group by othertr,department,grade)tablea join (select department,grade,concat(department, '/', grade) as departmentid,count(*) as totalstaff from user where designation = 'NON EXECUTIVE' and hodid = 0 group by department,grade)tableb on tablea.departmentid = tableb.departmentid group by othertr)tablea group by othertr order by totalstaff desc;";
+if (mysqli_num_rows($query_run) > 0) {
+    $sheet1->getStyle('A3:D' . ($rowCountOrder - 1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+}
+$query1 = "select othertr,sum(totalman) as totalstaff from (select othertr,count(*) as totalman from " . ldmsPlanningYearTable() . " tna where userid in (select userid from user join " . ldmsPlanningYearTable() . " tna on user.id = userid where designation = 'NON EXECUTIVE') and department = '' and training = 'OTHERS' group by othertr union select othertr,sum(totalstaff) as totalman from (select othertr,department,grade,concat(department, '/', grade) as departmentid from " . ldmsPlanningYearTable() . " tna where department != '' and training = 'OTHERS' group by othertr,department,grade)tablea join (select department,grade,concat(department, '/', grade) as departmentid,count(*) as totalstaff from user where designation = 'NON EXECUTIVE' and hodid = 0 group by department,grade)tableb on tablea.departmentid = tableb.departmentid group by othertr)tablea group by othertr order by totalstaff desc;";
 $query_run1 = mysqli_query($conn, $query1);
 if (mysqli_num_rows($query_run1) > 0) {
     $rowCountOrder1 = $rowCountOrder + 4;
@@ -113,13 +126,18 @@ if (mysqli_num_rows($query_run1) > 0) {
         $rowCountOrder1++;
     }
 }
-$sheet1->getStyle('A' . ($titlerow + 2) . ':C' . ($rowCountOrder1 - 1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+if (mysqli_num_rows($query_run1) > 0) {
+    $sheet1->getStyle('A' . ($titlerow + 2) . ':C' . ($rowCountOrder1 - 1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+}
 $spreadsheet->createSheet();
 $sheet2 = $spreadsheet->getSheet(2);
 $spreadsheet->getSheet(2)->setTitle("SUMMARY");
 $sheet2->getSheetView()->setZoomScale(85);
-$query = "select training,othertr,tna.section,staffno,staffname,gap,user.department,designation from user join tna on user.id = userid order by staffname desc;";
+$query = "select training,othertr,tna.section,staffno,staffname,gap,user.department,designation from user join " . ldmsPlanningYearTable() . " tna on user.id = userid order by staffname desc;";
 $query_run = mysqli_query($conn, $query);
+// Default so an empty result (e.g. right after the yearly reset) does not
+// leave the row counter undefined below.
+$rowCountOrder = 4;
 if (mysqli_num_rows($query_run) > 0) {
     $rowCountOrder = 4;
     $bilstaff = 1;
@@ -157,7 +175,9 @@ if (mysqli_num_rows($query_run) > 0) {
         $rowCountOrder++;
     }
 }
-$sheet2->getStyle('A3:I' . ($rowCountOrder - 1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+if (mysqli_num_rows($query_run) > 0) {
+    $sheet2->getStyle('A3:I' . ($rowCountOrder - 1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+}
 $writer = new Xlsx($spreadsheet);
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 header('Content-Disposition: attachment; filename="TNA Training Summary.xlsx"');

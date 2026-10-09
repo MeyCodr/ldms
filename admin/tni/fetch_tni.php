@@ -1,10 +1,11 @@
 <?php
     include "../../dbconn.php";
+    include_once __DIR__ . '/../../planning_year.php';
 
     if($_POST["action"] == "load_tni"){
         $output= array();
         
-        $sql = "select id,staffname,tnia.* from user join (select department,count(*) as tnicount from tni group by department)tnia on user.department = tnia.department where usertype = 'HOD';";
+        $sql = "select id,staffname,tnia.* from user join (select department,count(*) as tnicount from " . ldmsPlanningYearTable('tni') . " tni group by department)tnia on user.department = tnia.department where usertype = 'HOD';";
         $query = mysqli_query($conn,$sql);
         while($row = mysqli_fetch_assoc($query))
         {
@@ -27,7 +28,7 @@
             $department = $row['department'];
         }
 
-        $sql1 = "select count(*) as tnirecord from tni where department = '$department' ;";
+        $sql1 = "select count(*) as tnirecord from tni where department = '$department' and year = '" . ldmsPlanningYear() . "';";
         $query1 = mysqli_query($conn,$sql1);
         while($row1 = mysqli_fetch_assoc($query1))
         {
@@ -66,7 +67,7 @@
             $department = $row['department'];
         }
         
-        $sql = "select * from tni where department = '$department' ";
+        $sql = "select * from tni where department = '$department' and year = '" . ldmsPlanningYear() . "' order by id";
         $query = mysqli_query($conn,$sql);
         while($row = mysqli_fetch_assoc($query))
         {

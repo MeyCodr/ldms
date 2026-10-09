@@ -24,7 +24,10 @@ const TNA_SAVE_SECTIONS = [
     'sp' => 'special',
 ];
 
-const TNA_SAVE_YEAR = '2023';
+// TNA is stored under the planning year - the same "FY" the form headings
+// show, which rolls over on 1 October (see planning_year.php). The TNA lists
+// and forms read the same year.
+require_once __DIR__ . '/planning_year.php';
 
 // $owner      columns that identify whose TNA this is, used for both the
 //             DELETE and every INSERT: ['userid' => 12] or
@@ -38,12 +41,13 @@ function tna_save_rows($conn, array $owner, $status, $approved, array $post, arr
 {
     // Throw on any SQL error so the catch below can roll back.
     mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+    $year = (string) ldmsPlanningYear();
     try {
         $conn->begin_transaction();
 
         $where = implode(' AND ', array_map(fn($c) => "$c = ?", array_keys($owner)));
         $stmt = $conn->prepare("DELETE FROM tna WHERE $where AND year = ?");
-        $params = array_merge(array_values($owner), [TNA_SAVE_YEAR]);
+        $params = array_merge(array_values($owner), [$year]);
         $stmt->bind_param(str_repeat('s', count($params)), ...$params);
         $stmt->execute();
         $stmt->close();
@@ -77,7 +81,7 @@ function tna_save_rows($conn, array $owner, $status, $approved, array $post, arr
                     'monthapply' => $field('datetr'),
                     'status' => $status,
                     'section' => $section,
-                    'year' => TNA_SAVE_YEAR,
+                    'year' => $year,
                 ] + $owner + ($extra[$section] ?? []);
 
                 $cols = array_keys($row);

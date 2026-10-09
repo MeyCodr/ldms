@@ -1,8 +1,21 @@
 <?php
+    session_start();
     include "../../../dbconn.php";
 
+    // Same gate as tni.php; the department always comes from the logged-in
+    // HOD, not from the posted userid.
+    if (!isset($_SESSION['fullname'], $_SESSION['id'], $_SESSION['usertype']) || $_SESSION['usertype'] != 'HOD') {
+        echo json_encode(array());
+        exit();
+    }
+
+    $output = array();
+    // TNI is stored under the planning year (rolls over on 1 October).
+    include_once "../../../planning_year.php";
+    $tniYear = ldmsPlanningYear();
+
     if($_POST["action"] == "gettni"){
-        $userid = $_POST["userid"];
+        $userid = (int) $_SESSION['id'];
 
         $sql = "select department from user where id = '$userid'";
         $query = mysqli_query($conn,$sql);
@@ -11,7 +24,8 @@
             $department = $row['department'];
         }
 
-        $sql1 = "select count(*) as tnirecord from tni where department = '$department' and year = year(curdate());";
+        $department = mysqli_real_escape_string($conn, $department);
+        $sql1 = "select count(*) as tnirecord from tni where department = '$department' and year = '$tniYear';";
         $query1 = mysqli_query($conn,$sql1);
         while($row1 = mysqli_fetch_assoc($query1))
         {
@@ -41,7 +55,7 @@
 
         echo json_encode($output);
     }else if($_POST["action"] == "getlisttni"){
-        $userid = $_POST["userid"];
+        $userid = (int) $_SESSION['id'];
 
         $sql = "select department from user where id = '$userid'";
         $query = mysqli_query($conn,$sql);
@@ -50,7 +64,8 @@
             $department = $row['department'];
         }
         
-        $sql = "select * from tni where department = '$department' and year = year(curdate());";
+        $department = mysqli_real_escape_string($conn, $department);
+        $sql = "select * from tni where department = '$department' and year = '$tniYear' order by id;";
         $query = mysqli_query($conn,$sql);
         while($row = mysqli_fetch_assoc($query))
         {

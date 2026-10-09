@@ -1,5 +1,6 @@
 <?php
 include "../../dbconn.php";
+include_once __DIR__ . '/../../planning_year.php';
 
 require '../../asset/vendor/autoload.php';
 error_reporting(E_ALL);
@@ -18,7 +19,7 @@ if (isset($_POST['departmentrep'])) {
     $sheet = $spreadsheet->getSheet(0);
     $sheet->getSheetView()->setZoomScale(85);
 
-    // $query = "select staffno,staffname,training,othertr,gap,monthapply from user join tna on user.id = userid where user.department = '$department' and designation in ('MANAGER (AM/HOS & ABOVE)','EXECUTIVE') union select staffno,staffname,training,othertr,gap,monthapply from user join tna on user.id = userid where user.department = '$department' and designation = 'NON EXECUTIVE' and usertype != ''";
+    // $query = "select staffno,staffname,training,othertr,gap,monthapply from user join " . ldmsPlanningYearTable() . " tna on user.id = userid where user.department = '$department' and designation in ('MANAGER (AM/HOS & ABOVE)','EXECUTIVE') union select staffno,staffname,training,othertr,gap,monthapply from user join " . ldmsPlanningYearTable() . " tna on user.id = userid where user.department = '$department' and designation = 'NON EXECUTIVE' and usertype != ''";
     // $query_run = mysqli_query($conn, $query);
 
     // if(mysqli_num_rows($query_run) > 0)
@@ -75,7 +76,7 @@ if (isset($_POST['departmentrep'])) {
     //     $sheet->getStyle('A1:F'.($rowCountOrder-1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
     // }
-    $query = "select userid,staffno,staffname from user join tna on user.id = userid where user.department = '$department' and designation in ('MANAGER (AM/HOS & ABOVE)','EXECUTIVE') union select userid,staffno,staffname from user join tna on user.id = userid where user.department = '$department' and designation = 'NON EXECUTIVE' and usertype != ''";
+    $query = "select userid,staffno,staffname from user join " . ldmsPlanningYearTable() . " tna on user.id = userid where user.department = '$department' and designation in ('MANAGER (AM/HOS & ABOVE)','EXECUTIVE') union select userid,staffno,staffname from user join " . ldmsPlanningYearTable() . " tna on user.id = userid where user.department = '$department' and designation = 'NON EXECUTIVE' and usertype != ''";
     $query_run = mysqli_query($conn, $query);
 
     if (mysqli_num_rows($query_run) > 0) {
@@ -99,7 +100,7 @@ if (isset($_POST['departmentrep'])) {
             $sheet->setCellValue('B' . $rowCountOrder, $data['staffno']);
             $sheet->setCellValue('C' . $rowCountOrder, $data['staffname']);
             $userid = $data['userid'];
-            $query1 = "select training,othertr,gap,monthapply from tna where userid = '$userid'";
+            $query1 = "select training,othertr,gap,monthapply from " . ldmsPlanningYearTable() . " tna where userid = '$userid'";
             $query_run1 = mysqli_query($conn, $query1);
 
             if (mysqli_num_rows($query_run1) > 0) {
@@ -122,7 +123,7 @@ if (isset($_POST['departmentrep'])) {
         }
     }
 
-    $query = "select distinct(grade) from tna where department = '$department'";
+    $query = "select distinct(grade) from " . ldmsPlanningYearTable() . " tna where department = '$department'";
     $query_run = mysqli_query($conn, $query);
 
     if (mysqli_num_rows($query_run) > 0) {
@@ -131,7 +132,7 @@ if (isset($_POST['departmentrep'])) {
             $sheet->setCellValue('B' . $rowCountOrder, '');
             $sheet->setCellValue('C' . $rowCountOrder, $data['grade']);
             $grade = $data['grade'];
-            $query1 = "select training,othertr,gap,monthapply from tna where department = '$department' and grade = '$grade'";
+            $query1 = "select training,othertr,gap,monthapply from " . ldmsPlanningYearTable() . " tna where department = '$department' and grade = '$grade'";
             $query_run1 = mysqli_query($conn, $query1);
 
             if (mysqli_num_rows($query_run1) > 0) {

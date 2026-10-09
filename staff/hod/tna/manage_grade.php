@@ -96,7 +96,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['usertype'] == 'HOD')) {
                                         TNA LIST</button>
                                 </div>
                                 <div class="col-md-8" style="margin-top:10px" align="center">
-                                    <strong id="title">Training Need Analysis (TNA) Form - (FY 2025) - Grade <span
+                                    <strong id="title">Training Need Analysis (TNA) Form - (FY <?php include_once __DIR__ . '/../../../planning_year.php'; echo ldmsPlanningYear(); ?>) - Grade <span
                                             id="grade"></span>
                                 </div>
                                 <div class="col-md-2" style="margin-top:10px" align="right">

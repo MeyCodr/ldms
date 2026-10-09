@@ -89,7 +89,7 @@
                                     <button type="button" name="back_training" id="back_training" class="btn btn-success btn-md"><i class="far fa-arrow-alt-circle-left"></i> BACK TO TNI LIST</button>
                                 </div>
                                 <div class="col-md-8" style="margin-top:10px" align="center">
-                                    <strong id="title">Training Need Identification (TNI) Form - (FY 2025)</strong>
+                                    <strong id="title">Training Need Identification (TNI) Form - (FY <?php include_once __DIR__ . '/../../planning_year.php'; echo ldmsPlanningYear(); ?>)</strong>
                                 </div>
                                 <div class="col-md-2"></div>
                             </div>

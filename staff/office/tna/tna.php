@@ -94,7 +94,7 @@ if (isset($_SESSION['fullname']) && ($_SESSION['role'] == '')) {
                         <div class="panel-heading">
                             <div class="row">
                                 <div class="col-md-6" style="margin-top:1px;">
-                                    <strong id="title">Training Need Analysis (TNA) Form - (FY 2026)</strong>
+                                    <strong id="title">Training Need Analysis (TNA) Form - (FY <?php include_once __DIR__ . '/../../../planning_year.php'; echo ldmsPlanningYear(); ?>)</strong>
                                 </div>
                                 <div class="col-md-6" align="right">
                                     <span id="statustna"></span>

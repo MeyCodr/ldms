@@ -1,26 +1,27 @@
 <?php
 
 include "../../../dbconn.php";
+include_once __DIR__ . '/../../../planning_year.php';
 
 if (isset($_POST['action'])) {
 	if ($_POST["action"] == "gettna") {
 		$userid = $_POST["userid"];
 
-		// $sql = "select count(*) as tnarecord,status from tna where userid = '$userid' and year = '2023';";
-		$sql = "SELECT status, COUNT(*) AS tnarecord FROM tna WHERE userid = '$userid' AND year = '2023' GROUP BY status;";
+		// $sql = "select count(*) as tnarecord,status from tna where userid = '$userid' and year = '" . ldmsPlanningYear() . "';";
+		$sql = "SELECT status, COUNT(*) AS tnarecord FROM tna WHERE userid = '$userid' AND year = '" . ldmsPlanningYear() . "' GROUP BY status;";
 		$query = mysqli_query($conn, $sql);
 		while ($row = mysqli_fetch_assoc($query)) {
 			$tna = $row['tnarecord'];
 			$status = $row['status'];
 		}
 
-		$sql1 = "select ifnull(sum(totalday*totalhour),0) as sumhour from (select ((DATEDIFF(enddate, startdate)) + 1) as totalday,ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour from training join participation on training.id = trainingid where userid = '$userid' and year(startdate) = '2023')tablea;";
+		$sql1 = "select ifnull(sum(totalday*totalhour),0) as sumhour from (select ((DATEDIFF(enddate, startdate)) + 1) as totalday,ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour from training join participation on training.id = trainingid where userid = '$userid' and year(startdate) = year(curdate()))tablea;";
 		$query1 = mysqli_query($conn, $sql1);
 		while ($row1 = mysqli_fetch_assoc($query1)) {
 			$publichour = $row1['sumhour'];
 		}
 
-		$sql2 = "select ifnull(sum(totalday*totalhour),0) as sumhour from (select ((DATEDIFF(enddate, startdate)) + 1) as totalday,ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour from ojt join participateojt on ojt.id = ojtid where userid = '$userid' and year(startdate) = '2023')tablea;";
+		$sql2 = "select ifnull(sum(totalday*totalhour),0) as sumhour from (select ((DATEDIFF(enddate, startdate)) + 1) as totalday,ROUND((TIME_TO_SEC(TIMEDIFF(endtime,starttime))/60)/60,2) as totalhour from ojt join participateojt on ojt.id = ojtid where userid = '$userid' and year(startdate) = year(curdate()))tablea;";
 		$query2 = mysqli_query($conn, $sql2);
 		while ($row2 = mysqli_fetch_assoc($query2)) {
 			$ojthour = $row2['sumhour'];
@@ -38,7 +39,7 @@ if (isset($_POST['action'])) {
 	} else if ($_POST["action"] == "getlisttna") {
 		$userid = $_POST["userid"];
 
-		$sql = "select * from tna where userid = '$userid' and year = '2023';";
+		$sql = "select * from tna where userid = '$userid' and year = '" . ldmsPlanningYear() . "';";
 		$query = mysqli_query($conn, $sql);
 		while ($row = mysqli_fetch_assoc($query)) {
 			$output[] = array(

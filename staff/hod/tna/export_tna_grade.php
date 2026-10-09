@@ -1,6 +1,7 @@
 <?php
 
     include "../../../dbconn.php";
+include_once __DIR__ . '/../../../planning_year.php';
 
     require '../../../asset/fpdf/fpdf.php';
 
@@ -17,7 +18,7 @@
             $date1 = $rowd['date1'];
         }
 
-        $sqla = "select DATE_FORMAT(dateapprove,'%d/%m/%Y') as date1 from tna where department = '$department' and grade = '$grade';";
+        $sqla = "select DATE_FORMAT(dateapprove,'%d/%m/%Y') as date1 from " . ldmsPlanningYearTable() . " tna where department = '$department' and grade = '$grade';";
         $querya = mysqli_query($conn,$sqla);
         while($rowa = mysqli_fetch_assoc($querya))
         {
@@ -180,7 +181,7 @@
 
         $output1 = [];
 
-        $sql1 = "select * from tna where department = '$department' and grade = '$grade' and section = 'selfaware' and year = year(curdate());";
+        $sql1 = "select * from " . ldmsPlanningYearTable() . " tna where department = '$department' and grade = '$grade' and section = 'selfaware' and year = '" . ldmsPlanningYear() . "';";
         $query1 = mysqli_query($conn,$sql1);
         while($row1 = mysqli_fetch_assoc($query1))
         {
@@ -242,7 +243,7 @@
 
         $output2 = [];
 
-        $sql2 = "select * from tna where department = '$department' and grade = '$grade' and section = 'leadaware' and year = year(curdate());";
+        $sql2 = "select * from " . ldmsPlanningYearTable() . " tna where department = '$department' and grade = '$grade' and section = 'leadaware' and year = '" . ldmsPlanningYear() . "';";
         $query2 = mysqli_query($conn,$sql2);
         while($row2 = mysqli_fetch_assoc($query2))
         {
@@ -304,7 +305,7 @@
 
         $output3 = [];
 
-        $sql3 = "select * from tna where department = '$department' and grade = '$grade' and section = 'functional' and year = year(curdate());";
+        $sql3 = "select * from " . ldmsPlanningYearTable() . " tna where department = '$department' and grade = '$grade' and section = 'functional' and year = '" . ldmsPlanningYear() . "';";
         $query3 = mysqli_query($conn,$sql3);
         while($row3 = mysqli_fetch_assoc($query3))
         {
@@ -366,7 +367,7 @@
 
         $output4 = [];
 
-        $sql4 = "select * from tna where department = '$department' and grade = '$grade' and section = 'busiaware' and year = year(curdate());";
+        $sql4 = "select * from " . ldmsPlanningYearTable() . " tna where department = '$department' and grade = '$grade' and section = 'busiaware' and year = '" . ldmsPlanningYear() . "';";
         $query4 = mysqli_query($conn,$sql4);
         while($row4 = mysqli_fetch_assoc($query4))
         {
@@ -428,7 +429,7 @@
 
         $output5 = [];
 
-        $sql5 = "select * from tna where department = '$department' and grade = '$grade' and section = 'special' and year = year(curdate());";
+        $sql5 = "select * from " . ldmsPlanningYearTable() . " tna where department = '$department' and grade = '$grade' and section = 'special' and year = '" . ldmsPlanningYear() . "';";
         $query5 = mysqli_query($conn,$sql5);
         while($row5 = mysqli_fetch_assoc($query5))
         {

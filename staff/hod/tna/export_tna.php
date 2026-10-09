@@ -1,13 +1,14 @@
 <?php
 
     include "../../../dbconn.php";
+include_once __DIR__ . '/../../../planning_year.php';
 
     require '../../../asset/fpdf/fpdf.php';
 
     if($_POST["action"] == "printpdf"){
         $userid = $_POST["userid"];
 
-        $sqla = "select staffno,staffname,user.department,user.section,DATE_FORMAT(curdate(),'%d/%m/%Y') as date1 from user join tna on user.id = userid where user.id = '$userid';";
+        $sqla = "select staffno,staffname,user.department,user.section,DATE_FORMAT(curdate(),'%d/%m/%Y') as date1 from user join " . ldmsPlanningYearTable() . " tna on user.id = userid where user.id = '$userid';";
         $querya = mysqli_query($conn,$sqla);
         while($rowa = mysqli_fetch_assoc($querya))
         {
@@ -173,7 +174,7 @@
         $pdf->SetFont('Arial','',10);
         $pdf->Cell(150,10,'');
         $pdf->SetFont('Arial','U',10);
-        $pdf->Cell(0,10,'Training History 2023');
+        $pdf->Cell(0,10,'Training History ' . date('Y'));
         $pdf->SetFont('Arial','',10);
         $pdf->Ln(5);
         $pdf->Cell(20,10,'Staff No.');
@@ -209,7 +210,7 @@
         // $pdf->Cell(13,5,'When',1);
         // $pdf->Ln();
 
-        // $sql = "select * from tna where userid = '$userid' and section = 'mandatory' and year = year(curdate());";
+        // $sql = "select * from " . ldmsPlanningYearTable() . " tna where userid = '$userid' and section = 'mandatory' and year = '" . ldmsPlanningYear() . "';";
         // $query = mysqli_query($conn,$sql);
         // while($row = mysqli_fetch_assoc($query))
         // {
@@ -261,7 +262,7 @@
 
         $output1 = [];
 
-        $sql1 = "select * from tna where userid = '$userid' and section = 'selfaware' and year = year(curdate());";
+        $sql1 = "select * from " . ldmsPlanningYearTable() . " tna where userid = '$userid' and section = 'selfaware' and year = '" . ldmsPlanningYear() . "';";
         $query1 = mysqli_query($conn,$sql1);
         while($row1 = mysqli_fetch_assoc($query1))
         {
@@ -323,7 +324,7 @@
 
         $output2 = [];
 
-        $sql2 = "select * from tna where userid = '$userid' and section = 'leadaware' and year = year(curdate());";
+        $sql2 = "select * from " . ldmsPlanningYearTable() . " tna where userid = '$userid' and section = 'leadaware' and year = '" . ldmsPlanningYear() . "';";
         $query2 = mysqli_query($conn,$sql2);
         while($row2 = mysqli_fetch_assoc($query2))
         {
@@ -385,7 +386,7 @@
 
         $output3 = [];
 
-        $sql3 = "select * from tna where userid = '$userid' and section = 'functional' and year = year(curdate());";
+        $sql3 = "select * from " . ldmsPlanningYearTable() . " tna where userid = '$userid' and section = 'functional' and year = '" . ldmsPlanningYear() . "';";
         $query3 = mysqli_query($conn,$sql3);
         while($row3 = mysqli_fetch_assoc($query3))
         {
@@ -447,7 +448,7 @@
 
         $output4 = [];
 
-        $sql4 = "select * from tna where userid = '$userid' and section = 'busiaware' and year = year(curdate());";
+        $sql4 = "select * from " . ldmsPlanningYearTable() . " tna where userid = '$userid' and section = 'busiaware' and year = '" . ldmsPlanningYear() . "';";
         $query4 = mysqli_query($conn,$sql4);
         while($row4 = mysqli_fetch_assoc($query4))
         {
@@ -509,7 +510,7 @@
 
         $output5 = [];
 
-        $sql5 = "select * from tna where userid = '$userid' and section = 'special' and year = year(curdate());";
+        $sql5 = "select * from " . ldmsPlanningYearTable() . " tna where userid = '$userid' and section = 'special' and year = '" . ldmsPlanningYear() . "';";
         $query5 = mysqli_query($conn,$sql5);
         while($row5 = mysqli_fetch_assoc($query5))
         {

@@ -13,7 +13,11 @@
                 $department = $row['department'];
             }
 
-            $sql = "delete from tni where department = '$department' and year = year(curdate());";
+            // Same planning year as the HOD TNI form (rolls over on 1 October).
+            include_once "../../planning_year.php";
+            $tniYear = ldmsPlanningYear();
+
+            $sql = "delete from tni where department = '$department' and year = '$tniYear';";
             mysqli_query($conn, $sql);
 
             for ($i=1;$i<=$mandatory;$i++) {
@@ -26,7 +30,7 @@
                 $trtype = strtoupper($_POST['trtype'.$i]);
                 $evaluate = strtoupper($_POST['evaluate'.$i]);
 
-                $sql = "insert into tni (training,expected,actual,gap,cause,ask,method,evaluation,department,year) values ('$task','$targetsk','$currentsk','$gap','$cause','$ask','$trtype','$evaluate','$department',year(curdate()))";
+                $sql = "insert into tni (training,expected,actual,gap,cause,ask,method,evaluation,department,year) values ('$task','$targetsk','$currentsk','$gap','$cause','$ask','$trtype','$evaluate','$department','$tniYear')";
                 mysqli_query($conn, $sql);
             }
             echo json_encode(['message' => 'insert']);
